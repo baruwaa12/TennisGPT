@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../services/openai_service.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -7,6 +8,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final openAIService = Provider.of<OpenAIService>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('TennisGPT'),
@@ -22,6 +25,12 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
+                    SvgPicture.asset(
+                      'assets/images/logo.svg',
+                      width: 100,
+                      height: 100,
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
                       'Welcome to TennisGPT',
                       style: TextStyle(
@@ -37,6 +46,19 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.grey,
                       ),
                     ),
+                    if (openAIService.isLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    if (openAIService.error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Text(
+                          openAIService.error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -123,4 +145,4 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}
