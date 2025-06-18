@@ -39,6 +39,12 @@ class OpenAIService extends ChangeNotifier {
     );
   }
 
+  Future<String?> emotionalReset(String situation) async {
+    return _makeRequest(
+      'As a tennis coach, provide immediate emotional support and reframing for this situation. Focus on quick recovery and maintaining a positive mindset. Situation: $situation. Response should include: 1. Quick validation of feelings, 2. Positive reframing, 3. Immediate next steps, 4. Encouraging reminder',
+    );
+  }
+
   Future<String?> _makeRequest(String prompt) async {
     if (_apiKey.isEmpty) {
       _error = 'OpenAI API key not found';
@@ -58,7 +64,7 @@ class OpenAIService extends ChangeNotifier {
           'Authorization': 'Bearer $_apiKey',
         },
         body: jsonEncode({
-          'model': 'gpt-4',
+          'model': 'gpt-3.5-turbo',
           'messages': [
             {
               'role': 'system',

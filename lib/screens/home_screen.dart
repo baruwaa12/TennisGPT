@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/openai_service.dart';
+import 'emotional_reset_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -65,41 +66,40 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
+              child: Column(
                 children: [
                   _buildFeatureCard(
                     context,
-                    'Technique Analysis',
-                    Icons.sports_tennis,
-                    () {
-                      // TODO: Navigate to technique analysis
-                    },
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    'Match Strategy',
+                    '🧠 Mental Check-In',
+                    'Reflect on performance, get empathy, motivation and mindset drills',
                     Icons.psychology,
                     () {
-                      // TODO: Navigate to match strategy
+                      // TODO: Navigate to mental check-in
                     },
                   ),
+                  const SizedBox(height: 16),
                   _buildFeatureCard(
                     context,
-                    'Training Plans',
-                    Icons.calendar_today,
+                    '🎾 Tactical Coach',
+                    'Analyse issues, recieve tailored drils and a confidence boost',
+                    Icons.sports_tennis,
                     () {
-                      // TODO: Navigate to training plans
+                      // TODO: Navigate to tactical coach
                     },
                   ),
+                  const SizedBox(height: 16),
                   _buildFeatureCard(
                     context,
-                    'Video Analysis',
-                    Icons.videocam,
+                    '💥 Emotional Reset',
+                    'One-tap validation + calm reframe + next-step action for next match',
+                    Icons.refresh,
                     () {
-                      // TODO: Navigate to video analysis
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EmotionalResetScreen(),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -114,6 +114,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildFeatureCard(
     BuildContext context,
     String title,
+    String description,
     IconData icon,
     VoidCallback onTap,
   ) {
@@ -121,23 +122,40 @@ class HomeScreen extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
             children: [
               Icon(
                 icon,
                 size: 48,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey[400],
               ),
             ],
           ),
