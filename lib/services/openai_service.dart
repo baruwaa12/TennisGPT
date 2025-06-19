@@ -39,6 +39,12 @@ class OpenAIService extends ChangeNotifier {
     );
   }
 
+  Future<String?> mentalCheckIn(String journalEntry) async {
+    return _makeRequest(
+      'As a tennis coach, provide an empathetic and motivating response to this player\'s journal entry. Focus on validating their feelings while offering constructive perspective and actionable next steps. Journal Entry: $journalEntry. Response should include: 1. Empathy and validation, 2. Reframing of the situation, 3. 2-3 actionable steps for improvement',
+    );
+  }
+
   Future<String?> emotionalReset(String situation) async {
     return _makeRequest(
       'As a tennis coach, provide immediate emotional support and reframing for this situation. Focus on quick recovery and maintaining a positive mindset. Situation: $situation. Response should include: 1. Quick validation of feelings, 2. Positive reframing, 3. Immediate next steps, 4. Encouraging reminder',

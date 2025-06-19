@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/openai_service.dart';
 import 'emotional_reset_screen.dart';
+import 'mental_check_in_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -74,7 +75,12 @@ class HomeScreen extends StatelessWidget {
                     'Reflect on performance, get empathy, motivation and mindset drills',
                     Icons.psychology,
                     () {
-                      // TODO: Navigate to mental check-in
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MentalCheckInScreen(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
