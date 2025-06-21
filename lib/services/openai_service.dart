@@ -15,6 +15,12 @@ class OpenAIService extends ChangeNotifier {
   String? get error => _error;
   String? get lastResponse => _lastResponse;
 
+  void clearResponse() {
+    _lastResponse = null;
+    _error = null;
+    notifyListeners();
+  }
+
   Future<String?> analyzeTechnique(String description) async {
     return _makeRequest(
       'Analyze the following tennis technique and provide specific feedback for improvement: $description',
@@ -41,13 +47,13 @@ class OpenAIService extends ChangeNotifier {
 
   Future<String?> mentalCheckIn(String journalEntry) async {
     return _makeRequest(
-      'As a tennis coach, provide an empathetic and motivating response to this player\'s journal entry. Focus on validating their feelings while offering constructive perspective and actionable next steps. Journal Entry: $journalEntry. Response should include: 1. Empathy and validation, 2. Reframing of the situation, 3. 2-3 actionable steps for improvement',
+      'You are a tough but fair tennis coach who cares deeply about your players\' success. Analyze this journal entry with brutal honesty and accountability. Ask tough questions like: "Did you perform as best as you can and better than the other person?" "Did you use your brain or just fly through?" "Were you mentally present or just going through the motions?" Journal Entry: $journalEntry. Response should include: 1. Brief acknowledgment of their feelings, 2. Tough accountability questions that force honest self-reflection, 3. Call out any excuses or blaming external factors (wind, luck, etc.), 4. Specific mental and physical actions they MUST take to improve, 5. A challenge to prove they have the mental toughness to succeed. Be direct and push them to take full responsibility for their performance.',
     );
   }
 
   Future<String?> emotionalReset(String situation) async {
     return _makeRequest(
-      'As a tennis coach, provide immediate emotional support and reframing for this situation. Focus on quick recovery and maintaining a positive mindset. Situation: $situation. Response should include: 1. Quick validation of feelings, 2. Positive reframing, 3. Immediate next steps, 4. Encouraging reminder',
+      'You are a tough but caring tennis coach. Provide immediate emotional support AND accountability. Situation: $situation. Response should include: 1. Quick validation of feelings, 2. Tough love reminder that champions don\'t quit when things get hard, 3. Immediate action steps they MUST take right now, 4. A challenge to prove they have what it takes. Be supportive but push them to be mentally stronger. Tennis is as much mental as physical - they need to toughen up.',
     );
   }
 
@@ -74,7 +80,7 @@ class OpenAIService extends ChangeNotifier {
           'messages': [
             {
               'role': 'system',
-              'content': 'You are an expert tennis coach with deep knowledge of technique, strategy, and training methods.',
+              'content': 'You are an expert tennis coach with deep knowledge of technique, strategy, and training methods. You are tough but fair, pushing players to take tennis seriously while showing you care about their success. You balance empathy with accountability, never letting players make excuses but always believing in their potential. You ask tough questions that force honest self-reflection and call out excuses.',
             },
             {
               'role': 'user',

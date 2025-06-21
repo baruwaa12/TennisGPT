@@ -19,6 +19,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
   int _currentRating = 3;
   bool _showConfetti = false;
   bool _isLoading = false;
+  bool _hasSubmitted = false;
 
   @override
   void initState() {
@@ -81,167 +82,246 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.psychology,
-                        size: 64,
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'How are you feeling today?',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+              if (!_hasSubmitted) ...[
+                // Input Section
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.psychology,
+                          size: 64,
+                          color: Colors.blue,
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // Mood Slider
-                      Column(
-                        children: [
-                          Text(
-                            _getMoodEmoji(_currentRating),
-                            style: const TextStyle(fontSize: 48),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'How are you feeling today?',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Mood Slider
+                        Column(
+                          children: [
+                            Text(
+                              _getMoodEmoji(_currentRating),
+                              style: const TextStyle(fontSize: 48),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Stressed', style: TextStyle(fontSize: 12)),
+                                const Text('Calm', style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                            Slider(
+                              value: _currentRating.toDouble(),
+                              min: 1,
+                              max: 5,
+                              divisions: 4,
+                              activeColor: Colors.blue,
+                              onChanged: (value) {
+                                setState(() {
+                                  _currentRating = value.round();
+                                });
+                              },
+                            ),
+                            Text(
+                              'Rating: $_currentRating/5',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Journal Text Field
+                        const Text(
+                          "What's on your mind today?",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _journalController,
+                          focusNode: _focusNode,
+                          maxLines: null,
+                          minLines: 4,
+                          decoration: InputDecoration(
+                            hintText: 'Share your thoughts about your tennis performance, challenges, or anything on your mind...',
+                            border: const OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isLoading || _journalController.text.trim().isEmpty
+                                ? null
+                                : _handleSubmit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text(
+                                    'Submit',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Response Section (after submission)
+                Expanded(
+                  child: Consumer<OpenAIService>(
+                    builder: (context, openAIService, child) {
+                      if (openAIService.isLoading) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text('Stressed', style: TextStyle(fontSize: 12)),
-                              const Text('Calm', style: TextStyle(fontSize: 12)),
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text(
+                                'Your coach is thinking...',
+                                style: TextStyle(fontSize: 18),
+                              ),
                             ],
                           ),
-                          Slider(
-                            value: _currentRating.toDouble(),
-                            min: 1,
-                            max: 5,
-                            divisions: 4,
-                            activeColor: Colors.blue,
-                            onChanged: (value) {
-                              setState(() {
-                                _currentRating = value.round();
-                              });
-                            },
-                          ),
-                          Text(
-                            'Rating: $_currentRating/5',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                        );
+                      }
+
+                      if (openAIService.lastResponse != null) {
+                        return Column(
+                          children: [
+                            // Success Header
+                            Card(
+                              color: Colors.green[50],
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle, color: Colors.green),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Check-in Complete!',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Journal Text Field
-                      const Text(
-                        "What's on your mind today?",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _journalController,
-                        focusNode: _focusNode,
-                        maxLines: null,
-                        minLines: 4,
-                        decoration: InputDecoration(
-                          hintText: 'Share your thoughts about your tennis performance, challenges, or anything on your mind...',
-                          border: const OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading || _journalController.text.trim().isEmpty
-                              ? null
-                              : _handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                            const SizedBox(height: 16),
+                            
+                            // Coach's Response
+                            Expanded(
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.psychology, color: Colors.blue, size: 32),
+                                          const SizedBox(width: 12),
+                                          const Text(
+                                            'Your Coach\'s Response:',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Expanded(
+                                        child: SingleChildScrollView(
+                                          child: Text(
+                                            openAIService.lastResponse!,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              height: 1.6,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  'Submit',
+                            
+                            const SizedBox(height: 16),
+                            
+                            // New Check-in Button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _hasSubmitted = false;
+                                    _journalController.clear();
+                                    openAIService.clearResponse();
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'New Check-in',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                        ),
-                      ),
-                    ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+
+                      return const SizedBox.shrink();
+                    },
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // AI Response Section
-              Consumer<OpenAIService>(
-                builder: (context, openAIService, child) {
-                  if (openAIService.lastResponse != null) {
-                    return Expanded(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.psychology, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Your Coach\'s Response:',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  child: Text(
-                                    openAIService.lastResponse!,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
+              ],
               
               // Error Display
               Consumer<OpenAIService>(
@@ -331,6 +411,12 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       final openAIService = Provider.of<OpenAIService>(context, listen: false);
       await openAIService.mentalCheckIn(journalText);
 
+      // Show response section
+      setState(() {
+        _hasSubmitted = true;
+        _isLoading = false;
+      });
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -338,7 +424,6 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
       setState(() {
         _isLoading = false;
       });
