@@ -4,6 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../services/openai_service.dart';
 import 'emotional_reset_screen.dart';
 import 'mental_check_in_screen.dart';
+import 'tactical_coach_screen.dart';
+import 'match_history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -90,7 +92,12 @@ class HomeScreen extends StatelessWidget {
                     'Analyse issues, recieve tailored drils and a confidence boost',
                     Icons.sports_tennis,
                     () {
-                      // TODO: Navigate to tactical coach
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TacticalCoachScreen(),
+                        ),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
@@ -104,6 +111,21 @@ class HomeScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const EmotionalResetScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildFeatureCard(
+                    context,
+                    '📊 Match History',
+                    'Track your performance, view trends, and analyze progress over time',
+                    Icons.analytics,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MatchHistoryScreen(),
                         ),
                       );
                     },
