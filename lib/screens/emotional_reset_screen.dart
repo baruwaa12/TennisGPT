@@ -140,7 +140,7 @@ class EmotionalResetScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('💪 You\'ve got this!'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.grey,
         ),
       );
     }

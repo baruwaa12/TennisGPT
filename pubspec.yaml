@@ -41,7 +41,6 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_dotenv: ^5.1.0
   flutter_svg: ^2.0.9
-  confetti: ^0.7.0
 
 dev_dependencies:
   flutter_test:
