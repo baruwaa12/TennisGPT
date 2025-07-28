@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "569821241977",
+    "project_id": "tennisgpt-478d4",
+    "storage_bucket": "tennisgpt-478d4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:569821241977:android:f7a6e10dd0e31580e9eaa8",
+        "android_client_info": {
+          "package_name": "com.tennisgpt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_dPPO1Hmtyfwo0MjKaVSmWwB53jO93VY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

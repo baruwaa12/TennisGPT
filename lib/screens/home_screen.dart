@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/openai_service.dart';
+import '../services/auth_service.dart';
 import 'emotional_reset_screen.dart';
 import 'mental_check_in_screen.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,11 +15,52 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final openAIService = Provider.of<OpenAIService>(context);
+    final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('TennisGPT'),
         centerTitle: true,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'signout') {
+                await authService.signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  );
+                }
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'signout',
+                child: Row(
+                  children: [
+                    const Icon(Icons.logout),
+                    const SizedBox(width: 8),
+                    const Text('Sign Out'),
+                  ],
+                ),
+              ),
+            ],
+            child: CircleAvatar(
+              backgroundImage: authService.userPhotoURL != null
+                  ? NetworkImage(authService.userPhotoURL!)
+                  : null,
+              child: authService.userPhotoURL == null
+                  ? Text(
+                      authService.userDisplayName?.substring(0, 1).toUpperCase() ?? 'U',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -35,9 +78,9 @@ class HomeScreen extends StatelessWidget {
                       height: 100,
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Welcome to TennisGPT',
-                      style: TextStyle(
+                    Text(
+                      'Welcome, ${authService.userDisplayName ?? 'Player'}!',
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
