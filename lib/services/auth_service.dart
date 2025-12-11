@@ -1,67 +1,56 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/foundation.dart';
+// Sign in with Google (mobile OAuth + deep link)
+Future<void> signInWithGoogle() async {
+  _isLoading = true;
+  _error = null;
+  notifyListeners();
 
-class AuthService extends ChangeNotifier {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  
-  User? get currentUser => _auth.currentUser;
-  bool get isAuthenticated => _auth.currentUser != null;
+  try {
+    if (kDebugMode) {
+      print('═══════════════════════════════════════════════════════');
+      print('Starting Google OAuth flow...');
+      print('═══════════════════════════════════════════════════════');
+    }
 
-  // Initialize Firebase Auth
-  Future<void> initialize() async {
-    _auth.authStateChanges().listen((User? user) {
-      notifyListeners();
-    });
-  }
+    // Optional sanity check: ensure Google provider is enabled
+    final providers = await _supabase.auth.listProviders();
+    if (kDebugMode) {
+      print('Available providers: ${providers.map((p) => p.id).toList()}');
+    }
 
-  // Sign in with Google
-  Future<UserCredential?> signInWithGoogle() async {
-    try {
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
-      if (googleUser == null) {
-        return null; // User cancelled the sign-in
-      }
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+    if (!providers.any((p) => p.id == 'google')) {
+      throw Exception(
+        'Google OAuth provider is not enabled in Supabase.\n\n'
+        'To fix:\n'
+        '1. Supabase Dashboard → Authentication → Providers → Google\n'
+        '2. Toggle Google ON and add Client ID + Client Secret\n'
+        '3. Save changes',
       );
+    }
 
-      // Sign in to Firebase with the credential
-      final userCredential = await _auth.signInWithCredential(credential);
-      notifyListeners();
-      return userCredential;
-    } catch (e) {
+    if (kDebugMode) {
+      print('✅ Google provider is enabled');
+      print('Calling signInWithOAuth WITHOUT redirectTo (mobile PKCE flow)...');
+    }
+
+    // ❗ IMPORTANT: no redirectTo here
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      authScreenLaunchMode: LaunchMode.externalApplication,
+    );
+
+    if (kDebugMode) {
+      print('OAuth flow launched. Waiting for deep link callback...');
+      print('The auth state listener in initialize() will handle the session.');
+    }
+
+    // Do NOT set _isLoading = false here.
+    // We wait for the auth state listener to fire `signedIn`.
+  } catch (e) {
+    _error = e.toString().replaceFirst('Exception: ', '');
+    _isLoading = false;
+    notifyListeners();
+    if (kDebugMode) {
       print('Error signing in with Google: $e');
-      return null;
     }
   }
-
-  // Sign out
-  Future<void> signOut() async {
-    try {
-      await _googleSignIn.signOut();
-      await _auth.signOut();
-      notifyListeners();
-    } catch (e) {
-      print('Error signing out: $e');
-    }
-  }
-
-  // Get user display name
-  String? get userDisplayName => _auth.currentUser?.displayName;
-  
-  // Get user email
-  String? get userEmail => _auth.currentUser?.email;
-  
-  // Get user photo URL
-  String? get userPhotoURL => _auth.currentUser?.photoURL;
-} 
+}

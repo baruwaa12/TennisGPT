@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../services/auth_service.dart';
-import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,31 +12,43 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _isLoading = false;
+  @override
+  void initState() {
+    super.initState();
+    // Listen to auth service errors
+    final authService = Provider.of<AuthService>(context, listen: false);
+    authService.addListener(_onAuthStateChanged);
+  }
+
+  @override
+  void dispose() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    authService.removeListener(_onAuthStateChanged);
+    super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    // Show errors from AuthService as snackbars
+    if (authService.error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authService.error!),
+          backgroundColor: Colors.red,
+        ),
+      );
+      authService.clearError();
+    }
+  }
 
   Future<void> _signInWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      final result = await authService.signInWithGoogle();
-      
-      if (result != null && mounted) {
-        // Navigate to home screen on successful login
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else if (mounted) {
-        // Show error if login failed
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sign in failed. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      await authService.signInWithGoogle();
+
+      // Navigation is handled outside by your AuthWrapper / root widget
+      // when AuthService detects signedIn via onAuthStateChange
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -46,17 +58,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final isLoading = authService.isLoading;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -76,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // App Logo/Icon
+                  /// App Logo/Icon
                   Container(
                     width: 120,
                     height: 120,
@@ -97,10 +106,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.green.shade600,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
-                  // App Title
+
+                  /// App Title
                   Text(
                     'TennisGPT',
                     style: GoogleFonts.poppins(
@@ -109,10 +118,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.green.shade800,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
-                  // Subtitle
+
+                  /// Subtitle
                   Text(
                     'Your AI Tennis Coach',
                     style: GoogleFonts.poppins(
@@ -121,10 +130,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 60),
-                  
-                  // Google Sign In Button
+
+                  /// Google Sign In Button
                   Container(
                     width: double.infinity,
                     height: 56,
@@ -143,13 +152,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(28),
-                        onTap: _isLoading ? null : _signInWithGoogle,
+                        onTap: isLoading ? null : _signInWithGoogle,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (_isLoading)
+                              if (isLoading)
                                 SizedBox(
                                   width: 20,
                                   height: 20,
@@ -168,7 +177,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               const SizedBox(width: 12),
                               Text(
-                                _isLoading ? 'Signing in...' : 'Continue with Google',
+                                isLoading
+                                    ? 'Signing in...'
+                                    : 'Continue with Google',
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -181,10 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
-                  // Features list
+
+                  /// Features list
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -267,4 +278,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ],
     );
   }
-} 
+}
