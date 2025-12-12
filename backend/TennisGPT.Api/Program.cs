@@ -82,7 +82,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirect in development (ngrok handles SSL)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("AllowFlutterApp");
 app.UseAuthentication();
 app.UseAuthorization();
