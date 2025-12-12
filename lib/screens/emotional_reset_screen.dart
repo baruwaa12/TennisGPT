@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/openai_service.dart';
+import '../services/api_service.dart';
 
 class EmotionalResetScreen extends StatelessWidget {
   const EmotionalResetScreen({super.key});
@@ -14,8 +14,8 @@ class EmotionalResetScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Consumer<OpenAIService>(
-          builder: (context, openAIService, child) {
+        child: Consumer<ApiService>(
+          builder: (context, apiService, child) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -51,9 +51,9 @@ class EmotionalResetScreen extends StatelessWidget {
                           width: double.infinity,
                           height: 60,
                           child: ElevatedButton(
-                            onPressed: openAIService.isLoading
+                            onPressed: apiService.isLoading
                                 ? null
-                                : () => _handleEmotionalReset(context, openAIService),
+                                : () => _handleEmotionalReset(context, apiService),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
                               foregroundColor: Colors.white,
@@ -61,7 +61,7 @@ class EmotionalResetScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: openAIService.isLoading
+                            child: apiService.isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
                                 : const Text(
                                     '💥 EMOTIONAL RESET',
@@ -77,7 +77,7 @@ class EmotionalResetScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                if (openAIService.lastResponse != null)
+                if (apiService.lastResponse != null)
                   Expanded(
                     child: Card(
                       child: Padding(
@@ -96,7 +96,7 @@ class EmotionalResetScreen extends StatelessWidget {
                             Expanded(
                               child: SingleChildScrollView(
                                 child: Text(
-                                  openAIService.lastResponse!,
+                                  apiService.lastResponse!,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     height: 1.5,
@@ -109,13 +109,13 @@ class EmotionalResetScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                if (openAIService.error != null)
+                if (apiService.error != null)
                   Card(
                     color: Colors.red[50],
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        'Error: ${openAIService.error}',
+                        'Error: ${apiService.error}',
                         style: const TextStyle(color: Colors.red),
                       ),
                     ),
@@ -130,11 +130,11 @@ class EmotionalResetScreen extends StatelessWidget {
 
   Future<void> _handleEmotionalReset(
     BuildContext context,
-    OpenAIService openAIService,
+    ApiService apiService,
   ) async {
     const situation = "I need emotional support and reframing for my tennis game";
-    
-    final response = await openAIService.emotionalReset(situation);
+
+    final response = await apiService.emotionalReset(situation);
     
     if (response != null) {
       ScaffoldMessenger.of(context).showSnackBar(

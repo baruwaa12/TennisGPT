@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/match_performance.dart';
+import 'token_service.dart';
 
 class ApiService extends ChangeNotifier {
-  // Replace this with your actual Railway URL once deployed
-  static const String _baseUrl = 'https://your-app-name.railway.app';
-  
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000';
+  final TokenService _tokenService = TokenService();
+
   bool _isLoading = false;
   String? _error;
   String? _lastResponse;
@@ -21,18 +23,29 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _tokenService.getAccessToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  // ============ Coaching Endpoints ============
+
   Future<String?> mentalCheckIn(int mood, String journalEntry) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$_baseUrl/mental-check-in'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$_baseUrl/api/coaching/mental-check-in'),
+        headers: headers,
         body: jsonEncode({
-          'journal_entry': journalEntry,
-          'mood_rating': mood,
+          'mood': mood,
+          'journalEntry': journalEntry,
         }),
       );
 
@@ -62,12 +75,11 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$_baseUrl/emotional-reset'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'situation': situation,
-        }),
+        Uri.parse('$_baseUrl/api/coaching/emotional-reset'),
+        headers: headers,
+        body: jsonEncode({'situation': situation}),
       );
 
       if (response.statusCode == 200) {
@@ -96,16 +108,17 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final matchesJson = recentMatches != null && recentMatches.isNotEmpty 
-        ? recentMatches.take(3).map((match) => match.toJson()).toList()
-        : [];
+      final headers = await _getHeaders();
+      final matchesJson = recentMatches != null && recentMatches.isNotEmpty
+          ? recentMatches.take(3).map((match) => match.toJson()).toList()
+          : null;
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/tactical-analysis'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$_baseUrl/api/coaching/tactical-analysis'),
+        headers: headers,
         body: jsonEncode({
-          'match_description': matchDescription,
-          'recent_matches': matchesJson,
+          'matchDescription': matchDescription,
+          'recentMatches': matchesJson,
         }),
       );
 
@@ -135,14 +148,13 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final headers = await _getHeaders();
       final matchesJson = matches.map((match) => match.toJson()).toList();
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/drill-recommendations'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'matches': matchesJson,
-        }),
+        Uri.parse('$_baseUrl/api/coaching/drills'),
+        headers: headers,
+        body: jsonEncode({'matches': matchesJson}),
       );
 
       if (response.statusCode == 200) {
@@ -171,11 +183,113 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$_baseUrl/quick-tactical-tip'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('$_baseUrl/api/coaching/quick-tip'),
+        headers: headers,
+        body: jsonEncode({'situation': situation}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _lastResponse = data['response'];
+        notifyListeners();
+        return _lastResponse;
+      } else {
+        _error = 'Error: ${response.statusCode} - ${response.body}';
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      _error = 'Error: $e';
+      notifyListeners();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Legacy methods for backward compatibility
+  Future<String?> analyzeTechnique(String description) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/coaching/technique'),
+        headers: headers,
+        body: jsonEncode({'description': description}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _lastResponse = data['response'];
+        notifyListeners();
+        return _lastResponse;
+      } else {
+        _error = 'Error: ${response.statusCode} - ${response.body}';
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      _error = 'Error: $e';
+      notifyListeners();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> getMatchStrategy(String opponentDescription) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/coaching/match-strategy'),
+        headers: headers,
+        body: jsonEncode({'opponentDescription': opponentDescription}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _lastResponse = data['response'];
+        notifyListeners();
+        return _lastResponse;
+      } else {
+        _error = 'Error: ${response.statusCode} - ${response.body}';
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      _error = 'Error: $e';
+      notifyListeners();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> generateTrainingPlan(String playerLevel, String goals) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/coaching/training-plan'),
+        headers: headers,
         body: jsonEncode({
-          'situation': situation,
+          'playerLevel': playerLevel,
+          'goals': goals,
         }),
       );
 
@@ -198,4 +312,4 @@ class ApiService extends ChangeNotifier {
       notifyListeners();
     }
   }
-} 
+}

@@ -19,19 +19,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <!-- Deep link for Supabase OAuth callback -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <!-- Matches: io.supabase.flutter://login-callback/ -->
-                <data
-                    android:scheme="io.supabase.flutter"
-                    android:host="login-callback"
-                    android:pathPrefix="/" />
-            </intent-filter>
         </activity>
 
         <!-- Don't delete the meta-data below.

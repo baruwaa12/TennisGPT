@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/openai_service.dart';
+import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../models/check_in_entry.dart';
 
@@ -196,9 +196,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             ] else ...[
               // Response Section (after submission)
               Expanded(
-                child: Consumer<OpenAIService>(
-                  builder: (context, openAIService, child) {
-                    if (openAIService.isLoading) {
+                child: Consumer<ApiService>(
+                  builder: (context, apiService, child) {
+                    if (apiService.isLoading) {
                       return const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -214,7 +214,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       );
                     }
 
-                    if (openAIService.lastResponse != null) {
+                    if (apiService.lastResponse != null) {
                       return Column(
                         children: [
                           // Success Header
@@ -265,7 +265,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                                     Expanded(
                                       child: SingleChildScrollView(
                                         child: Text(
-                                          openAIService.lastResponse!,
+                                          apiService.lastResponse!,
                                           style: const TextStyle(
                                             fontSize: 16,
                                             height: 1.6,
@@ -290,7 +290,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                                 setState(() {
                                   _hasSubmitted = false;
                                   _journalController.clear();
-                                  openAIService.clearResponse();
+                                  apiService.clearResponse();
                                 });
                               },
                               style: ElevatedButton.styleFrom(
@@ -320,15 +320,15 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             ],
             
             // Error Display
-            Consumer<OpenAIService>(
-              builder: (context, openAIService, child) {
-                if (openAIService.error != null) {
+            Consumer<ApiService>(
+              builder: (context, apiService, child) {
+                if (apiService.error != null) {
                   return Card(
                     color: Colors.red[50],
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        'Error: ${openAIService.error}',
+                        'Error: ${apiService.error}',
                         style: const TextStyle(color: Colors.red),
                       ),
                     ),
@@ -391,8 +391,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       );
 
       // Get AI response
-      final openAIService = Provider.of<OpenAIService>(context, listen: false);
-      await openAIService.mentalCheckIn(_currentRating, journalText);
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.mentalCheckIn(_currentRating, journalText);
 
       // Show response section
       setState(() {

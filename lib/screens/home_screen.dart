@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../services/openai_service.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import 'emotional_reset_screen.dart';
 import 'mental_check_in_screen.dart';
@@ -14,7 +14,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final openAIService = Provider.of<OpenAIService>(context);
+    final apiService = Provider.of<ApiService>(context);
     final authService = Provider.of<AuthService>(context);
 
     return Scaffold(
@@ -93,16 +93,16 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.grey,
                       ),
                     ),
-                    if (openAIService.isLoading)
+                    if (apiService.isLoading)
                       const Padding(
                         padding: EdgeInsets.only(top: 16.0),
                         child: CircularProgressIndicator(),
                       ),
-                    if (openAIService.error != null)
+                    if (apiService.error != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
                         child: Text(
-                          openAIService.error!,
+                          apiService.error!,
                           style: const TextStyle(color: Colors.red),
                         ),
                       ),

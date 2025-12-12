@@ -52,7 +52,8 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>io.supabase.flutter</string>
+				<!-- Replace with your Google reversed client ID from GoogleService-Info.plist -->
+				<string>com.googleusercontent.apps.YOUR_IOS_CLIENT_ID</string>
 			</array>
 		</dict>
 	</array>

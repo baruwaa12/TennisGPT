@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
-import '../services/openai_service.dart';
+import '../services/api_service.dart';
 import '../services/match_history_service.dart';
 import '../models/match_performance.dart';
 
@@ -59,8 +58,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
       _analysisResponse = null;
     });
 
-    final openAIService = Provider.of<OpenAIService>(context, listen: false);
-    final response = await openAIService.tacticalAnalysis(
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final response = await apiService.tacticalAnalysis(
       _matchDescriptionController.text.trim(),
       _recentMatches,
     );
@@ -77,8 +76,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
       _drillsResponse = null;
     });
 
-    final openAIService = Provider.of<OpenAIService>(context, listen: false);
-    final response = await openAIService.generateDrillsFromHistory(_recentMatches);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final response = await apiService.generateDrillsFromHistory(_recentMatches);
 
     setState(() {
       _isGeneratingDrills = false;
@@ -99,8 +98,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
       _quickTipResponse = null;
     });
 
-    final openAIService = Provider.of<OpenAIService>(context, listen: false);
-    final response = await openAIService.quickTacticalTip(_quickTipController.text.trim());
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final response = await apiService.quickTacticalTip(_quickTipController.text.trim());
 
     setState(() {
       _isGettingTip = false;

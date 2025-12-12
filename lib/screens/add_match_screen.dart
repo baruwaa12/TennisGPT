@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
-import '../services/openai_service.dart';
+import '../services/api_service.dart';
 
 class AddMatchScreen extends StatefulWidget {
   const AddMatchScreen({super.key});
@@ -97,9 +96,9 @@ Notes: ${_notesController.text}
       '''.trim();
 
       // Get AI analysis
-      final openAIService = Provider.of<OpenAIService>(context, listen: false);
+      final apiService = Provider.of<ApiService>(context, listen: false);
       final recentMatches = await _matchHistoryService.getRecentMatches(3);
-      final analysis = await openAIService.tacticalAnalysis(matchDescription, recentMatches);
+      final analysis = await apiService.tacticalAnalysis(matchDescription, recentMatches);
       
       // Generate drill recommendations
       final allMatches = await _matchHistoryService.getAllMatches();
@@ -120,7 +119,7 @@ Notes: ${_notesController.text}
         recommendedDrills: [],
       ));
       
-      final drills = await openAIService.generateDrillsFromHistory(allMatches);
+      final drills = await apiService.generateDrillsFromHistory(allMatches);
       
       // Create final match performance
       final match = MatchPerformance(

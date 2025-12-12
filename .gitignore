@@ -120,3 +120,78 @@ coverage/
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+prompts
+dist
+dist-ssr
+*.local
+.claude
+.vscode
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sw?
+deslop.md
+# Build results
+bin/
+obj/
+out/
+artifacts/
+
+# VS / VS Code
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+**/Properties/launchSettings.json
+
+# Packages
+packages/
+*.nupkg
+
+# Logs
+*.log
+
+# Env
+.env
+
+# Resharper / Rider
+_ReSharper*/
+*.DotSettings.user
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Publish profiles
+*.pubxml
+*.pubxml.user
+
+# Azure
+PublishProfiles/
+appsettings.Development.json
+
