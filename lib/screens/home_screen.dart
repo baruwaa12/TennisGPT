@@ -112,68 +112,70 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Expanded(
-              child: Column(
-                children: [
-                  _buildFeatureCard(
-                    context,
-                    '🧠 Mental Check-In',
-                    'Reflect on performance, get empathy, motivation and mindset drills',
-                    Icons.psychology,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MentalCheckInScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFeatureCard(
-                    context,
-                    '🎾 Tactical Coach',
-                    'Analyse issues, recieve tailored drils and a confidence boost',
-                    Icons.sports_tennis,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TacticalCoachScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFeatureCard(
-                    context,
-                    '💥 Emotional Reset',
-                    'One-tap validation + calm reframe + next-step action for next match',
-                    Icons.refresh,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EmotionalResetScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFeatureCard(
-                    context,
-                    '📊 Match History',
-                    'Track your performance, view trends, and analyze progress over time',
-                    Icons.analytics,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MatchHistoryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildFeatureCard(
+                      context,
+                      '🧠 Mental Check-In',
+                      'Reflect on performance, get empathy, motivation and mindset drills',
+                      Icons.psychology,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MentalCheckInScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFeatureCard(
+                      context,
+                      '🎾 Tactical Coach',
+                      'Analyse issues, recieve tailored drils and a confidence boost',
+                      Icons.sports_tennis,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TacticalCoachScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFeatureCard(
+                      context,
+                      '💥 Emotional Reset',
+                      'One-tap validation + calm reframe + next-step action for next match',
+                      Icons.refresh,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EmotionalResetScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFeatureCard(
+                      context,
+                      '📊 Match History',
+                      'Track your performance, view trends, and analyze progress over time',
+                      Icons.analytics,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MatchHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
