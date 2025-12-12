@@ -174,6 +174,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   'https://developers.google.com/identity/images/g-logo.png',
                                   height: 24,
                                   width: 24,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    // Fallback to icon if network image fails
+                                    return Icon(
+                                      Icons.g_mobiledata,
+                                      size: 24,
+                                      color: Colors.blue.shade700,
+                                    );
+                                  },
                                 ),
                               const SizedBox(width: 12),
                               Text(

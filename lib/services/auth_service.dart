@@ -8,8 +8,10 @@ import 'token_service.dart';
 class AuthService extends ChangeNotifier {
   final String _apiBaseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000';
   final TokenService _tokenService = TokenService();
+  // Web client ID from google-services.json (client_type: 3)
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
+    serverClientId: '750269168426-5l9q1pskuunfuqqhrirko0u8p0plcvb8.apps.googleusercontent.com',
   );
 
   bool _isLoading = false;
