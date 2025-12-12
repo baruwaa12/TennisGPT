@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'token_service.dart';
 
 class AuthService extends ChangeNotifier {
-  final String _apiBaseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000';
+  final String _apiBaseUrl = dotenv.env['API_BASE_URL'] ?? 'https://3b8b77112412.ngrok-free.app';
   final TokenService _tokenService = TokenService();
   // Web client ID from google-services.json (client_type: 3)
   final GoogleSignIn _googleSignIn = GoogleSignIn(
