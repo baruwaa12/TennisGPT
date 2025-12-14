@@ -1,0 +1,6 @@
+@TennisGPT.Api_HostAddress = http://localhost:5163
+
+GET {{TennisGPT.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
