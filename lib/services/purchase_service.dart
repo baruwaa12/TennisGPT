@@ -185,8 +185,8 @@ class PurchaseService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final customerInfo = await Purchases.purchasePackage(package);
-      _updateCustomerInfo(customerInfo);
+      final purchaseResult = await Purchases.purchasePackage(package);
+      _updateCustomerInfo(purchaseResult.customerInfo);
       
       if (kDebugMode) {
         print('PurchaseService: Purchase successful');

@@ -70,7 +70,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🧠 Mental Check-In'),
+        title: const Text('🧠 Pre-Match Prep'),
         centerTitle: true,
       ),
       body: Padding(
@@ -92,7 +92,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'How are you feeling today?',
+                        'Pre-Match Readiness',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -100,7 +100,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       ),
                       const SizedBox(height: 24),
                       
-                      // Mood Slider
+                      // Readiness Slider
                       Column(
                         children: [
                           Text(
@@ -111,8 +111,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Stressed', style: TextStyle(fontSize: 12)),
-                              const Text('Calm', style: TextStyle(fontSize: 12)),
+                              const Text('Not Ready', style: TextStyle(fontSize: 12)),
+                              const Text('Ready to Compete', style: TextStyle(fontSize: 12)),
                             ],
                           ),
                           Slider(
@@ -128,7 +128,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                             },
                           ),
                           Text(
-                            'Rating: $_currentRating/5',
+                            'Readiness: $_currentRating/5',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -141,7 +141,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       
                       // Journal Text Field
                       const Text(
-                        "What's on your mind today?",
+                        "What's your focus for today?",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -154,7 +154,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                         maxLines: null,
                         minLines: 4,
                         decoration: InputDecoration(
-                          hintText: 'Share your thoughts about your tennis performance, challenges, or anything on your mind...',
+                          hintText: 'What tactical elements do you want to focus on? Who are you playing? Any concerns?',
                           border: const OutlineInputBorder(),
                           filled: true,
                           fillColor: Colors.grey[50],
@@ -181,7 +181,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           child: _isLoading
                               ? const CircularProgressIndicator(color: Colors.white)
                               : const Text(
-                                  'Submit',
+                                  'Get My Briefing 🎯',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -227,7 +227,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                                   const Icon(Icons.check_circle, color: Colors.blue),
                                   const SizedBox(width: 8),
                                   const Text(
-                                    'Check-in Complete!',
+                                    'Your Pre-Match Briefing',
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -253,7 +253,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                                         const Icon(Icons.psychology, color: Colors.blue, size: 32),
                                         const SizedBox(width: 12),
                                         const Text(
-                                          'Your Coach\'s Response:',
+                                          'Tactical Briefing:',
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
@@ -301,7 +301,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'New Check-in',
+                                'New Prep Session',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
