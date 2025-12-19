@@ -9,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/purchase_service.dart';
+import 'services/usage_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => PurchaseService()..initialize(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => UsageService()..initialize(),
         ),
       ],
       child: MaterialApp(

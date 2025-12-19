@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+import '../services/purchase_service.dart';
+import '../services/usage_service.dart';
 import '../models/check_in_entry.dart';
+import 'paywall_screen.dart';
 
 class MentalCheckInScreen extends StatefulWidget {
   const MentalCheckInScreen({super.key});
@@ -356,6 +360,24 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       return;
     }
 
+    // Check usage limits (premium users bypass)
+    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final usageService = Provider.of<UsageService>(context, listen: false);
+    
+    if (!purchaseService.isPremium && !usageService.canUsePrepSession) {
+      HapticFeedback.mediumImpact();
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PaywallScreen(
+            trigger: PaywallTrigger.prepSessionLimit,
+          ),
+        ),
+      );
+      
+      if (result != true) return;
+    }
+
     // Hide keyboard
     _focusNode.unfocus();
     
@@ -374,11 +396,10 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       // Save to local storage
       await StorageService.saveCheckIn(entry);
 
-      // TODO: Analytics event - mental_checkin_submitted
-      // analytics.track('mental_checkin_submitted', {
-      //   'rating': _currentRating,
-      //   'has_journal_text': journalText.isNotEmpty,
-      // });
+      // Record usage for free users
+      if (!purchaseService.isPremium) {
+        await usageService.recordPrepSession();
+      }
 
       // Show tailored tip with neutral styling
       final tip = _getTailoredTip(_currentRating);

@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../services/purchase_service.dart';
+import '../services/usage_service.dart';
+import 'paywall_screen.dart';
 
 class EmotionalResetScreen extends StatefulWidget {
   const EmotionalResetScreen({super.key});
@@ -421,9 +424,32 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   ) async {
     if (_selectedTrigger == null) return;
 
+    // Check usage limits (premium users bypass)
+    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final usageService = Provider.of<UsageService>(context, listen: false);
+    
+    if (!purchaseService.isPremium && !usageService.canUseDebrief) {
+      HapticFeedback.mediumImpact();
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PaywallScreen(
+            trigger: PaywallTrigger.debriefLimit,
+          ),
+        ),
+      );
+      
+      if (result != true) return;
+    }
+
     HapticFeedback.lightImpact();
     
     final response = await apiService.emotionalReset(_selectedTrigger!);
+    
+    // Record usage for free users
+    if (!purchaseService.isPremium && response != null) {
+      await usageService.recordDebrief();
+    }
     
     if (response != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

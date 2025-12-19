@@ -5,7 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../services/api_service.dart';
+import '../services/purchase_service.dart';
+import '../services/usage_service.dart';
 import 'add_match_screen.dart';
+import 'paywall_screen.dart';
 
 class QuickMatchScreen extends StatefulWidget {
   const QuickMatchScreen({super.key});
@@ -64,6 +67,26 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       return;
     }
 
+    // Check usage limits (premium users bypass)
+    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final usageService = Provider.of<UsageService>(context, listen: false);
+    
+    if (!purchaseService.isPremium && !usageService.canLogMatch) {
+      // Show paywall
+      HapticFeedback.mediumImpact();
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PaywallScreen(
+            trigger: PaywallTrigger.matchLimit,
+          ),
+        ),
+      );
+      
+      // If they subscribed, continue with save
+      if (result != true) return;
+    }
+
     setState(() => _isSaving = true);
     HapticFeedback.mediumImpact();
 
@@ -104,6 +127,11 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       );
 
       await _matchHistoryService.saveMatch(match);
+      
+      // Record usage for free users
+      if (!purchaseService.isPremium) {
+        await usageService.recordMatchLogged();
+      }
 
       setState(() {
         _isSaving = false;
