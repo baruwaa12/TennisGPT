@@ -9,7 +9,7 @@ import 'emotional_reset_screen.dart';
 import 'mental_check_in_screen.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
-import 'add_match_screen.dart';
+import 'quick_match_screen.dart';
 import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -98,9 +98,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 
                 const SizedBox(height: 20),
                 
-                // Quick Stats Row
+                // Quick Stats Row (only if has matches)
                 if (!_isLoading && _recentMatches.isNotEmpty)
                   _buildQuickStats(),
+                
+                // Empty state for new users
+                if (!_isLoading && _recentMatches.isEmpty)
+                  _buildEmptyState(context),
                 
                 const SizedBox(height: 20),
                 
@@ -348,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
         HapticFeedback.lightImpact();
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const AddMatchScreen()),
+          MaterialPageRoute(builder: (context) => const QuickMatchScreen()),
         ).then((_) => _loadStats());
       },
       child: Container(
@@ -369,21 +373,33 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
           children: [
-            const Icon(
-              Icons.add_circle_outline,
-              color: Colors.white,
-              size: 28,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.add_circle_outline,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Log Match',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(height: 4),
             Text(
-              'Log Match',
+              '⚡ Quick: 30 seconds',
               style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+                fontSize: 12,
+                color: Colors.white.withOpacity(0.9),
               ),
             ),
           ],
@@ -686,5 +702,81 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => screen),
     ).then((_) => _loadStats());
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green.shade50, Colors.blue.shade50],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green.shade100),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            '🎾',
+            style: TextStyle(fontSize: 48),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Ready to improve your game?',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Log your first match and get personalized AI insights to level up your tennis.',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildBenefitChip('📊 Track Progress'),
+              const SizedBox(width: 8),
+              _buildBenefitChip('🎯 Get AI Tips'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
   }
 }
