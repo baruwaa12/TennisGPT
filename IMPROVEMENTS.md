@@ -240,6 +240,172 @@ User action → Check isPremium → Check canUse[Feature]
 
 ---
 
+## Day 6 - Onboarding Flow (Tactical-First)
+
+### Onboarding Screens
+```
+Screen 1: Welcome
+┌─────────────────────────────────────┐
+│              🎯                     │
+│          TennisGPT                  │
+│    Your AI Tennis Strategist        │
+│                                     │
+│    ⚡ Log matches in 30 seconds     │
+│    🧠 Get tactical analysis         │
+│    📈 Track your improvement        │
+│                                     │
+│         [Get Started]               │
+└─────────────────────────────────────┘
+
+Screen 2: Player Level
+┌─────────────────────────────────────┐
+│      What's your level?             │
+│                                     │
+│   ○ Beginner (Learning basics)      │
+│   ● Intermediate (NTRP 3.0-4.0)     │
+│   ○ Advanced (NTRP 4.0-5.0)         │
+│   ○ Competitive (Tournament)        │
+│                                     │
+│         [Continue]                  │
+└─────────────────────────────────────┘
+
+Screen 3: Primary Goal
+┌─────────────────────────────────────┐
+│    What's your main goal?           │
+│                                     │
+│   🏆 Win more matches               │
+│   🎯 Beat specific opponents        │
+│   📈 Improve consistency            │
+│   📊 Track my progress              │
+│                                     │
+│         [Continue]                  │
+└─────────────────────────────────────┘
+
+Screen 4: First Match Log
+┌─────────────────────────────────────┐
+│    Log your last match              │
+│                                     │
+│   Opponent: [________________]      │
+│   Result: [🏆 WIN] [💪 LOSS]        │
+│   One thing that stood out:         │
+│   [________________________]        │
+│                                     │
+│    [Skip]  [Get My Analysis →]      │
+└─────────────────────────────────────┘
+
+Screen 5: First AI Insight
+┌─────────────────────────────────────┐
+│   🎯 Your First Tactical Insight    │
+│   Based on your match vs Mike       │
+│                                     │
+│   ┌─────────────────────────────┐   │
+│   │ [AI tactical analysis...]   │   │
+│   └─────────────────────────────┘   │
+│                                     │
+│   Want unlimited insights?          │
+│                                     │
+│   [Start Free]  [Go Premium ⭐]     │
+└─────────────────────────────────────┘
+```
+
+### Player Profile Service
+| Data Stored | Purpose |
+|-------------|---------|
+| `player_level` | Tailor AI insights to skill level |
+| `primary_goal` | Focus AI on what matters most |
+| `player_name` | Personalization |
+| `has_completed_onboarding` | Skip onboarding for returning users |
+
+### Onboarding Features
+- ✅ 5-step progressive flow
+- ✅ Progress indicator dots
+- ✅ Skip option at any step
+- ✅ Animated selection states
+- ✅ Haptic feedback on selections
+- ✅ Instant AI value (first insight)
+- ✅ Soft upsell to premium at end
+- ✅ Profile stored in SharedPreferences
+
+### Value Before Signup
+The onboarding provides **immediate AI value** by:
+1. Collecting player level for personalized advice
+2. Collecting primary goal for focused insights
+3. Logging first match in simplified form
+4. Showing instant AI tactical analysis
+5. Demonstrating app value before any paywall
+
+### Files Created
+- `lib/screens/onboarding/onboarding_screen.dart` - 5-step onboarding flow
+- `lib/services/player_profile_service.dart` - Player profile storage
+
+### Files Modified
+- `lib/main.dart` - Added PlayerProfileService, updated AuthWrapper
+
+---
+
+## Day 7 - Week 1 Testing & Polish
+
+### Issues Fixed
+
+#### 1. Loading Spinner on Onboarding Insight Page
+- **Before**: Plain text "Loading your tactical insight..."
+- **After**: Spinning indicator with "Analyzing your match..." message
+
+#### 2. Player Profile Context in AI Calls
+- **Before**: AI calls didn't include player level/goal context
+- **After**: All tactical analysis calls now include player context for personalized insights
+
+```dart
+// Before
+final response = await apiService.tacticalAnalysis(query, _recentMatches);
+
+// After - includes player context
+final playerContext = profileService.getPlayerContext();
+if (playerContext.isNotEmpty) {
+  query = '$playerContext\n\n$query';
+}
+final response = await apiService.tacticalAnalysis(query, _recentMatches);
+```
+
+### Polish & Quality Checks
+
+#### Screens Reviewed ✅
+| Screen | Status | Notes |
+|--------|--------|-------|
+| Home Screen | ✅ | Time-based greeting, stats, haptic feedback |
+| Tactical Coach | ✅ | Player context added, topic buttons work |
+| Quick Match Log | ✅ | Celebration animation, paywall trigger |
+| Pre-Match Prep | ✅ | Paywall trigger, clean UI |
+| Post-Match Debrief | ✅ | Trigger buttons, paywall integration |
+| Onboarding | ✅ | Loading spinner added, smooth flow |
+| Paywall | ✅ | Context messages, pricing options |
+
+#### Lint Check Results
+- ✅ No linter errors across all files
+- ✅ All imports properly organized
+- ✅ No unused variables or dead code
+
+### Week 1 Completion Summary
+```
+┌──────────────────────────────────────────┐
+│           WEEK 1 COMPLETE                │
+├──────────────────────────────────────────┤
+│ Day 1: AI Tone Overhaul + RevenueCat    │
+│ Day 2: Home Screen Redesign (Tactical)  │
+│ Day 3: Quick Match Logging              │
+│ Day 4: Tactical Coach Enhancement       │
+│ Day 5: Paywall Implementation           │
+│ Day 6: Onboarding Flow                  │
+│ Day 7: Testing & Polish                 │
+└──────────────────────────────────────────┘
+```
+
+### Files Modified
+- `lib/screens/onboarding/onboarding_screen.dart` - Loading spinner
+- `lib/screens/tactical_coach_screen.dart` - Player context integration
+
+---
+
 ## Summary of All Improvements
 
 ### UX Patterns Added
@@ -254,6 +420,8 @@ User action → Check isPremium → Check canUse[Feature]
 | Topic Selection | One-tap category buttons |
 | Freemium Gating | Contextual paywall triggers |
 | Usage Tracking | Monthly reset, persistent counts |
+| Onboarding Flow | Progressive 5-step value delivery |
+| Value Before Signup | AI insight during onboarding |
 
 ### Design System
 - **Primary Font**: Google Fonts Poppins
@@ -268,7 +436,7 @@ User action → Check isPremium → Check canUse[Feature]
 - Pull-to-refresh on home screen
 - Lazy loading of match history
 - Optimized stat calculations
-- SharedPreferences for usage persistence
+- SharedPreferences for usage & profile persistence
 
 ---
 
@@ -281,7 +449,9 @@ User action → Check isPremium → Check canUse[Feature]
 | 3 | 1 | 1 |
 | 4 | 0 | 1 |
 | 5 | 2 | 5 |
-| **Total** | **5** | **12** |
+| 6 | 2 | 1 |
+| 7 | 0 | 2 |
+| **Total** | **7** | **15** |
 
 ### New Files
 1. `lib/services/purchase_service.dart`
@@ -289,6 +459,8 @@ User action → Check isPremium → Check canUse[Feature]
 3. `lib/screens/quick_match_screen.dart`
 4. `lib/screens/paywall_screen.dart`
 5. `lib/services/usage_service.dart`
+6. `lib/screens/onboarding/onboarding_screen.dart`
+7. `lib/services/player_profile_service.dart`
 
 ### Modified Files
 1. `backend/TennisGPT.Application/Services/OpenAIService.cs`

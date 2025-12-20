@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/match_history_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
+import '../services/player_profile_service.dart';
 import '../models/match_performance.dart';
 import 'paywall_screen.dart';
 
@@ -162,6 +163,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     if (_selectedTopic != null && query.isEmpty) {
       final topic = _topics.firstWhere((t) => t['id'] == _selectedTopic);
       query = topic['prompt'];
+    }
+
+    // Add player profile context
+    final profileService = Provider.of<PlayerProfileService>(context, listen: false);
+    final playerContext = profileService.getPlayerContext();
+    if (playerContext.isNotEmpty) {
+      query = '$playerContext\n\n$query';
     }
 
     setState(() {
@@ -440,9 +448,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             style: GoogleFonts.poppins(),
             maxLines: 3,
             onChanged: (_) {
-              if (_selectedTopic != null) {
-                setState(() => _selectedTopic = null);
-              }
+              // Always rebuild to update button state
+              setState(() {
+                // Clear topic selection when user types
+                if (_selectedTopic != null) {
+                  _selectedTopic = null;
+                }
+              });
             },
             decoration: InputDecoration(
               hintText: 'e.g., "How do I beat a pusher?" or "My serve breaks down under pressure"',

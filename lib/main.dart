@@ -6,10 +6,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/purchase_service.dart';
 import 'services/usage_service.dart';
+import 'services/player_profile_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +44,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => UsageService()..initialize(),
         ),
+        ChangeNotifierProvider(
+          create: (context) => PlayerProfileService()..initialize(),
+        ),
       ],
       child: MaterialApp(
         title: 'TennisGPT',
@@ -71,13 +76,27 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthService>(
-      builder: (context, authService, child) {
-        if (authService.isAuthenticated) {
-          return const HomeScreen();
-        } else {
+    return Consumer2<AuthService, PlayerProfileService>(
+      builder: (context, authService, profileService, child) {
+        // Not authenticated - show login
+        if (!authService.isAuthenticated) {
           return const LoginScreen();
         }
+        
+        // Profile not loaded yet - show loading
+        if (!profileService.isLoaded) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        // Authenticated but hasn't completed onboarding - show onboarding
+        if (!profileService.hasCompletedOnboarding) {
+          return const OnboardingScreen();
+        }
+        
+        // Authenticated and onboarding complete - show home
+        return const HomeScreen();
       },
     );
   }
