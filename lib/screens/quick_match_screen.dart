@@ -7,6 +7,8 @@ import '../services/match_history_service.dart';
 import '../services/api_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
+import '../services/celebration_service.dart';
+import '../widgets/shareable_card.dart';
 import 'add_match_screen.dart';
 import 'paywall_screen.dart';
 
@@ -141,6 +143,21 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       
       _celebrationController.forward();
       HapticFeedback.heavyImpact();
+      
+      // Check for milestone celebrations
+      if (mounted) {
+        // Check first match
+        await CelebrationService.checkFirstMatch(context);
+        
+        // Check first win
+        if (_result == 'Win') {
+          await CelebrationService.checkFirstWin(context);
+        }
+        
+        // Check 10 matches milestone
+        final matchCount = await _matchHistoryService.getTotalMatches();
+        await CelebrationService.checkTenMatches(context, matchCount);
+      }
 
     } catch (e) {
       setState(() => _isSaving = false);
@@ -662,7 +679,27 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                     ),
                   ),
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              // Share button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ShareButton(
+                    shareText: ShareTextGenerator.matchResult(
+                      result: _result!,
+                      opponent: _opponentController.text.isEmpty ? 'Opponent' : _opponentController.text,
+                      setsWon: _setsWon,
+                      setsLost: _setsLost,
+                      insight: _aiInsight != null 
+                          ? ShareTextGenerator.tacticalAnalysis(_aiInsight!).split('\n').take(2).join(' ') 
+                          : null,
+                    ),
+                    subject: isWin ? 'I won my tennis match!' : 'Match logged on TennisGPT',
+                    color: isWin ? Colors.green : Colors.blue,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               GestureDetector(
                 onTap: _goBack,
                 child: Container(

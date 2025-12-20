@@ -6,6 +6,7 @@ import '../../services/player_profile_service.dart';
 import '../../services/api_service.dart';
 import '../home_screen.dart';
 import '../paywall_screen.dart';
+import '../../utils/tennis_validator.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -59,6 +60,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_opponentController.text.trim().isEmpty) {
       _skipToHome();
       return;
+    }
+
+    // Validate note is tennis-related if provided
+    if (_noteController.text.trim().length > 20) {
+      final validationError = TennisValidator.validate(_noteController.text);
+      if (validationError != null) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please describe something tennis-related about your match',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isLoadingInsight = true);

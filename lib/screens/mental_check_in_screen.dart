@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../models/check_in_entry.dart';
+import '../utils/tennis_validator.dart';
 import 'paywall_screen.dart';
 
 class MentalCheckInScreen extends StatefulWidget {
@@ -355,6 +356,20 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
         const SnackBar(
           content: Text('Please write something before submitting'),
           backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validate tennis-related content
+    final validationError = TennisValidator.validate(journalText);
+    if (validationError != null) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationError),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 4),
         ),
       );
       return;

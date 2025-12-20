@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
+import '../utils/tennis_validator.dart';
 import 'paywall_screen.dart';
 
 class EmotionalResetScreen extends StatefulWidget {
@@ -423,6 +424,22 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     ApiService apiService,
   ) async {
     if (_selectedTrigger == null) return;
+
+    // Validate tennis-related content for custom input
+    if (_showCustomInput) {
+      final validationError = TennisValidator.validate(_selectedTrigger!);
+      if (validationError != null) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(validationError),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+    }
 
     // Check usage limits (premium users bypass)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);

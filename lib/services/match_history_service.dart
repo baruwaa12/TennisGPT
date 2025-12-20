@@ -82,6 +82,12 @@ class MatchHistoryService {
     return wins / matches.length;
   }
   
+  // Get total match count
+  Future<int> getTotalMatches() async {
+    final List<MatchPerformance> matches = await getAllMatches();
+    return matches.length;
+  }
+  
   // Get common weaknesses across matches
   Future<Map<String, int>> getCommonWeaknesses() async {
     final List<MatchPerformance> matches = await getAllMatches();

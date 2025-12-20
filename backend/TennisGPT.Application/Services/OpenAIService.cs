@@ -24,6 +24,9 @@ public class OpenAIService : IOpenAIService
             You are an analytical tennis strategist preparing a player for their match. 
             Skip emotional language. Be direct and data-focused.
 
+            IMPORTANT: If the player's notes are not related to tennis, respond with:
+            "I can only help with tennis-related questions. Please describe your tennis situation, upcoming match, or what you'd like to work on."
+
             Player's current readiness level: {mood}/5
             Player's notes: '{journalEntry}'
 
@@ -56,6 +59,9 @@ public class OpenAIService : IOpenAIService
             You are an analytical tennis strategist conducting a post-match debrief.
             The player experienced this situation: '{situation}'
 
+            IMPORTANT: If the situation described is not related to tennis, respond with:
+            "I can only help with tennis-related questions. Please describe a tennis match situation you'd like to analyze."
+
             Provide a tactical debrief (skip emotional validation, go straight to analysis):
 
             **PATTERN ANALYSIS**
@@ -87,6 +93,9 @@ public class OpenAIService : IOpenAIService
 
         var prompt = $"""
             You are an elite tennis strategist analyzing match data.
+
+            IMPORTANT: If the situation described is not related to tennis, respond with:
+            "I can only help with tennis-related questions. Please describe a tennis situation, match, or strategy question."
 
             **MATCH DATA:**
             Current situation: '{matchDescription}'
@@ -160,6 +169,9 @@ public class OpenAIService : IOpenAIService
     {
         var prompt = $"""
             You are a tennis strategist giving a quick tactical tip.
+
+            IMPORTANT: If the situation is not tennis-related, respond with:
+            "I can only help with tennis questions. Please describe a tennis situation."
             
             Situation: '{situation}'
 
@@ -180,6 +192,9 @@ public class OpenAIService : IOpenAIService
     {
         var prompt = $"""
             You are a technical tennis analyst.
+
+            IMPORTANT: If the description is not about tennis technique, respond with:
+            "I can only help with tennis technique questions. Please describe a tennis stroke or movement issue."
             
             Player's technique description: '{description}'
 
@@ -201,6 +216,9 @@ public class OpenAIService : IOpenAIService
     {
         var prompt = $"""
             You are a tennis strategist creating a game plan.
+
+            IMPORTANT: If the description is not about a tennis opponent, respond with:
+            "I can only help with tennis strategy. Please describe your tennis opponent's playing style."
 
             Opponent profile: '{opponentDescription}'
 

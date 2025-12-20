@@ -8,6 +8,9 @@ import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/match_performance.dart';
+import '../utils/tennis_validator.dart';
+import '../widgets/shareable_card.dart';
+import '../services/celebration_service.dart';
 import 'paywall_screen.dart';
 
 class TacticalCoachScreen extends StatefulWidget {
@@ -139,6 +142,25 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       return;
     }
 
+    // Validate tennis-related content (skip for topic buttons - they're pre-validated)
+    if (_selectedTopic == null && query.isNotEmpty) {
+      final validationError = TennisValidator.validate(query);
+      if (validationError != null) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              validationError,
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+    }
+
     // Check usage limits (premium users bypass)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
@@ -194,6 +216,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       });
       
       HapticFeedback.lightImpact();
+      
+      // Check for first analysis celebration
+      if (response != null && mounted) {
+        CelebrationService.checkFirstAnalysis(context);
+      }
     } catch (e) {
       setState(() => _isAnalyzing = false);
       if (mounted) {
@@ -676,6 +703,36 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               height: 1.7,
               color: Colors.grey[800],
             ),
+          ),
+          const SizedBox(height: 20),
+          const Divider(),
+          const SizedBox(height: 12),
+          // Action buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ShareButton(
+                shareText: ShareTextGenerator.tacticalAnalysis(_analysisResponse!),
+                subject: 'My TennisGPT Tactical Analysis',
+                color: Colors.blue,
+              ),
+              const SizedBox(width: 16),
+              TextButton.icon(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  setState(() {
+                    _analysisResponse = null;
+                    _selectedTopic = null;
+                    _queryController.clear();
+                  });
+                },
+                icon: const Icon(Icons.add, size: 18),
+                label: Text(
+                  'New Analysis',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
           ),
         ],
       ),

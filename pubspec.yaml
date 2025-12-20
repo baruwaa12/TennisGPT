@@ -47,6 +47,13 @@ dependencies:
   # RevenueCat for subscription management
   purchases_flutter: ^9.10.0
   purchases_ui_flutter: ^9.10.0
+  
+  # Shareability & Viral Features
+  share_plus: ^10.1.4
+  confetti: ^0.8.0
+  
+  # Charts for Analytics
+  fl_chart: ^0.70.2
 
 dev_dependencies:
   flutter_test:
