@@ -183,8 +183,10 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       return _buildSuccessView();
     }
     
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           '⚡ Quick Match Log',

@@ -12,6 +12,7 @@ import 'services/auth_service.dart';
 import 'services/purchase_service.dart';
 import 'services/usage_service.dart';
 import 'services/player_profile_service.dart';
+import 'services/theme_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,25 +48,21 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => PlayerProfileService()..initialize(),
         ),
+        ChangeNotifierProvider(
+          create: (context) => ThemeService()..init(),
+        ),
       ],
-      child: MaterialApp(
-        title: 'TennisGPT',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.green,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.green,
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
-        home: const AuthWrapper(),
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp(
+            title: 'TennisGPT',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeService.lightTheme,
+            darkTheme: ThemeService.darkTheme,
+            themeMode: themeService.themeMode,
+            home: const AuthWrapper(),
+          );
+        },
       ),
     );
   }

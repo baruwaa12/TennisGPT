@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
+import '../services/theme_service.dart';
 import '../models/match_performance.dart';
 import 'emotional_reset_screen.dart';
 import 'mental_check_in_screen.dart';
@@ -186,6 +187,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context, AuthService authService, String firstName) {
+    final themeService = Provider.of<ThemeService>(context);
+    final isDark = themeService.themeMode == ThemeMode.dark;
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -220,9 +224,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
                 );
               }
+            } else if (value == 'theme') {
+              await themeService.toggleTheme();
+              HapticFeedback.lightImpact();
             }
           },
-          itemBuilder: (BuildContext context) => [
+          itemBuilder: (BuildContext _) => [
+            PopupMenuItem<String>(
+              value: 'theme',
+              child: Row(
+                children: [
+                  Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                  const SizedBox(width: 8),
+                  Text(isDark ? 'Light Mode' : 'Dark Mode'),
+                ],
+              ),
+            ),
             const PopupMenuItem<String>(
               value: 'signout',
               child: Row(
@@ -236,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
           child: CircleAvatar(
             radius: 24,
-            backgroundColor: Colors.green.shade100,
+            backgroundColor: isDark ? Colors.green.shade800 : Colors.green.shade100,
             backgroundImage: authService.userPhotoURL != null
                 ? NetworkImage(authService.userPhotoURL!)
                 : null,
@@ -244,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? Text(
                     firstName.substring(0, 1).toUpperCase(),
                     style: TextStyle(
-                      color: Colors.green.shade700,
+                      color: isDark ? Colors.green.shade200 : Colors.green.shade700,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),

@@ -110,7 +110,50 @@ class PlayerProfileService extends ChangeNotifier {
       orElse: () => {'title': 'improve'},
     )['title'];
     
-    return 'Player profile: $levelLabel level, main goal is to ${goalLabel?.toLowerCase()}.';
+    // Add complexity instructions based on level
+    String complexityInstructions = '';
+    switch (_playerLevel) {
+      case 'beginner':
+        complexityInstructions = '''
+RESPONSE COMPLEXITY: BEGINNER LEVEL
+- Use simple, everyday language (avoid tennis jargon or explain it)
+- Focus on fundamentals and basic concepts
+- Give step-by-step instructions
+- Keep recommendations simple and achievable
+- Explain "why" in simple terms''';
+        break;
+      case 'intermediate':
+        complexityInstructions = '''
+RESPONSE COMPLEXITY: INTERMEDIATE LEVEL
+- Use standard tennis terminology
+- Include tactical concepts they can apply
+- Balance technical detail with practicality
+- Assume knowledge of basic strokes and court positions''';
+        break;
+      case 'advanced':
+        complexityInstructions = '''
+RESPONSE COMPLEXITY: ADVANCED LEVEL
+- Use technical tennis terminology freely
+- Include nuanced tactical concepts
+- Discuss shot selection and pattern play
+- Reference specific situations and adjustments''';
+        break;
+      case 'competitive':
+        complexityInstructions = '''
+RESPONSE COMPLEXITY: COMPETITIVE/TOURNAMENT LEVEL
+- Use advanced technical language
+- Include match strategy and opponent analysis concepts
+- Discuss high-pressure situations and mental game
+- Reference professional-level tactics and patterns
+- Be data-driven and analytical''';
+        break;
+      default:
+        complexityInstructions = '';
+    }
+    
+    return '''Player profile: $levelLabel level, main goal is to ${goalLabel?.toLowerCase()}.
+
+$complexityInstructions''';
   }
 
   /// Reset profile (for testing)

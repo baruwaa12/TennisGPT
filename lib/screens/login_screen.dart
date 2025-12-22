@@ -65,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isLoading = authService.isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Container(
@@ -72,10 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.green.shade50,
-              Colors.green.shade100,
-            ],
+            colors: isDark 
+              ? [const Color(0xFF1A1A1A), const Color(0xFF0D0D0D)]
+              : [Colors.green.shade50, Colors.green.shade100],
           ),
         ),
         child: SafeArea(
@@ -90,11 +90,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                       borderRadius: BorderRadius.circular(60),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.green.withOpacity(0.3),
+                          color: Colors.green.withOpacity(isDark ? 0.2 : 0.3),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Icon(
                       Icons.sports_tennis,
                       size: 60,
-                      color: Colors.green.shade600,
+                      color: Colors.green.shade400,
                     ),
                   ),
 
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
+                      color: isDark ? Colors.white : Colors.green.shade800,
                     ),
                   ),
 
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Your AI Tennis Coach',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: Colors.green.shade600,
+                      color: isDark ? Colors.green.shade300 : Colors.green.shade600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -138,11 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -165,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.green.shade600,
+                                      Colors.green.shade400,
                                     ),
                                   ),
                                 )
@@ -191,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.green.shade800,
+                                  color: isDark ? Colors.white : Colors.green.shade800,
                                 ),
                               ),
                             ],
@@ -207,7 +207,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
+                      color: isDark 
+                        ? const Color(0xFF2C2C2C).withOpacity(0.8)
+                        : Colors.white.withOpacity(0.8),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -246,17 +248,19 @@ class _LoginScreenState extends State<LoginScreen> {
     required String title,
     required String subtitle,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.green.shade100,
+            color: isDark ? Colors.green.shade900 : Colors.green.shade100,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: Colors.green.shade600,
+            color: Colors.green.shade400,
             size: 20,
           ),
         ),
@@ -270,14 +274,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.green.shade800,
+                  color: isDark ? Colors.white : Colors.green.shade800,
                 ),
               ),
               Text(
                 subtitle,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: Colors.green.shade600,
+                  color: isDark ? Colors.grey[400] : Colors.green.shade600,
                 ),
               ),
             ],

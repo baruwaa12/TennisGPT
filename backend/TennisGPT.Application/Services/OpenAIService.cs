@@ -27,6 +27,12 @@ public class OpenAIService : IOpenAIService
             IMPORTANT: If the player's notes are not related to tennis, respond with:
             "I can only help with tennis-related questions. Please describe your tennis situation, upcoming match, or what you'd like to work on."
 
+            IMPORTANT: The player's notes may include their skill level (beginner/intermediate/advanced/competitive).
+            ADAPT YOUR LANGUAGE AND COMPLEXITY to match their level:
+            - Beginner: Use simple words, explain tennis terms, focus on basics
+            - Intermediate: Standard tennis language, practical tips
+            - Advanced/Competitive: Technical terms, nuanced tactics
+
             Player's current readiness level: {mood}/5
             Player's notes: '{journalEntry}'
 
@@ -62,6 +68,12 @@ public class OpenAIService : IOpenAIService
             IMPORTANT: If the situation described is not related to tennis, respond with:
             "I can only help with tennis-related questions. Please describe a tennis match situation you'd like to analyze."
 
+            IMPORTANT: The situation may include the player's skill level (beginner/intermediate/advanced/competitive).
+            ADAPT YOUR LANGUAGE AND COMPLEXITY to match their level:
+            - Beginner: Use simple words, explain tennis terms, focus on basics
+            - Intermediate: Standard tennis language, practical tips
+            - Advanced/Competitive: Technical terms, nuanced tactics
+
             Provide a tactical debrief (skip emotional validation, go straight to analysis):
 
             **PATTERN ANALYSIS**
@@ -96,6 +108,12 @@ public class OpenAIService : IOpenAIService
 
             IMPORTANT: If the situation described is not related to tennis, respond with:
             "I can only help with tennis-related questions. Please describe a tennis situation, match, or strategy question."
+
+            IMPORTANT: The description may include the player's skill level (beginner/intermediate/advanced/competitive).
+            ADAPT YOUR LANGUAGE AND COMPLEXITY to match their level:
+            - Beginner: Use simple everyday words, explain any tennis terms, focus on basic concepts they can understand
+            - Intermediate: Standard tennis language, practical tactical tips
+            - Advanced/Competitive: Technical terms, nuanced tactics, pattern analysis
 
             **MATCH DATA:**
             Current situation: '{matchDescription}'
@@ -172,6 +190,8 @@ public class OpenAIService : IOpenAIService
 
             IMPORTANT: If the situation is not tennis-related, respond with:
             "I can only help with tennis questions. Please describe a tennis situation."
+
+            IMPORTANT: Adapt complexity to player level if mentioned (beginner = simple words, advanced = technical terms).
             
             Situation: '{situation}'
 
@@ -195,6 +215,10 @@ public class OpenAIService : IOpenAIService
 
             IMPORTANT: If the description is not about tennis technique, respond with:
             "I can only help with tennis technique questions. Please describe a tennis stroke or movement issue."
+
+            IMPORTANT: Adapt complexity to player level if mentioned:
+            - Beginner: Simple explanations, basic mechanics, easy drills
+            - Advanced: Technical biomechanics terms, specific adjustments
             
             Player's technique description: '{description}'
 
@@ -219,6 +243,10 @@ public class OpenAIService : IOpenAIService
 
             IMPORTANT: If the description is not about a tennis opponent, respond with:
             "I can only help with tennis strategy. Please describe your tennis opponent's playing style."
+
+            IMPORTANT: Adapt complexity to player level if mentioned:
+            - Beginner: Simple tactics, basic positioning, easy to remember
+            - Advanced: Pattern play, shot selection, pressure situations
 
             Opponent profile: '{opponentDescription}'
 

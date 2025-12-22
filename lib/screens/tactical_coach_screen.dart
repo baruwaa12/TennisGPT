@@ -236,8 +236,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           '🎯 Tactical Coach',
