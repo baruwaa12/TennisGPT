@@ -491,6 +491,62 @@ AI now adapts response complexity based on player level:
 
 ---
 
+## Day 9 (Lite) - Retention Mechanics
+
+### Streak System 🔥
+Track consecutive days of app activity to build habits.
+
+#### StreakService Features
+- Track consecutive days with match logged OR tactical analysis
+- Persist streak data in SharedPreferences
+- Validate streak on app launch (detect broken streaks)
+- Milestone celebrations at 3, 7, 14, 30, 60, 100 days
+- Display current streak and best streak
+
+#### Streak UI on Home Screen
+```
+┌─────────────────────────────────────┐
+│ 🔥  5 Day Streak                    │
+│     You're on fire! Keep it going.  │
+│                          Best: 12   │
+└─────────────────────────────────────┘
+```
+
+### Daily Tips 💡
+30+ rotating tennis tips displayed on home screen.
+
+#### Tip Categories
+| Category | Examples |
+|----------|----------|
+| Serve | Toss consistency, relaxed grip |
+| Footwork | Split step, recovery position |
+| Mental | Visualization, one point at a time |
+| Groundstrokes | Watch the ball, depth over power |
+| Tactics | Attack weak wing, play patterns |
+| Net Play | Punch volleys, approach down the line |
+| Physical | Hydration, stretching |
+
+#### Daily Tip UI
+```
+┌─────────────────────────────────────┐
+│ 🎾  Daily Tip                       │
+│     "Federer takes 3 deep breaths   │
+│      before every serve. Try it."   │
+└─────────────────────────────────────┘
+```
+
+### Files Created
+- `lib/services/streak_service.dart` - Streak tracking with milestones
+- `lib/data/daily_tips.dart` - 30+ rotating tennis tips
+
+### Files Modified
+- `lib/main.dart` - Added StreakService provider
+- `lib/screens/home_screen.dart` - Streak display + Daily tip card
+- `lib/screens/quick_match_screen.dart` - Record streak on match save
+- `lib/screens/tactical_coach_screen.dart` - Record streak on analysis
+
+---
+
 ## Summary of All Improvements
 
 ### UX Patterns Added
@@ -510,6 +566,8 @@ AI now adapts response complexity based on player level:
 | Shareability | Share buttons on AI responses |
 | Achievements | Subtle snackbar milestones |
 | Dark Mode | System/Light/Dark toggle |
+| Streak System | Consecutive day tracking |
+| Daily Tips | Rotating tennis tips |
 
 ### Design System
 - **Primary Font**: Google Fonts Poppins
@@ -540,7 +598,8 @@ AI now adapts response complexity based on player level:
 | 6 | 2 | 1 |
 | 7 | 0 | 2 |
 | 8 | 3 | 11 |
-| **Total** | **10** | **26** |
+| 9 | 2 | 4 |
+| **Total** | **12** | **30** |
 
 ### New Files
 1. `lib/services/purchase_service.dart`
@@ -553,6 +612,8 @@ AI now adapts response complexity based on player level:
 8. `lib/widgets/shareable_card.dart`
 9. `lib/services/celebration_service.dart`
 10. `lib/services/theme_service.dart`
+11. `lib/services/streak_service.dart`
+12. `lib/data/daily_tips.dart`
 
 ### Modified Files
 1. `backend/TennisGPT.Application/Services/OpenAIService.cs`

@@ -11,6 +11,7 @@ import '../models/match_performance.dart';
 import '../utils/tennis_validator.dart';
 import '../widgets/shareable_card.dart';
 import '../services/celebration_service.dart';
+import '../services/streak_service.dart';
 import 'paywall_screen.dart';
 
 class TacticalCoachScreen extends StatefulWidget {
@@ -217,9 +218,23 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       
       HapticFeedback.lightImpact();
       
-      // Check for first analysis celebration
+      // Check for first analysis celebration and record streak
       if (response != null && mounted) {
         CelebrationService.checkFirstAnalysis(context);
+        
+        // Record streak activity
+        final streakService = Provider.of<StreakService>(context, listen: false);
+        final streakMilestone = await streakService.recordActivity();
+        
+        // Show streak milestone if hit
+        if (streakMilestone != null && mounted) {
+          CelebrationService.showAchievement(
+            context,
+            type: CelebrationType.milestone,
+            title: streakMilestone.title,
+            message: streakMilestone.message,
+          );
+        }
       }
     } catch (e) {
       setState(() => _isAnalyzing = false);

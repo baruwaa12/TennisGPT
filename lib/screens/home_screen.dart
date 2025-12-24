@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/theme_service.dart';
+import '../services/streak_service.dart';
+import '../data/daily_tips.dart';
 import '../models/match_performance.dart';
 import 'emotional_reset_screen.dart';
 import 'mental_check_in_screen.dart';
@@ -96,6 +98,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // Header with greeting and profile
                 _buildHeader(context, authService, firstName),
+                
+                const SizedBox(height: 16),
+                
+                // Streak and Daily Tip Row
+                _buildStreakAndTipRow(context),
                 
                 const SizedBox(height: 20),
                 
@@ -267,6 +274,140 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   )
                 : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStreakAndTipRow(BuildContext context) {
+    final streakService = Provider.of<StreakService>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dailyTip = DailyTips.getTodaysTip();
+    
+    return Column(
+      children: [
+        // Streak Card (only show if streak > 0)
+        if (streakService.currentStreak > 0)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange.shade400, Colors.orange.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('🔥', style: TextStyle(fontSize: 24)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${streakService.currentStreak} Day Streak',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        streakService.hasActivityToday 
+                            ? "You're on fire! Keep it going."
+                            : "Log a match to keep your streak!",
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (streakService.longestStreak > streakService.currentStreak)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Best: ${streakService.longestStreak}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        
+        // Daily Tip Card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                dailyTip['emoji'] ?? '💡',
+                style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily Tip',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      dailyTip['tip'] ?? '',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: isDark ? Colors.grey[300] : Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ],

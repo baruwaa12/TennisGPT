@@ -13,6 +13,7 @@ import 'services/purchase_service.dart';
 import 'services/usage_service.dart';
 import 'services/player_profile_service.dart';
 import 'services/theme_service.dart';
+import 'services/streak_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => ThemeService()..init(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => StreakService()..initialize(),
         ),
       ],
       child: Consumer<ThemeService>(

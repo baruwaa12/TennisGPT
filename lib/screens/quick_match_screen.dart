@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
+import '../services/streak_service.dart';
 import '../widgets/shareable_card.dart';
 import 'add_match_screen.dart';
 import 'paywall_screen.dart';
@@ -144,8 +145,22 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       _celebrationController.forward();
       HapticFeedback.heavyImpact();
       
-      // Check for milestone celebrations
+      // Check for milestone celebrations and record streak
       if (mounted) {
+        // Record streak activity
+        final streakService = Provider.of<StreakService>(context, listen: false);
+        final streakMilestone = await streakService.recordActivity();
+        
+        // Show streak milestone if hit
+        if (streakMilestone != null && mounted) {
+          CelebrationService.showAchievement(
+            context,
+            type: CelebrationType.milestone,
+            title: streakMilestone.title,
+            message: streakMilestone.message,
+          );
+        }
+        
         // Check first match
         await CelebrationService.checkFirstMatch(context);
         
