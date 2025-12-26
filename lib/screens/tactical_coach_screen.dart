@@ -111,7 +111,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🎾 Tactical Coach'),
+        title: const Text('Tactical Coach'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -128,7 +128,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        '📊 Recent Performance',
+                        'Recent Performance',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -181,7 +181,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '🔍 Match Analysis',
+                      'Match Analysis',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -241,7 +241,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '🏋️ Drill Recommendations',
+                      'Drill Recommendations',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -302,7 +302,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '💡 Quick Tactical Tip',
+                      'Quick Tactical Tip',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

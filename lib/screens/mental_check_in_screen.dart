@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../models/check_in_entry.dart';
@@ -12,24 +14,23 @@ class MentalCheckInScreen extends StatefulWidget {
 }
 
 class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
-  final TextEditingController _journalController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  
   int _currentRating = 3;
   bool _isLoading = false;
   bool _hasSubmitted = false;
+  
+  // New State for Chips
+  final Set<String> _selectedTags = {};
+  
+  final List<String> _feelingsTags = [
+    'Confident', 'Anxious', 'Focused', 'Distracted', 
+    'Tired', 'Energetic', 'Frustrated', 'Calm',
+    'Choked', 'In the Zone', 'Angry', 'Motivated'
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadLastRating();
-  }
-
-  @override
-  void dispose() {
-    _journalController.dispose();
-    _focusNode.dispose();
-    super.dispose();
   }
 
   Future<void> _loadLastRating() async {
@@ -41,36 +42,28 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
 
   String _getMoodEmoji(int rating) {
     switch (rating) {
-      case 1:
-        return '😰';
-      case 2:
-        return '😟';
-      case 3:
-        return '😐';
-      case 4:
-        return '😊';
-      case 5:
-        return '😄';
-      default:
-        return '😐';
+      case 1: return '😰';
+      case 2: return '😟';
+      case 3: return '😐';
+      case 4: return '😊';
+      case 5: return '😄';
+      default: return '😐';
     }
   }
 
-  String _getTailoredTip(int rating) {
-    if (rating <= 2) {
-      return "Try this 2-minute breathing drill.";
-    } else if (rating >= 4) {
-      return "Great mood—set a new practice goal today!";
-    } else {
-      return "Keep focusing on your form—you're doing well!";
-    }
+  void _handleHaptic() {
+    Vibrate.feedback(FeedbackType.selection);
+  }
+
+  void _handleSuccessHaptic() {
+    Vibrate.feedback(FeedbackType.success);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🧠 Mental Check-In'),
+        title: const Text('Mental Check-In'),
         centerTitle: true,
       ),
       body: Padding(
@@ -79,136 +72,183 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (!_hasSubmitted) ...[
-              // Input Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+              Expanded(
+                child: SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(
-                        Icons.psychology,
-                        size: 64,
-                        color: Colors.blue,
-                      ),
+                      // Mood Section
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'How are you feeling?',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              _getMoodEmoji(_currentRating),
+                              style: const TextStyle(fontSize: 64),
+                            ).animate().scale(duration: 200.ms, curve: Curves.easeOutBack),
+                            const SizedBox(height: 16),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: Theme.of(context).colorScheme.primary,
+                                thumbColor: Theme.of(context).colorScheme.primary,
+                                overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              ),
+                              child: Slider(
+                                value: _currentRating.toDouble(),
+                                min: 1,
+                                max: 5,
+                                divisions: 4,
+                                onChanged: (value) {
+                                  if (value.round() != _currentRating) {
+                                    _handleHaptic();
+                                    setState(() {
+                                      _currentRating = value.round();
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Stressed', style: TextStyle(color: Colors.grey[400])),
+                                Text('Peaking', style: TextStyle(color: Colors.grey[400])),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ).animate().fadeIn().slideY(begin: 0.1, end: 0),
+                      
                       const SizedBox(height: 16),
-                      const Text(
-                        'How are you feeling today?',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
                       
-                      // Mood Slider
-                      Column(
-                        children: [
-                          Text(
-                            _getMoodEmoji(_currentRating),
-                            style: const TextStyle(fontSize: 48),
+                      // Tags Section
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.05),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Stressed', style: TextStyle(fontSize: 12)),
-                              const Text('Calm', style: TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                          Slider(
-                            value: _currentRating.toDouble(),
-                            min: 1,
-                            max: 5,
-                            divisions: 4,
-                            activeColor: Colors.blue,
-                            onChanged: (value) {
-                              setState(() {
-                                _currentRating = value.round();
-                              });
-                            },
-                          ),
-                          Text(
-                            'Rating: $_currentRating/5',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Select what describes you',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Journal Text Field
-                      const Text(
-                        "What's on your mind today?",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _journalController,
-                        focusNode: _focusNode,
-                        maxLines: null,
-                        minLines: 4,
-                        decoration: InputDecoration(
-                          hintText: 'Share your thoughts about your tennis performance, challenges, or anything on your mind...',
-                          border: const OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Submit Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading || _journalController.text.trim().isEmpty
-                              ? null
-                              : _handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  'Submit',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                            const SizedBox(height: 16),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _feelingsTags.map((tag) {
+                                final isSelected = _selectedTags.contains(tag);
+                                return FilterChip(
+                                  label: Text(tag),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    _handleHaptic();
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedTags.add(tag);
+                                      } else {
+                                        _selectedTags.remove(tag);
+                                      }
+                                    });
+                                  },
+                                  checkmarkColor: Colors.black,
+                                  selectedColor: Theme.of(context).colorScheme.primary,
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? Colors.black : Colors.white,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                   ),
-                                ),
+                                  backgroundColor: Colors.grey[800],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    side: BorderSide(
+                                      color: isSelected 
+                                          ? Theme.of(context).colorScheme.primary 
+                                          : Colors.transparent,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
                         ),
-                      ),
+                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
                     ],
                   ),
                 ),
               ),
+              
+              const SizedBox(height: 16),
+              
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading || _selectedTags.isEmpty
+                      ? null
+                      : _handleSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : const Text(
+                          'Log Check-In',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ).animate().fadeIn(delay: 200.ms),
             ] else ...[
-              // Response Section (after submission)
+              // Response Section
               Expanded(
                 child: Consumer<ApiService>(
                   builder: (context, apiService, child) {
                     if (apiService.isLoading) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 24),
                             Text(
-                              'Your coach is thinking...',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                              'Processing...',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[400],
+                              ),
+                            ).animate().shimmer(),
                           ],
                         ),
                       );
@@ -218,86 +258,97 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       return Column(
                         children: [
                           // Success Header
-                          Card(
-                            color: Colors.blue[50],
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Check-In Logged',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ).animate().fadeIn().slideY(begin: -0.2, end: 0),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Coach's Response
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.05),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.check_circle, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Check-in Complete!',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.lightbulb_outline, size: 28),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        'Insight',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      child: Text(
+                                        apiService.lastResponse!,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          height: 1.6,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // Coach's Response
-                          Expanded(
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.psychology, color: Colors.blue, size: 32),
-                                        const SizedBox(width: 12),
-                                        const Text(
-                                          'Your Coach\'s Response:',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Expanded(
-                                      child: SingleChildScrollView(
-                                        child: Text(
-                                          apiService.lastResponse!,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            height: 1.6,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
                           
                           const SizedBox(height: 16),
                           
                           // New Check-in Button
                           SizedBox(
                             width: double.infinity,
-                            height: 50,
+                            height: 56,
                             child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
                                   _hasSubmitted = false;
-                                  _journalController.clear();
+                                  _selectedTags.clear();
                                   apiService.clearResponse();
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
+                                backgroundColor: Colors.grey[800],
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
                               child: const Text(
@@ -323,13 +374,18 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             Consumer<ApiService>(
               builder: (context, apiService, child) {
                 if (apiService.error != null) {
-                  return Card(
-                    color: Colors.red[50],
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.withOpacity(0.5)),
+                      ),
                       child: Text(
                         'Error: ${apiService.error}',
-                        style: const TextStyle(color: Colors.red),
+                        style: const TextStyle(color: Colors.redAccent),
                       ),
                     ),
                   );
@@ -344,26 +400,18 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    final journalText = _journalController.text.trim();
-    
-    if (journalText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please write something before submitting'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
+    if (_selectedTags.isEmpty) return;
 
-    // Hide keyboard
-    _focusNode.unfocus();
+    _handleSuccessHaptic();
     
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Construct journal text from tags
+      final journalText = "I am feeling: ${_selectedTags.join(', ')}";
+
       // Create check-in entry
       final entry = CheckInEntry(
         timestamp: DateTime.now().millisecondsSinceEpoch,
@@ -373,22 +421,6 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
 
       // Save to local storage
       await StorageService.saveCheckIn(entry);
-
-      // TODO: Analytics event - mental_checkin_submitted
-      // analytics.track('mental_checkin_submitted', {
-      //   'rating': _currentRating,
-      //   'has_journal_text': journalText.isNotEmpty,
-      // });
-
-      // Show tailored tip with neutral styling
-      final tip = _getTailoredTip(_currentRating);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(tip),
-          backgroundColor: Colors.grey[700],
-          duration: const Duration(seconds: 3),
-        ),
-      );
 
       // Get AI response
       final apiService = Provider.of<ApiService>(context, listen: false);
