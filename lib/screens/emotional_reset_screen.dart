@@ -62,7 +62,10 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF121212) : null,
       appBar: AppBar(
         title: const Text('💬 Post-Match Debrief'),
         centerTitle: true,

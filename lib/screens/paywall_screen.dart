@@ -77,7 +77,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -86,7 +86,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   _triggerMessage,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,

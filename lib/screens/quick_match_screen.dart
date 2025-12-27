@@ -9,9 +9,11 @@ import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
+import '../services/pattern_service.dart';
 import '../widgets/shareable_card.dart';
 import 'add_match_screen.dart';
 import 'paywall_screen.dart';
+import 'match_reflection_screen.dart';
 
 class QuickMatchScreen extends StatefulWidget {
   const QuickMatchScreen({super.key});
@@ -32,6 +34,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   bool _isSaving = false;
   bool _showSuccess = false;
   String? _aiInsight;
+  MatchPerformance? _savedMatch;
   
   late AnimationController _celebrationController;
   late Animation<double> _scaleAnimation;
@@ -140,6 +143,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         _isSaving = false;
         _showSuccess = true;
         _aiInsight = analysis;
+        _savedMatch = match;
       });
       
       _celebrationController.forward();
@@ -717,6 +721,53 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                 ],
               ),
               const SizedBox(height: 16),
+              // Reflect button
+              if (_savedMatch != null)
+                GestureDetector(
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MatchReflectionScreen(match: _savedMatch!),
+                      ),
+                    );
+                    // Save reflection data for pattern detection
+                    if (result != null && result is Map) {
+                      final patternService = PatternService();
+                      await patternService.saveReflection(
+                        matchId: _savedMatch!.id,
+                        strengths: List<String>.from(result['strengths'] ?? []),
+                        weaknesses: List<String>.from(result['weaknesses'] ?? []),
+                        result: _savedMatch!.result,
+                        date: _savedMatch!.date,
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: isWin ? Colors.green.shade50 : Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isWin ? Colors.green.shade300 : Colors.blue.shade300,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '📝 Reflect on Match',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isWin ? Colors.green.shade700 : Colors.blue.shade700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_savedMatch != null) const SizedBox(height: 12),
               GestureDetector(
                 onTap: _goBack,
                 child: Container(

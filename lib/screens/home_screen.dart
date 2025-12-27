@@ -14,6 +14,7 @@ import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
 import 'quick_match_screen.dart';
 import 'login_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -234,9 +235,24 @@ class _HomeScreenState extends State<HomeScreen> {
             } else if (value == 'theme') {
               await themeService.toggleTheme();
               HapticFeedback.lightImpact();
+            } else if (value == 'settings') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
             }
           },
           itemBuilder: (BuildContext _) => [
+            const PopupMenuItem<String>(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings),
+                  SizedBox(width: 8),
+                  Text('Settings'),
+                ],
+              ),
+            ),
             PopupMenuItem<String>(
               value: 'theme',
               child: Row(

@@ -547,6 +547,141 @@ Track consecutive days of app activity to build habits.
 
 ---
 
+## Day 10 - Match Reflection & Pattern Detection
+
+### Post-Match Reflection Screen 📝
+Guided reflection after match save with quick-select options.
+
+#### What Went Well (Strengths)
+| Option | Emoji |
+|--------|-------|
+| Serve was on | 🎯 |
+| Movement was good | 🏃 |
+| Made smart shot selections | 🧠 |
+| Stayed focused throughout | 👁️ |
+| Returns were solid | ↩️ |
+| Net play was effective | 🏐 |
+
+#### What Needs Work (Weaknesses)
+| Option | Emoji |
+|--------|-------|
+| Too many unforced errors | ❌ |
+| Backhand broke down | 🔙 |
+| Lost focus in key moments | 😵 |
+| Fitness/stamina issues | 😮‍💨 |
+| Serve was inconsistent | 🎾 |
+| Nerves affected play | 😰 |
+
+#### Flow
+```
+Match Saved → Success Screen → [Reflect on Match] → Reflection Screen
+                                                   ↓
+                                           Select strengths/weaknesses
+                                                   ↓
+                                           [Get Tactical Advice] → AI Analysis
+```
+
+### Pattern Detection Service 📊
+Detects recurring patterns across matches for smarter insights.
+
+#### Pattern Types
+| Type | Description |
+|------|-------------|
+| Recurring Weakness | Same issue in 3+ matches |
+| Consistent Strength | Same strength in 3+ matches |
+| Loss Correlation | Issues appearing in losses |
+
+#### Example Insights
+- "📊 Pattern: Backhand issues in 4 of your last 5 matches"
+- "💪 Consistent strength: Your serve is on in 5 of last 7 matches"
+
+### Dark Mode Gaps Fixed
+Added dark mode support to remaining screens:
+- `match_history_screen.dart`
+- `add_match_screen.dart`
+- `emotional_reset_screen.dart`
+- `mental_check_in_screen.dart`
+
+### Files Created
+- `lib/screens/match_reflection_screen.dart` - Guided post-match reflection
+- `lib/services/pattern_service.dart` - Pattern detection across matches
+
+### Files Modified
+- `lib/screens/quick_match_screen.dart` - "Reflect on Match" button + pattern saving
+- `lib/screens/match_history_screen.dart` - Dark mode
+- `lib/screens/add_match_screen.dart` - Dark mode
+- `lib/screens/emotional_reset_screen.dart` - Dark mode
+- `lib/screens/mental_check_in_screen.dart` - Dark mode
+
+---
+
+## Day 11 - Tactical Pre-Match Prep Redesign
+
+### Complete Redesign of Pre-Match Screen 🧠
+Transformed from emotional check-in to tactical preparation.
+
+#### New Features
+| Feature | Description |
+|---------|-------------|
+| Opponent Field | Optional - triggers opponent-specific analysis |
+| Game Plan Options | 6 tactical options to select |
+| Confidence Slider | 1-10 scale with color feedback |
+| Additional Notes | Free-text for specific concerns |
+
+#### Game Plan Options
+| Option | Emoji |
+|--------|-------|
+| Attack their backhand | 🎯 |
+| Stay consistent, wait for errors | 🛡️ |
+| Serve and volley | ⚡ |
+| Change pace frequently | 🔄 |
+| Be aggressive, dictate play | 💪 |
+| Move them with angles | 📐 |
+
+#### Visual Improvements
+- Gradient header card
+- Chip-style game plan selectors
+- Color-coded confidence (red→green)
+- Clean briefing result view
+
+### Files Modified
+- `lib/screens/mental_check_in_screen.dart` - Complete redesign
+
+---
+
+## Day 12 - Settings Screen & Polish
+
+### Settings Screen ⚙️
+Full settings screen with all user preferences.
+
+#### Sections
+| Section | Features |
+|---------|----------|
+| Profile | Avatar, name, email, PRO badge |
+| Stats | Streak, matches logged, analyses |
+| Subscription | Premium status, upgrade button |
+| Appearance | Theme picker (System/Light/Dark) |
+| Player Profile | Edit skill level and goals |
+| Support | Help, Feedback, Rate app |
+| Legal | Terms, Privacy |
+| Account | Sign out |
+
+#### Access
+Profile menu on home screen → Settings option
+
+### Gap Fixes
+- Dark mode text colors in paywall screen
+- Settings accessible from home menu
+
+### Files Created
+- `lib/screens/settings_screen.dart` - Full settings screen
+
+### Files Modified
+- `lib/screens/home_screen.dart` - Added settings to menu
+- `lib/screens/paywall_screen.dart` - Dark mode text fix
+
+---
+
 ## Summary of All Improvements
 
 ### UX Patterns Added
@@ -568,6 +703,10 @@ Track consecutive days of app activity to build habits.
 | Dark Mode | System/Light/Dark toggle |
 | Streak System | Consecutive day tracking |
 | Daily Tips | Rotating tennis tips |
+| Match Reflection | Guided post-match review |
+| Pattern Detection | Recurring weakness alerts |
+| Tactical Pre-Match | Game plan selection |
+| Settings Screen | Full user preferences |
 
 ### Design System
 - **Primary Font**: Google Fonts Poppins
@@ -599,7 +738,10 @@ Track consecutive days of app activity to build habits.
 | 7 | 0 | 2 |
 | 8 | 3 | 11 |
 | 9 | 2 | 4 |
-| **Total** | **12** | **30** |
+| 10 | 2 | 5 |
+| 11 | 0 | 1 |
+| 12 | 1 | 2 |
+| **Total** | **15** | **38** |
 
 ### New Files
 1. `lib/services/purchase_service.dart`
@@ -614,6 +756,9 @@ Track consecutive days of app activity to build habits.
 10. `lib/services/theme_service.dart`
 11. `lib/services/streak_service.dart`
 12. `lib/data/daily_tips.dart`
+13. `lib/screens/match_reflection_screen.dart`
+14. `lib/services/pattern_service.dart`
+15. `lib/screens/settings_screen.dart`
 
 ### Modified Files
 1. `backend/TennisGPT.Application/Services/OpenAIService.cs`
