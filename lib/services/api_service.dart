@@ -6,7 +6,7 @@ import '../models/match_performance.dart';
 import 'token_service.dart';
 
 class ApiService extends ChangeNotifier {
-  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://8d9288d5369e.ngrok-free.app';
+  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://1c8c72e2d757.ngrok-free.app';
   final TokenService _tokenService = TokenService();
 
   bool _isLoading = false;

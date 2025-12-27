@@ -294,7 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem('🔥', '${streakService.currentStreak}', 'Streak', isDark),
-          _buildStatItem('📊', '${usageService.matchesLoggedThisMonth}', 'Matches', isDark),
+          _buildStatItem('📊', '${usageService.matchCount}', 'Matches', isDark),
           _buildStatItem('🎯', '${usageService.tacticalAnalysesThisMonth}', 'Analyses', isDark),
         ],
       ),
