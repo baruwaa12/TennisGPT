@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../models/check_in_entry.dart';
@@ -52,11 +52,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
   }
 
   void _handleHaptic() {
-    Vibrate.feedback(FeedbackType.selection);
+    HapticFeedback.selectionClick();
   }
 
   void _handleSuccessHaptic() {
-    Vibrate.feedback(FeedbackType.success);
+    HapticFeedback.mediumImpact();
   }
 
   @override
