@@ -1,20 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/match_performance.dart';
 import 'token_service.dart';
 
-String _getApiBaseUrl() {
-  try {
-    return dotenv.env['API_BASE_URL'] ?? 'https://tennisgpt-production.up.railway.app';
-  } catch (e) {
-    return 'https://tennisgpt-production.up.railway.app';
-  }
-}
-
 class ApiService extends ChangeNotifier {
-  final String _baseUrl = _getApiBaseUrl();
+  final String _baseUrl = 'https://tennisgpt-production.up.railway.app';
   final TokenService _tokenService = TokenService();
 
   bool _isLoading = false;

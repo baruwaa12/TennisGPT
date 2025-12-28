@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'screens/home_screen.dart';
@@ -17,28 +16,12 @@ import 'services/streak_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Load environment variables - only on mobile platforms
-  bool dotenvLoaded = false;
-  if (!kIsWeb) {
-    try {
-      await dotenv.load(fileName: ".env");
-      dotenvLoaded = true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Warning: .env file not found, using defaults');
-      }
-    }
-  }
 
   // Allow google_fonts to fetch from network if assets aren't bundled
   GoogleFonts.config.allowRuntimeFetching = true;
 
   if (kDebugMode) {
-    final apiUrl = dotenvLoaded 
-        ? (dotenv.env['API_BASE_URL'] ?? 'https://tennisgpt-production.up.railway.app')
-        : 'https://tennisgpt-production.up.railway.app';
-    print('API_BASE_URL = $apiUrl');
+    print('API_BASE_URL = https://tennisgpt-production.up.railway.app');
   }
 
   runApp(const MyApp());
