@@ -1,0 +1,87 @@
+workflows:
+  ios-workflow:
+    name: iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        API_BASE_URL: "https://tennisgpt-production.up.railway.app"
+    
+    scripts:
+      - name: Create .env file
+        script: |
+          echo "API_BASE_URL=$API_BASE_URL" > .env
+          cat .env
+      
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      
+      - name: Install CocoaPods
+        script: |
+          cd ios && pod install
+      
+      - name: Build iOS
+        script: |
+          flutter build ios --release --no-codesign
+    
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/archive/*.xcarchive
+      - flutter_drive.log
+
+  # For when you have Apple Developer account set up
+  ios-testflight:
+    name: iOS TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    
+    integrations:
+      app_store_connect: Codemagic  # You'll set this up in Codemagic UI
+    
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.tennisgpt.app
+      vars:
+        API_BASE_URL: "https://tennisgpt-production.up.railway.app"
+    
+    scripts:
+      - name: Create .env file
+        script: |
+          echo "API_BASE_URL=$API_BASE_URL" > .env
+      
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      
+      - name: Install CocoaPods
+        script: |
+          cd ios && pod install
+      
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files $(xcode-project detect-bundle-id)
+          keychain add-certificates
+          xcode-project use-profiles
+      
+      - name: Build iOS IPA
+        script: |
+          flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+    
+    artifacts:
+      - build/ios/ipa/*.ipa
+    
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+

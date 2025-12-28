@@ -17,13 +17,28 @@ import 'services/streak_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  
+  // Load environment variables - only on mobile platforms
+  bool dotenvLoaded = false;
+  if (!kIsWeb) {
+    try {
+      await dotenv.load(fileName: ".env");
+      dotenvLoaded = true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Warning: .env file not found, using defaults');
+      }
+    }
+  }
 
   // Allow google_fonts to fetch from network if assets aren't bundled
   GoogleFonts.config.allowRuntimeFetching = true;
 
   if (kDebugMode) {
-    print('API_BASE_URL from .env = ${dotenv.env['API_BASE_URL']}');
+    final apiUrl = dotenvLoaded 
+        ? (dotenv.env['API_BASE_URL'] ?? 'https://tennisgpt-production.up.railway.app')
+        : 'https://tennisgpt-production.up.railway.app';
+    print('API_BASE_URL = $apiUrl');
   }
 
   runApp(const MyApp());

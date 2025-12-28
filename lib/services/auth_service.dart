@@ -5,8 +5,16 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
 
+String _getApiBaseUrl() {
+  try {
+    return dotenv.env['API_BASE_URL'] ?? 'https://tennisgpt-production.up.railway.app';
+  } catch (e) {
+    return 'https://tennisgpt-production.up.railway.app';
+  }
+}
+
 class AuthService extends ChangeNotifier {
-  final String _apiBaseUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000';
+  final String _apiBaseUrl = _getApiBaseUrl();
   final TokenService _tokenService = TokenService();
   
   // GoogleSignIn setup - serverClientId is only for mobile platforms

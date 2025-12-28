@@ -5,8 +5,16 @@ import 'dart:convert';
 import '../models/match_performance.dart';
 import 'token_service.dart';
 
+String _getApiBaseUrl() {
+  try {
+    return dotenv.env['API_BASE_URL'] ?? 'https://tennisgpt-production.up.railway.app';
+  } catch (e) {
+    return 'https://tennisgpt-production.up.railway.app';
+  }
+}
+
 class ApiService extends ChangeNotifier {
-  final String _baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://8d9288d5369e.ngrok-free.app';
+  final String _baseUrl = _getApiBaseUrl();
   final TokenService _tokenService = TokenService();
 
   bool _isLoading = false;
