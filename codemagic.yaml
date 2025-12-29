@@ -29,7 +29,11 @@ workflows:
         script: cd ios && pod install
       
       - name: Build iOS IPA
-        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+        script: |
+          # Use Codemagic's auto-incrementing build number
+          flutter build ipa --release \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
     
     artifacts:
       - build/ios/ipa/*.ipa
