@@ -52,20 +52,20 @@ class MatchPerformance {
 
   factory MatchPerformance.fromJson(Map<String, dynamic> json) {
     return MatchPerformance(
-      id: json['id'],
-      date: DateTime.parse(json['date']),
-      opponent: json['opponent'],
-      result: json['result'],
-      setsWon: json['setsWon'],
-      setsLost: json['setsLost'],
-      surface: json['surface'],
-      weather: json['weather'],
-      notes: json['notes'],
-      strengths: Map<String, int>.from(json['strengths']),
-      weaknesses: Map<String, int>.from(json['weaknesses']),
-      keyMoments: List<String>.from(json['keyMoments']),
-      tacticalAnalysis: json['tacticalAnalysis'],
-      recommendedDrills: List<String>.from(json['recommendedDrills']),
+      id: json['id'] ?? '',
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+      opponent: json['opponent'] ?? 'Unknown',
+      result: json['result'] ?? 'Unknown',
+      setsWon: json['setsWon'] ?? 0,
+      setsLost: json['setsLost'] ?? 0,
+      surface: json['surface'] ?? 'Hard',
+      weather: json['weather'] ?? 'Unknown',
+      notes: json['notes'] ?? '',
+      strengths: json['strengths'] != null ? Map<String, int>.from(json['strengths']) : {},
+      weaknesses: json['weaknesses'] != null ? Map<String, int>.from(json['weaknesses']) : {},
+      keyMoments: json['keyMoments'] != null ? List<String>.from(json['keyMoments']) : [],
+      tacticalAnalysis: json['tacticalAnalysis'] ?? '',
+      recommendedDrills: json['recommendedDrills'] != null ? List<String>.from(json['recommendedDrills']) : [],
     );
   }
 

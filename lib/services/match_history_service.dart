@@ -10,12 +10,17 @@ class MatchHistoryService {
     final prefs = await SharedPreferences.getInstance();
     final String? matchesJson = prefs.getString(_storageKey);
     
-    if (matchesJson == null) return [];
+    if (matchesJson == null || matchesJson.isEmpty) return [];
     
-    final List<dynamic> matchesList = json.decode(matchesJson);
-    return matchesList
-        .map((json) => MatchPerformance.fromJson(json))
-        .toList();
+    try {
+      final List<dynamic> matchesList = json.decode(matchesJson);
+      return matchesList
+          .map((json) => MatchPerformance.fromJson(json))
+          .toList();
+    } catch (e) {
+      // If JSON is corrupted, return empty list
+      return [];
+    }
   }
   
   // Save a new match performance

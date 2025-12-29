@@ -100,6 +100,15 @@ class AuthService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
+        // Check for empty response
+        if (response.body.isEmpty) {
+          _error = 'Server returned empty response';
+          if (kDebugMode) {
+            print('AuthService: Empty response from server');
+          }
+          return;
+        }
+        
         final data = jsonDecode(response.body);
 
         // Save tokens
@@ -120,8 +129,17 @@ class AuthService extends ChangeNotifier {
           print('AuthService: Authenticated as $_userEmail');
         }
       } else {
-        final errorData = jsonDecode(response.body);
-        _error = errorData['message'] ?? 'Authentication failed';
+        // Handle error response
+        String errorMessage = 'Authentication failed (${response.statusCode})';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (_) {
+            errorMessage = response.body;
+          }
+        }
+        _error = errorMessage;
         if (kDebugMode) {
           print('AuthService: Auth failed - $_error');
         }
@@ -197,15 +215,22 @@ class AuthService extends ChangeNotifier {
         },
       );
 
-      if (response.statusCode == 200) {
-        final user = jsonDecode(response.body);
-        _userDisplayName = user['displayName'];
-        _userPhotoURL = user['photoUrl'];
-        _userEmail = user['email'];
-        _isAuthenticated = true;
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        try {
+          final user = jsonDecode(response.body);
+          _userDisplayName = user['displayName'];
+          _userPhotoURL = user['photoUrl'];
+          _userEmail = user['email'];
+          _isAuthenticated = true;
 
-        if (kDebugMode) {
-          print('AuthService: Restored session for $_userEmail');
+          if (kDebugMode) {
+            print('AuthService: Restored session for $_userEmail');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('AuthService: Error parsing user data - $e');
+          }
+          await _tokenService.clearTokens();
         }
       } else if (response.statusCode == 401) {
         // Token expired, try to refresh
@@ -233,23 +258,29 @@ class AuthService extends ChangeNotifier {
         body: jsonEncode({'refreshToken': refreshToken}),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        await _tokenService.saveTokens(
-          accessToken: data['accessToken'],
-          refreshToken: data['refreshToken'],
-        );
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        try {
+          final data = jsonDecode(response.body);
+          await _tokenService.saveTokens(
+            accessToken: data['accessToken'],
+            refreshToken: data['refreshToken'],
+          );
 
-        final user = data['user'];
-        _userDisplayName = user['displayName'];
-        _userPhotoURL = user['photoUrl'];
-        _userEmail = user['email'];
-        _isAuthenticated = true;
+          final user = data['user'];
+          _userDisplayName = user['displayName'];
+          _userPhotoURL = user['photoUrl'];
+          _userEmail = user['email'];
+          _isAuthenticated = true;
 
-        if (kDebugMode) {
-          print('AuthService: Token refreshed for $_userEmail');
+          if (kDebugMode) {
+            print('AuthService: Token refreshed for $_userEmail');
+          }
+          return true;
+        } catch (e) {
+          if (kDebugMode) {
+            print('AuthService: Error parsing refresh response - $e');
+          }
         }
-        return true;
       }
     } catch (e) {
       if (kDebugMode) {

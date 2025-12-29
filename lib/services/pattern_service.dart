@@ -19,8 +19,13 @@ class PatternService {
     final reflectionsJson = prefs.getString(_reflectionsKey);
     
     List<Map<String, dynamic>> reflections = [];
-    if (reflectionsJson != null) {
-      reflections = List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
+    if (reflectionsJson != null && reflectionsJson.isNotEmpty) {
+      try {
+        reflections = List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
+      } catch (e) {
+        // If JSON is corrupted, start fresh
+        reflections = [];
+      }
     }
     
     reflections.add({
@@ -44,9 +49,14 @@ class PatternService {
     final prefs = await SharedPreferences.getInstance();
     final reflectionsJson = prefs.getString(_reflectionsKey);
     
-    if (reflectionsJson == null) return [];
+    if (reflectionsJson == null || reflectionsJson.isEmpty) return [];
     
-    return List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
+    try {
+      return List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
+    } catch (e) {
+      // If JSON is corrupted, return empty list
+      return [];
+    }
   }
 
   /// Detect weakness patterns across recent matches

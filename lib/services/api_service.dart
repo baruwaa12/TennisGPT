@@ -16,6 +16,19 @@ class ApiService extends ChangeNotifier {
   String? get error => _error;
   String? get lastResponse => _lastResponse;
 
+  /// Safely decode JSON, handling empty responses
+  Map<String, dynamic>? _safeJsonDecode(String body) {
+    if (body.isEmpty) return null;
+    try {
+      return jsonDecode(body) as Map<String, dynamic>;
+    } catch (e) {
+      if (kDebugMode) {
+        print('ApiService: JSON decode error - $e');
+      }
+      return null;
+    }
+  }
+
   void clearResponse() {
     _lastResponse = null;
     _error = null;
@@ -49,7 +62,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -82,7 +100,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -122,7 +145,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -157,7 +185,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -190,7 +223,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -224,7 +262,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -257,7 +300,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;
@@ -293,7 +341,12 @@ class ApiService extends ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _error = 'Invalid response from server';
+          notifyListeners();
+          return null;
+        }
         _lastResponse = data['response'];
         notifyListeners();
         return _lastResponse;

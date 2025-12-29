@@ -8,9 +8,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - tennisgpt_monthly: $9.99/month
 /// - tennisgpt_annual: $59.99/year (best value)
 class PurchaseService extends ChangeNotifier {
-  // RevenueCat API Keys (replace with your actual keys)
+  // RevenueCat API Keys
+  // TODO: Replace with your actual RevenueCat API keys from https://app.revenuecat.com
   static const String _revenueCatApiKeyApple = 'YOUR_REVENUECAT_APPLE_API_KEY';
   static const String _revenueCatApiKeyGoogle = 'YOUR_REVENUECAT_GOOGLE_API_KEY';
+  
+  // Check if RevenueCat is configured
+  static bool get isConfigured => 
+      _revenueCatApiKeyApple != 'YOUR_REVENUECAT_APPLE_API_KEY' &&
+      _revenueCatApiKeyGoogle != 'YOUR_REVENUECAT_GOOGLE_API_KEY';
   
   // Product identifiers
   static const String monthlyProductId = 'tennisgpt_monthly';
@@ -41,6 +47,17 @@ class PurchaseService extends ChangeNotifier {
     try {
       _isLoading = true;
       notifyListeners();
+
+      // Skip if RevenueCat is not configured (placeholder keys)
+      if (!isConfigured) {
+        if (kDebugMode) {
+          print('PurchaseService: RevenueCat not configured (using placeholder keys)');
+        }
+        _isInitialized = true;
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
 
       // Configure RevenueCat
       late PurchasesConfiguration configuration;

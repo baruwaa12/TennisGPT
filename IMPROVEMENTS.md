@@ -770,3 +770,159 @@ Profile menu on home screen → Settings option
 7. `lib/screens/quick_match_screen.dart`
 8. `lib/services/match_history_service.dart`
 9. `pubspec.yaml`
+
+---
+
+## Day 13 - iOS Stability & Error Handling Fixes
+
+### Critical Issues Fixed for iOS Deployment
+
+#### 1. JSON Parsing "Unexpected End of Input" Fix
+**Problem**: App crashed with "unexpected end of input at (character 1)" when server returned empty or malformed JSON.
+
+**Files Fixed**:
+- `lib/services/auth_service.dart`
+- `lib/services/api_service.dart`
+- `lib/services/match_history_service.dart`
+- `lib/services/pattern_service.dart`
+
+**Changes Made**:
+```dart
+// Before (crashes on empty response)
+final data = jsonDecode(response.body);
+
+// After (safe handling)
+if (response.body.isEmpty) {
+  _error = 'Server returned empty response';
+  return null;
+}
+final data = _safeJsonDecode(response.body);
+if (data == null) {
+  _error = 'Invalid response from server';
+  return null;
+}
+```
+
+#### 2. AuthService Empty Response Handling
+| Method | Fix Applied |
+|--------|-------------|
+| `signInWithGoogle()` | Check `response.body.isEmpty` before parsing |
+| `_fetchCurrentUser()` | Wrap JSON parse in try-catch |
+| `_refreshToken()` | Check body not empty before decoding |
+| Error response parsing | Safely decode error message with fallback |
+
+#### 3. ApiService Safe JSON Decoder
+Added `_safeJsonDecode()` helper method that:
+- Returns `null` for empty strings
+- Catches JSON parse exceptions
+- Logs errors in debug mode
+
+Applied to all API endpoints:
+- `mentalCheckIn()`
+- `emotionalReset()`
+- `tacticalAnalysis()`
+- `generateDrillsFromHistory()`
+- `quickTacticalTip()`
+- `analyzeTechnique()`
+- `getMatchStrategy()`
+- `generateTrainingPlan()`
+
+#### 4. MatchPerformance Model Safe Parsing
+**Problem**: `fromJson()` crashed if any field was `null`.
+
+**Fix**: Added null-safe defaults for all fields:
+```dart
+// Before
+id: json['id'],
+
+// After
+id: json['id'] ?? '',
+date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+opponent: json['opponent'] ?? 'Unknown',
+strengths: json['strengths'] != null ? Map<String, int>.from(json['strengths']) : {},
+// etc.
+```
+
+#### 5. MatchHistoryService Corruption Handling
+**Problem**: Corrupted SharedPreferences data crashed the app.
+
+**Fix**: Wrap `json.decode()` in try-catch, return empty list on failure:
+```dart
+try {
+  final List<dynamic> matchesList = json.decode(matchesJson);
+  return matchesList.map(...).toList();
+} catch (e) {
+  return []; // Don't crash, just return empty
+}
+```
+
+#### 6. PatternService Safe Loading
+Same corrupted data handling applied to:
+- `getReflections()`
+- `saveReflection()`
+
+#### 7. RevenueCat Placeholder Key Safety
+**Problem**: App crashed trying to initialize RevenueCat with placeholder keys.
+
+**Fix**: Added `isConfigured` check that skips RevenueCat initialization if keys are still placeholders:
+```dart
+static bool get isConfigured => 
+    _revenueCatApiKeyApple != 'YOUR_REVENUECAT_APPLE_API_KEY' &&
+    _revenueCatApiKeyGoogle != 'YOUR_REVENUECAT_GOOGLE_API_KEY';
+
+Future<void> initialize() async {
+  if (!isConfigured) {
+    print('RevenueCat not configured (using placeholder keys)');
+    _isInitialized = true;
+    return; // Skip initialization, don't crash
+  }
+  // ... normal initialization
+}
+```
+
+### Summary of Robustness Improvements
+
+| Issue Type | Files Affected | Fix Applied |
+|------------|---------------|-------------|
+| Empty JSON response | auth_service, api_service | Check `.isEmpty` before parse |
+| Malformed JSON | All services | try-catch around `jsonDecode` |
+| Null fields in model | match_performance | Default values with `??` |
+| Corrupted local storage | match_history_service, pattern_service | Catch exceptions, return empty |
+| Placeholder API keys | purchase_service | Skip init if not configured |
+
+### Testing Recommendations
+
+1. **Network Error Simulation**: Test with airplane mode on
+2. **Empty Response Test**: Backend returning empty body
+3. **Corrupted Storage**: Clear app data, verify graceful recovery
+4. **First Launch**: Fresh install without any stored data
+5. **Token Expiry**: Test with expired auth tokens
+
+### Files Modified
+- `lib/services/auth_service.dart` - Empty response handling, error parsing
+- `lib/services/api_service.dart` - Added `_safeJsonDecode()`, applied to all endpoints
+- `lib/services/match_history_service.dart` - Corrupted data handling
+- `lib/services/pattern_service.dart` - Safe JSON loading and saving
+- `lib/services/purchase_service.dart` - Placeholder key detection
+- `lib/models/match_performance.dart` - Null-safe `fromJson()`
+
+---
+
+## Pending Items
+
+### RevenueCat Setup Required
+The app uses placeholder RevenueCat API keys. Before release:
+1. Create RevenueCat account at https://app.revenuecat.com
+2. Configure iOS and Android apps
+3. Create products: `tennisgpt_monthly` and `tennisgpt_annual`
+4. Replace placeholder keys in `lib/services/purchase_service.dart`:
+   ```dart
+   static const String _revenueCatApiKeyApple = 'YOUR_ACTUAL_KEY';
+   static const String _revenueCatApiKeyGoogle = 'YOUR_ACTUAL_KEY';
+   ```
+
+### Backend Health Check
+Ensure Railway backend is running and accessible:
+- URL: `https://tennisgpt-production.up.railway.app`
+- Test endpoint: `/api/health` (if available)
+- Verify environment variables are set correctly
