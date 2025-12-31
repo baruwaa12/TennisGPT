@@ -28,14 +28,12 @@ workflows:
       - name: Install CocoaPods
         script: cd ios && pod install
       
-      - name: Get latest build number from App Store Connect
+      - name: Generate unique build number
         script: |
-          # Fetch the latest build number and increment by 1
-          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number com.tennisgpt.app || echo "0")
-          echo "Latest build number: $LATEST_BUILD"
-          NEW_BUILD=$((LATEST_BUILD + 1))
-          echo "New build number: $NEW_BUILD"
-          echo "BUILD_NUMBER=$NEW_BUILD" >> $CM_ENV
+          # Use timestamp for guaranteed unique build number (YYMMDDHHM format)
+          BUILD_NUMBER=$(date +%y%m%d%H%M)
+          echo "Generated build number: $BUILD_NUMBER"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
       
       - name: Build iOS IPA
         script: |
