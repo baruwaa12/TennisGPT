@@ -13,15 +13,18 @@ import 'mental_check_in_screen.dart';
 import 'emotional_reset_screen.dart';
 import 'settings_screen.dart';
 
-/// Home Screen - Dashboard Hub
+/// Home Screen - Performance Dashboard
 /// 
-/// Design: Strava-inspired feed with Whoop-style insights
-/// Structure:
-/// 1. Header (greeting + profile)
-/// 2. Stats overview card
-/// 3. Primary action (Log Match)
-/// 4. Recent activity feed
-/// 5. Quick access tools
+/// Design Philosophy:
+/// - Strava structure: Clear dashboard, performance-first
+/// - Whoop tone: Calm, confident, coach-like
+/// - Premium feel: Restraint over noise
+/// 
+/// Hierarchy:
+/// 1. Performance stats (visual anchor)
+/// 2. Primary action (Log Match)
+/// 3. Recent activity (context)
+/// 4. Quick tools (secondary)
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -83,13 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return isWinStreak ? streak : -streak;
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
-
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
@@ -106,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // Header
+              // Minimal header
               SliverToBoxAdapter(
                 child: _buildHeader(context, authService, firstName),
               ),
@@ -116,31 +112,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    const SizedBox(height: AppTheme.spaceMD),
                     
-                    // Stats Overview Card
-                    _buildStatsCard(),
+                    // Performance Card - Visual Anchor
+                    _buildPerformanceCard(streakService),
                     
-                    const SizedBox(height: AppTheme.spaceMD),
+                    const SizedBox(height: AppTheme.spaceLG),
                     
-                    // Primary Action - Log Match
+                    // Primary Action
                     _buildPrimaryAction(),
                     
-                    const SizedBox(height: AppTheme.spaceLG),
-                    
-                    // Streak indicator (if active)
-                    if (streakService.currentStreak > 0) ...[
-                      _buildStreakBanner(streakService),
-                      const SizedBox(height: AppTheme.spaceLG),
-                    ],
+                    const SizedBox(height: AppTheme.spaceXL),
                     
                     // Recent Activity
-                    _buildRecentActivity(),
+                    if (_recentMatches.isNotEmpty) ...[
+                      _buildRecentActivity(),
+                      const SizedBox(height: AppTheme.spaceXL),
+                    ],
                     
-                    const SizedBox(height: AppTheme.spaceLG),
-                    
-                    // Quick Tools
-                    _buildQuickTools(),
+                    // Tools (minimal)
+                    _buildToolsSection(),
                     
                     const SizedBox(height: AppTheme.spaceXXL),
                   ]),
@@ -153,29 +143,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Minimal header - name and settings only
   Widget _buildHeader(BuildContext context, AuthService authService, String firstName) {
     return Padding(
-      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMD, 
+        AppTheme.spaceMD, 
+        AppTheme.spaceMD, 
+        AppTheme.spaceSM,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Greeting
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _getGreeting(),
-                style: AppTheme.bodySmall,
-              ),
-              const SizedBox(height: AppTheme.spaceXS),
-              Text(
-                firstName,
-                style: AppTheme.headingLarge,
-              ),
-            ],
+          // Simple name, no greeting
+          Text(
+            firstName,
+            style: AppTheme.headingMedium,
           ),
           
-          // Profile avatar
+          // Settings icon
           GestureDetector(
             onTap: () {
               HapticFeedback.lightImpact();
@@ -185,22 +171,18 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             child: Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: AppTheme.surfaceCard,
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.surfaceBorder, width: 2),
+                border: Border.all(color: AppTheme.surfaceBorder),
               ),
-              child: authService.userPhotoURL != null
-                  ? ClipOval(
-                      child: Image.network(
-                        authService.userPhotoURL!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildAvatarFallback(firstName),
-                      ),
-                    )
-                  : _buildAvatarFallback(firstName),
+              child: const Icon(
+                Icons.settings_outlined,
+                color: AppTheme.textMuted,
+                size: 20,
+              ),
             ),
           ),
         ],
@@ -208,102 +190,99 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAvatarFallback(String name) {
-    return Center(
-      child: Text(
-        name.substring(0, 1).toUpperCase(),
-        style: AppTheme.headingMedium.copyWith(color: AppTheme.primary),
-      ),
-    );
-  }
-
-  Widget _buildStatsCard() {
+  /// Performance Card - The visual anchor
+  /// Hierarchy: Primary stat → Secondary stats → Tertiary indicators
+  Widget _buildPerformanceCard(StreakService streakService) {
     final winPercentage = (_winRate * 100).toStringAsFixed(0);
     
-    return TGCard(
+    return Container(
       padding: AppTheme.cardPaddingLarge,
+      decoration: AppTheme.cardDecoration,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Stats row
+          // Primary Stat: Win Rate (large, prominent)
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: _buildStatItem(
-                  value: '$winPercentage%',
-                  label: 'Win Rate',
-                  valueColor: double.parse(winPercentage) >= 50 
-                      ? AppTheme.win 
-                      : AppTheme.loss,
+              Text(
+                '$winPercentage%',
+                style: AppTheme.statLarge.copyWith(
+                  fontSize: 48,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 48,
-                color: AppTheme.surfaceBorder,
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  value: '$_totalMatches',
-                  label: 'Matches',
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 48,
-                color: AppTheme.surfaceBorder,
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  value: '${_currentStreak.abs()}',
-                  label: _currentStreak >= 0 ? 'Win Streak' : 'Loss Streak',
-                  valueColor: _currentStreak >= 0 ? AppTheme.win : AppTheme.loss,
+              const SizedBox(width: AppTheme.spaceSM),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'win rate',
+                  style: AppTheme.label,
                 ),
               ),
             ],
           ),
           
-          // Last 5 matches visual
+          const SizedBox(height: AppTheme.spaceLG),
+          
+          // Divider
+          Container(height: 1, color: AppTheme.surfaceBorder),
+          
+          const SizedBox(height: AppTheme.spaceMD),
+          
+          // Secondary Stats Row
+          Row(
+            children: [
+              // Matches played
+              Expanded(
+                child: _buildSecondaryStatItem(
+                  value: '$_totalMatches',
+                  label: 'matches',
+                ),
+              ),
+              
+              // Streak (integrated, not separate)
+              if (_currentStreak != 0)
+                Expanded(
+                  child: _buildSecondaryStatItem(
+                    value: '${_currentStreak.abs()}',
+                    label: _currentStreak > 0 ? 'win streak' : 'to bounce back',
+                    valueColor: _currentStreak > 0 ? AppTheme.win : null,
+                  ),
+                ),
+              
+              // App streak (subtle)
+              if (streakService.currentStreak > 0)
+                Expanded(
+                  child: _buildSecondaryStatItem(
+                    value: '${streakService.currentStreak}',
+                    label: 'day streak',
+                  ),
+                ),
+            ],
+          ),
+          
+          // Tertiary: Recent form (subtle visual)
           if (_recentMatches.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceMD),
-            Container(
-              height: 1,
-              color: AppTheme.surfaceBorder,
-            ),
+            Container(height: 1, color: AppTheme.surfaceBorder),
             const SizedBox(height: AppTheme.spaceMD),
+            
             Row(
               children: [
-                Text(
-                  'Last ${_recentMatches.take(5).length}',
-                  style: AppTheme.label,
-                ),
+                Text('Recent', style: AppTheme.label),
                 const SizedBox(width: AppTheme.spaceMD),
                 ...List.generate(
                   _recentMatches.take(5).length,
                   (index) {
-                    final match = _recentMatches[index];
-                    final isWin = match.result.toLowerCase() == 'win';
+                    final isWin = _recentMatches[index].result.toLowerCase() == 'win';
                     return Container(
-                      margin: const EdgeInsets.only(right: AppTheme.spaceSM),
-                      width: 32,
-                      height: 32,
+                      margin: const EdgeInsets.only(right: 6),
+                      width: 8,
+                      height: 8,
                       decoration: BoxDecoration(
-                        color: isWin 
-                            ? AppTheme.win.withOpacity(0.15)
-                            : AppTheme.loss.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                        border: Border.all(
-                          color: isWin ? AppTheme.win : AppTheme.loss,
-                          width: 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          isWin ? 'W' : 'L',
-                          style: AppTheme.bodySmall.copyWith(
-                            color: isWin ? AppTheme.win : AppTheme.loss,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        color: isWin ? AppTheme.win : AppTheme.loss.withOpacity(0.6),
+                        shape: BoxShape.circle,
                       ),
                     );
                   },
@@ -316,25 +295,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatItem({
+  Widget _buildSecondaryStatItem({
     required String value,
     required String label,
     Color? valueColor,
   }) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           value,
-          style: AppTheme.statLarge.copyWith(
+          style: AppTheme.statMedium.copyWith(
             color: valueColor ?? AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: AppTheme.spaceXS),
+        const SizedBox(height: 2),
         Text(label, style: AppTheme.label),
       ],
     );
   }
 
+  /// Primary Action - Clear but not overpowering
   Widget _buildPrimaryAction() {
     return GestureDetector(
       onTap: () {
@@ -347,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppTheme.spaceLG,
-          vertical: AppTheme.spaceMD + 4,
+          vertical: AppTheme.spaceMD,
         ),
         decoration: BoxDecoration(
           color: AppTheme.primary,
@@ -357,9 +338,9 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
-              Icons.add_circle_outline,
+              Icons.add,
               color: Colors.white,
-              size: 24,
+              size: 20,
             ),
             const SizedBox(width: AppTheme.spaceSM),
             Text(
@@ -372,54 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStreakBanner(StreakService streakService) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceMD),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.warning.withOpacity(0.2),
-            AppTheme.warning.withOpacity(0.05),
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceSM),
-            decoration: BoxDecoration(
-              color: AppTheme.warning.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            ),
-            child: const Text('🔥', style: TextStyle(fontSize: 20)),
-          ),
-          const SizedBox(width: AppTheme.spaceMD),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${streakService.currentStreak} Day Streak',
-                  style: AppTheme.headingSmall.copyWith(color: AppTheme.warning),
-                ),
-                Text(
-                  streakService.hasActivityToday 
-                      ? "You're on fire!" 
-                      : "Log a match to keep it going",
-                  style: AppTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  /// Recent Activity - Context with subtle insights
   Widget _buildRecentActivity() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Recent Activity', style: AppTheme.headingMedium),
+            Text('Recent', style: AppTheme.headingSmall),
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -438,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               child: Text(
-                'See All',
+                'View all',
                 style: AppTheme.bodySmall.copyWith(color: AppTheme.primary),
               ),
             ),
@@ -447,30 +381,32 @@ class _HomeScreenState extends State<HomeScreen> {
         
         const SizedBox(height: AppTheme.spaceMD),
         
-        // Activity feed
-        if (_isLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(AppTheme.spaceLG),
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            ),
-          )
-        else if (_recentMatches.isEmpty)
-          _buildEmptyState()
-        else
-          ...List.generate(
-            _recentMatches.take(3).length,
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
-              child: _buildMatchCard(_recentMatches[index]),
-            ),
+        // Match list
+        ...List.generate(
+          _recentMatches.take(3).length,
+          (index) => Padding(
+            padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+            child: _buildMatchItem(_recentMatches[index]),
           ),
+        ),
       ],
     );
   }
 
-  Widget _buildMatchCard(MatchPerformance match) {
+  /// Match item - Clean with optional insight
+  Widget _buildMatchItem(MatchPerformance match) {
     final isWin = match.result.toLowerCase() == 'win';
+    
+    // Extract a brief insight if available
+    String? insight;
+    if (match.reflection != null && match.reflection!.isNotEmpty) {
+      // Take first sentence or first 50 chars
+      final reflection = match.reflection!;
+      final firstSentence = reflection.split('.').first;
+      insight = firstSentence.length > 60 
+          ? '${firstSentence.substring(0, 57)}...' 
+          : firstSentence;
+    }
     
     return GestureDetector(
       onTap: () {
@@ -480,54 +416,70 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(builder: (context) => const MatchHistoryScreen()),
         );
       },
-      child: TGCard(
+      child: Container(
+        padding: AppTheme.cardPadding,
+        decoration: AppTheme.cardDecoration,
         child: Row(
           children: [
-            // Result indicator
+            // Result indicator - subtle
             Container(
-              width: 48,
-              height: 48,
+              width: 4,
+              height: insight != null ? 48 : 36,
               decoration: BoxDecoration(
-                color: isWin 
-                    ? AppTheme.win.withOpacity(0.15)
-                    : AppTheme.loss.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-              ),
-              child: Center(
-                child: Text(
-                  isWin ? 'W' : 'L',
-                  style: AppTheme.headingMedium.copyWith(
-                    color: isWin ? AppTheme.win : AppTheme.loss,
-                  ),
-                ),
+                color: isWin ? AppTheme.win : AppTheme.loss.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
             
             const SizedBox(width: AppTheme.spaceMD),
             
-            // Match details
+            // Match info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'vs ${match.opponent}',
-                    style: AppTheme.headingSmall,
+                  Row(
+                    children: [
+                      Text(
+                        match.opponent,
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Text(
+                        '${match.setsWon}-${match.setsLost}',
+                        style: AppTheme.bodySmall,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppTheme.spaceXS),
+                  const SizedBox(height: 2),
                   Text(
-                    '${_formatDate(match.date)} • ${match.setsWon}-${match.setsLost}',
-                    style: AppTheme.bodySmall,
+                    _formatDate(match.date),
+                    style: AppTheme.label,
                   ),
+                  // Subtle insight line
+                  if (insight != null) ...[
+                    const SizedBox(height: AppTheme.spaceSM),
+                    Text(
+                      insight,
+                      style: AppTheme.bodySmall.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: AppTheme.textMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),
             
-            // Arrow
             const Icon(
               Icons.chevron_right,
               color: AppTheme.textMuted,
-              size: 20,
+              size: 18,
             ),
           ],
         ),
@@ -535,94 +487,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return TGCard(
-      padding: AppTheme.cardPaddingLarge,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceMD),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.sports_tennis,
-              size: 32,
-              color: AppTheme.primary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spaceMD),
-          Text(
-            'No matches yet',
-            style: AppTheme.headingSmall,
-          ),
-          const SizedBox(height: AppTheme.spaceSM),
-          Text(
-            'Log your first match to start tracking your progress',
-            textAlign: TextAlign.center,
-            style: AppTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickTools() {
+  /// Tools Section - Minimal, secondary
+  Widget _buildToolsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Quick Tools', style: AppTheme.headingMedium),
+        Text('Tools', style: AppTheme.headingSmall),
         
         const SizedBox(height: AppTheme.spaceMD),
         
         Row(
           children: [
-            Expanded(
-              child: _buildToolCard(
-                icon: Icons.psychology_outlined,
-                label: 'Tactical Coach',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const TacticalCoachScreen()),
-                  );
-                },
+            Expanded(child: _buildToolItem(
+              icon: Icons.psychology_outlined,
+              label: 'Tactical',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TacticalCoachScreen()),
               ),
-            ),
-            const SizedBox(width: AppTheme.spaceMD),
-            Expanded(
-              child: _buildToolCard(
-                icon: Icons.flag_outlined,
-                label: 'Pre-Match',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MentalCheckInScreen()),
-                  );
-                },
+            )),
+            const SizedBox(width: AppTheme.spaceSM),
+            Expanded(child: _buildToolItem(
+              icon: Icons.flag_outlined,
+              label: 'Pre-Match',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MentalCheckInScreen()),
               ),
-            ),
-            const SizedBox(width: AppTheme.spaceMD),
-            Expanded(
-              child: _buildToolCard(
-                icon: Icons.rate_review_outlined,
-                label: 'Debrief',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const EmotionalResetScreen()),
-                  );
-                },
+            )),
+            const SizedBox(width: AppTheme.spaceSM),
+            Expanded(child: _buildToolItem(
+              icon: Icons.edit_note_outlined,
+              label: 'Debrief',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EmotionalResetScreen()),
               ),
-            ),
+            )),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildToolCard({
+  Widget _buildToolItem({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -632,21 +540,19 @@ class _HomeScreenState extends State<HomeScreen> {
         HapticFeedback.lightImpact();
         onTap();
       },
-      child: TGCard(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spaceSM,
+          vertical: AppTheme.spaceMD,
+        ),
+        decoration: AppTheme.cardDecoration,
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: AppTheme.primary,
-            ),
+            Icon(icon, size: 22, color: AppTheme.textSecondary),
             const SizedBox(height: AppTheme.spaceSM),
             Text(
               label,
-              style: AppTheme.bodySmall.copyWith(
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textPrimary,
-              ),
+              style: AppTheme.label.copyWith(color: AppTheme.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -661,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     if (diff.inDays == 0) return 'Today';
     if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
     
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
