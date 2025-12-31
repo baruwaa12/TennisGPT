@@ -133,7 +133,7 @@ class AuthService extends ChangeNotifier {
         String errorMessage = 'Authentication failed (${response.statusCode})';
         if (response.body.isNotEmpty) {
           try {
-            final errorData = jsonDecode(response.body);
+        final errorData = jsonDecode(response.body);
             errorMessage = errorData['message'] ?? errorMessage;
           } catch (_) {
             errorMessage = response.body;
@@ -217,14 +217,14 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         try {
-          final user = jsonDecode(response.body);
-          _userDisplayName = user['displayName'];
-          _userPhotoURL = user['photoUrl'];
-          _userEmail = user['email'];
-          _isAuthenticated = true;
+        final user = jsonDecode(response.body);
+        _userDisplayName = user['displayName'];
+        _userPhotoURL = user['photoUrl'];
+        _userEmail = user['email'];
+        _isAuthenticated = true;
 
-          if (kDebugMode) {
-            print('AuthService: Restored session for $_userEmail');
+        if (kDebugMode) {
+          print('AuthService: Restored session for $_userEmail');
           }
         } catch (e) {
           if (kDebugMode) {
@@ -260,22 +260,22 @@ class AuthService extends ChangeNotifier {
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         try {
-          final data = jsonDecode(response.body);
-          await _tokenService.saveTokens(
-            accessToken: data['accessToken'],
-            refreshToken: data['refreshToken'],
-          );
+        final data = jsonDecode(response.body);
+        await _tokenService.saveTokens(
+          accessToken: data['accessToken'],
+          refreshToken: data['refreshToken'],
+        );
 
-          final user = data['user'];
-          _userDisplayName = user['displayName'];
-          _userPhotoURL = user['photoUrl'];
-          _userEmail = user['email'];
-          _isAuthenticated = true;
+        final user = data['user'];
+        _userDisplayName = user['displayName'];
+        _userPhotoURL = user['photoUrl'];
+        _userEmail = user['email'];
+        _isAuthenticated = true;
 
-          if (kDebugMode) {
-            print('AuthService: Token refreshed for $_userEmail');
-          }
-          return true;
+        if (kDebugMode) {
+          print('AuthService: Token refreshed for $_userEmail');
+        }
+        return true;
         } catch (e) {
           if (kDebugMode) {
             print('AuthService: Error parsing refresh response - $e');

@@ -13,10 +13,10 @@ class MatchHistoryService {
     if (matchesJson == null || matchesJson.isEmpty) return [];
     
     try {
-      final List<dynamic> matchesList = json.decode(matchesJson);
-      return matchesList
-          .map((json) => MatchPerformance.fromJson(json))
-          .toList();
+    final List<dynamic> matchesList = json.decode(matchesJson);
+    return matchesList
+        .map((json) => MatchPerformance.fromJson(json))
+        .toList();
     } catch (e) {
       // If JSON is corrupted, return empty list
       return [];

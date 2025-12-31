@@ -21,7 +21,7 @@ class PatternService {
     List<Map<String, dynamic>> reflections = [];
     if (reflectionsJson != null && reflectionsJson.isNotEmpty) {
       try {
-        reflections = List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
+      reflections = List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
       } catch (e) {
         // If JSON is corrupted, start fresh
         reflections = [];
@@ -52,7 +52,7 @@ class PatternService {
     if (reflectionsJson == null || reflectionsJson.isEmpty) return [];
     
     try {
-      return List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
+    return List<Map<String, dynamic>>.from(json.decode(reflectionsJson));
     } catch (e) {
       // If JSON is corrupted, return empty list
       return [];
