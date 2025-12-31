@@ -28,11 +28,20 @@ workflows:
       - name: Install CocoaPods
         script: cd ios && pod install
       
+      - name: Get latest build number from App Store Connect
+        script: |
+          # Fetch the latest build number and increment by 1
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number com.tennisgpt.app || echo "0")
+          echo "Latest build number: $LATEST_BUILD"
+          NEW_BUILD=$((LATEST_BUILD + 1))
+          echo "New build number: $NEW_BUILD"
+          echo "BUILD_NUMBER=$NEW_BUILD" >> $CM_ENV
+      
       - name: Build iOS IPA
         script: |
-          # Use Codemagic's auto-incrementing build number
+          echo "Building with build number: $BUILD_NUMBER"
           flutter build ipa --release \
-            --build-number=$PROJECT_BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
     
     artifacts:
