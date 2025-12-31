@@ -399,10 +399,9 @@ class _HomeScreenState extends State<HomeScreen> {
     
     // Extract a brief insight if available
     String? insight;
-    if (match.reflection != null && match.reflection!.isNotEmpty) {
-      // Take first sentence or first 50 chars
-      final reflection = match.reflection!;
-      final firstSentence = reflection.split('.').first;
+    if (match.notes.isNotEmpty) {
+      // Take first sentence or first 60 chars
+      final firstSentence = match.notes.split('.').first;
       insight = firstSentence.length > 60 
           ? '${firstSentence.substring(0, 57)}...' 
           : firstSentence;
