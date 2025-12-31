@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../services/api_service.dart';
@@ -11,9 +11,22 @@ import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../services/pattern_service.dart';
 import '../widgets/shareable_card.dart';
-import 'add_match_screen.dart';
 import 'paywall_screen.dart';
 import 'match_reflection_screen.dart';
+
+/// Quick Match Log - Stage 1
+/// 
+/// Design Philosophy:
+/// - Speed first: Log in under 30 seconds
+/// - Minimal inputs: Result + Score only required
+/// - Calm aesthetic: No emojis, no loud colors
+/// - Clear hierarchy: One decision at a time
+/// 
+/// Flow:
+/// 1. Select result (Win/Loss)
+/// 2. Enter score
+/// 3. Optional: Opponent name, quick note
+/// 4. Save → Success → Optional reflection
 
 class QuickMatchScreen extends StatefulWidget {
   const QuickMatchScreen({super.key});
@@ -27,6 +40,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   final TextEditingController _opponentController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  final FocusNode _opponentFocus = FocusNode();
+  final FocusNode _noteFocus = FocusNode();
   
   String? _result;
   int _setsWon = 2;
@@ -36,18 +51,19 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   String? _aiInsight;
   MatchPerformance? _savedMatch;
   
-  late AnimationController _celebrationController;
-  late Animation<double> _scaleAnimation;
+  late AnimationController _successController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _celebrationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+    _successController = AnimationController(
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _celebrationController, curve: Curves.elasticOut),
+    _fadeAnimation = CurvedAnimation(
+      parent: _successController,
+      curve: Curves.easeOut,
     );
   }
 
@@ -55,46 +71,42 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   void dispose() {
     _opponentController.dispose();
     _noteController.dispose();
-    _celebrationController.dispose();
+    _opponentFocus.dispose();
+    _noteFocus.dispose();
+    _successController.dispose();
     super.dispose();
   }
 
   Future<void> _saveMatch() async {
     if (_result == null) {
+      HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Please select WIN or LOSS',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: Colors.orange,
+          content: Text('Select Win or Loss', style: AppTheme.bodyMedium),
+          backgroundColor: AppTheme.surfaceElevated,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    // Check usage limits (premium users bypass)
+    // Check usage limits
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
     
     if (!purchaseService.isPremium && !usageService.canLogMatch) {
-      // Show paywall
       HapticFeedback.mediumImpact();
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PaywallScreen(
-            trigger: PaywallTrigger.matchLimit,
-          ),
+          builder: (context) => const PaywallScreen(trigger: PaywallTrigger.matchLimit),
         ),
       );
-      
-      // If they subscribed, continue with save
       if (result != true) return;
     }
 
     setState(() => _isSaving = true);
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
 
     try {
       final matchId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -102,19 +114,19 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           ? 'Opponent' 
           : _opponentController.text.trim();
       
-      // Create quick match description for AI
+      // Create match description for AI
       final matchDescription = '''
 Match Result: $_result ($_setsWon-$_setsLost)
 Opponent: $opponent
 ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       '''.trim();
 
-      // Get AI analysis
+      // Get AI analysis (background, non-blocking feel)
       final apiService = Provider.of<ApiService>(context, listen: false);
       final recentMatches = await _matchHistoryService.getRecentMatches(3);
       final analysis = await apiService.tacticalAnalysis(matchDescription, recentMatches);
 
-      // Create match with minimal data
+      // Create match
       final match = MatchPerformance(
         id: matchId,
         date: DateTime.now(),
@@ -123,18 +135,18 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         setsWon: _setsWon,
         setsLost: _setsLost,
         surface: 'Hard',
-        weather: 'Sunny',
+        weather: '',
         notes: _noteController.text,
         strengths: {},
         weaknesses: {},
         keyMoments: [],
-        tacticalAnalysis: analysis ?? 'Analysis pending',
+        tacticalAnalysis: analysis ?? '',
         recommendedDrills: [],
       );
 
       await _matchHistoryService.saveMatch(match);
       
-      // Record usage for free users
+      // Record usage
       if (!purchaseService.isPremium) {
         await usageService.recordMatchLogged();
       }
@@ -146,16 +158,14 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         _savedMatch = match;
       });
       
-      _celebrationController.forward();
-      HapticFeedback.heavyImpact();
+      _successController.forward();
+      HapticFeedback.mediumImpact();
       
-      // Check for milestone celebrations and record streak
+      // Handle celebrations
       if (mounted) {
-        // Record streak activity
         final streakService = Provider.of<StreakService>(context, listen: false);
         final streakMilestone = await streakService.recordActivity();
         
-        // Show streak milestone if hit
         if (streakMilestone != null && mounted) {
           CelebrationService.showAchievement(
             context,
@@ -165,15 +175,11 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
           );
         }
         
-        // Check first match
         await CelebrationService.checkFirstMatch(context);
-        
-        // Check first win
         if (_result == 'Win') {
           await CelebrationService.checkFirstWin(context);
         }
         
-        // Check 10 matches milestone
         final matchCount = await _matchHistoryService.getTotalMatches();
         await CelebrationService.checkTenMatches(context, matchCount);
       }
@@ -183,17 +189,12 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            content: Text('Error saving match', style: AppTheme.bodyMedium),
+            backgroundColor: AppTheme.loss,
           ),
         );
       }
     }
-  }
-
-  void _goBack() {
-    HapticFeedback.lightImpact();
-    Navigator.pop(context, _showSuccess);
   }
 
   @override
@@ -202,424 +203,122 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       return _buildSuccessView();
     }
     
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
-      appBar: AppBar(
-        title: Text(
-          '⚡ Quick Match Log',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      backgroundColor: AppTheme.surfaceDark,
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              // Header
+              _buildHeader(),
+              
+              // Form
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppTheme.spaceMD),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Result Selection - Primary
+                      _buildResultSection(),
+                      
+                      const SizedBox(height: AppTheme.spaceLG),
+                      
+                      // Score - Secondary
+                      _buildScoreSection(),
+                      
+                      const SizedBox(height: AppTheme.spaceLG),
+                      
+                      // Optional Fields
+                      _buildOptionalSection(),
+                      
+                      const SizedBox(height: AppTheme.spaceXL),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Save Button - Fixed at bottom
+              _buildSaveButton(),
+            ],
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          TextButton(
-            onPressed: () {
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
               HapticFeedback.lightImpact();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AddMatchScreen()),
-              );
+              Navigator.pop(context);
             },
-            child: Text(
-              'Detailed',
-              style: GoogleFonts.poppins(
-                color: Colors.grey[600],
-                fontSize: 14,
+            child: Container(
+              padding: const EdgeInsets.all(AppTheme.spaceSM),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceCard,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+              ),
+              child: const Icon(
+                Icons.close,
+                color: AppTheme.textSecondary,
+                size: 20,
               ),
             ),
           ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Text('Log Match', style: AppTheme.headingMedium),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Log your match in 30 seconds',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Result',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildResultButton(
-                    label: 'WIN',
-                    emoji: '🏆',
-                    isSelected: _result == 'Win',
-                    color: Colors.green,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() {
-                        _result = 'Win';
-                        _setsWon = 2;
-                        _setsLost = 0;
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildResultButton(
-                    label: 'LOSS',
-                    emoji: '😤',
-                    isSelected: _result == 'Loss',
-                    color: Colors.red,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() {
-                        _result = 'Loss';
-                        _setsWon = 0;
-                        _setsLost = 2;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Score',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: _buildScoreSelector(
-                      value: _setsWon,
-                      label: 'You',
-                      isWinner: _result == 'Win',
-                      onChanged: (val) => setState(() => _setsWon = val),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      '-',
-                      style: GoogleFonts.poppins(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildScoreSelector(
-                      value: _setsLost,
-                      label: 'Opp',
-                      isWinner: _result == 'Loss',
-                      onChanged: (val) => setState(() => _setsLost = val),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Opponent (optional)',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _opponentController,
-                style: GoogleFonts.poppins(),
-                decoration: InputDecoration(
-                  hintText: 'Who did you play?',
-                  hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Quick note (optional)',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _noteController,
-                style: GoogleFonts.poppins(),
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'e.g., "Backhand broke down in 3rd set"',
-                  hintStyle: GoogleFonts.poppins(
-                    color: Colors.grey[400],
-                    fontSize: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.all(16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            GestureDetector(
-              onTap: _isSaving ? null : _saveMatch,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: _result == null
-                        ? [Colors.grey.shade400, Colors.grey.shade500]
-                        : _result == 'Win'
-                            ? [Colors.green.shade500, Colors.green.shade700]
-                            : [Colors.blue.shade500, Colors.blue.shade700],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: _result != null
-                      ? [
-                          BoxShadow(
-                            color: (_result == 'Win' ? Colors.green : Colors.blue)
-                                .withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          'Save & Get AI Analysis 🎯',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AddMatchScreen()),
-                  );
-                },
-                child: Text(
-                  '+ Add detailed stats instead',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildResultButton({
-    required String label,
-    required String emoji,
-    required bool isSelected,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade200,
-            width: isSelected ? 3 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withOpacity(0.2),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-        ),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 32)),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? color : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScoreSelector({
-    required int value,
-    required String label,
-    required bool isWinner,
-    required Function(int) onChanged,
-  }) {
+  Widget _buildResultSection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 8),
+        Text('Result', style: AppTheme.headingSmall),
+        const SizedBox(height: AppTheme.spaceMD),
         Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 36,
-              height: 36,
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                onPressed: value > 0
-                    ? () {
-                        HapticFeedback.selectionClick();
-                        onChanged(value - 1);
-                      }
-                    : null,
-                icon: Icon(
-                  Icons.remove_circle_outline,
-                  size: 28,
-                  color: value > 0 ? Colors.grey[600] : Colors.grey[300],
-                ),
+            Expanded(
+              child: _buildResultOption(
+                label: 'Win',
+                isSelected: _result == 'Win',
+                color: AppTheme.win,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() {
+                    _result = 'Win';
+                    if (_setsWon <= _setsLost) {
+                      _setsWon = 2;
+                      _setsLost = 0;
+                    }
+                  });
+                },
               ),
             ),
-            Container(
-              width: 44,
-              height: 44,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: isWinner ? Colors.green.shade50 : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isWinner ? Colors.green.shade200 : Colors.grey.shade200,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$value',
-                  style: GoogleFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: isWinner ? Colors.green.shade700 : Colors.grey[700],
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 36,
-              height: 36,
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                onPressed: value < 3
-                    ? () {
-                        HapticFeedback.selectionClick();
-                        onChanged(value + 1);
-                      }
-                    : null,
-                icon: Icon(
-                  Icons.add_circle_outline,
-                  size: 28,
-                  color: value < 3 ? Colors.grey[600] : Colors.grey[300],
-                ),
+            const SizedBox(width: AppTheme.spaceMD),
+            Expanded(
+              child: _buildResultOption(
+                label: 'Loss',
+                isSelected: _result == 'Loss',
+                color: AppTheme.loss,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() {
+                    _result = 'Loss';
+                    if (_setsLost <= _setsWon) {
+                      _setsWon = 0;
+                      _setsLost = 2;
+                    }
+                  });
+                },
               ),
             ),
           ],
@@ -628,196 +327,450 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     );
   }
 
+  Widget _buildResultOption({
+    required String label,
+    required bool isSelected,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceLG),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.15) : AppTheme.surfaceCard,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+          border: Border.all(
+            color: isSelected ? color : AppTheme.surfaceBorder,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: AppTheme.headingMedium.copyWith(
+              color: isSelected ? color : AppTheme.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Score', style: AppTheme.headingSmall),
+        const SizedBox(height: AppTheme.spaceMD),
+        Container(
+          padding: AppTheme.cardPadding,
+          decoration: AppTheme.cardDecoration,
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildScoreInput(
+                  value: _setsWon,
+                  label: 'You',
+                  isHighlighted: _result == 'Win',
+                  onChanged: (val) => setState(() => _setsWon = val),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
+                child: Text(
+                  '–',
+                  style: AppTheme.statMedium.copyWith(color: AppTheme.textMuted),
+                ),
+              ),
+              Expanded(
+                child: _buildScoreInput(
+                  value: _setsLost,
+                  label: 'Opp',
+                  isHighlighted: _result == 'Loss',
+                  onChanged: (val) => setState(() => _setsLost = val),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScoreInput({
+    required int value,
+    required String label,
+    required bool isHighlighted,
+    required Function(int) onChanged,
+  }) {
+    return Column(
+      children: [
+        Text(label, style: AppTheme.label),
+        const SizedBox(height: AppTheme.spaceSM),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildScoreButton(
+              icon: Icons.remove,
+              enabled: value > 0,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onChanged(value - 1);
+              },
+            ),
+            Container(
+              width: 48,
+              height: 48,
+              margin: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSM),
+              decoration: BoxDecoration(
+                color: isHighlighted 
+                    ? AppTheme.primary.withOpacity(0.15) 
+                    : AppTheme.surfaceElevated,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                border: Border.all(
+                  color: isHighlighted ? AppTheme.primary : AppTheme.surfaceBorder,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '$value',
+                  style: AppTheme.statMedium.copyWith(
+                    color: isHighlighted ? AppTheme.primary : AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            _buildScoreButton(
+              icon: Icons.add,
+              enabled: value < 3,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onChanged(value + 1);
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScoreButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceElevated,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: enabled ? AppTheme.textSecondary : AppTheme.textMuted,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionalSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Optional', style: AppTheme.label),
+        const SizedBox(height: AppTheme.spaceMD),
+        
+        // Opponent name
+        Container(
+          decoration: AppTheme.cardDecoration,
+          child: TextField(
+            controller: _opponentController,
+            focusNode: _opponentFocus,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Opponent name',
+              hintStyle: AppTheme.bodyMedium,
+              border: InputBorder.none,
+              contentPadding: AppTheme.cardPadding,
+            ),
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _noteFocus.requestFocus(),
+          ),
+        ),
+        
+        const SizedBox(height: AppTheme.spaceSM),
+        
+        // Quick note
+        Container(
+          decoration: AppTheme.cardDecoration,
+          child: TextField(
+            controller: _noteController,
+            focusNode: _noteFocus,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: 'Quick note (e.g., "serve was off today")',
+              hintStyle: AppTheme.bodyMedium,
+              border: InputBorder.none,
+              contentPadding: AppTheme.cardPadding,
+            ),
+            textInputAction: TextInputAction.done,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton() {
+    final isValid = _result != null;
+    
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceDark,
+        border: Border(
+          top: BorderSide(color: AppTheme.surfaceBorder),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: GestureDetector(
+          onTap: _isSaving ? null : _saveMatch,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+            decoration: BoxDecoration(
+              color: isValid ? AppTheme.primary : AppTheme.surfaceCard,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            ),
+            child: Center(
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'Save Match',
+                      style: AppTheme.headingSmall.copyWith(
+                        color: isValid ? Colors.white : AppTheme.textMuted,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Success View - Calm confirmation, not celebration
   Widget _buildSuccessView() {
     final isWin = _result == 'Win';
     
     return Scaffold(
-      backgroundColor: isWin ? Colors.green.shade50 : Colors.blue.shade50,
+      backgroundColor: AppTheme.surfaceDark,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const Spacer(),
-              ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  children: [
-                    Text(
-                      isWin ? '🏆' : '💪',
-                      style: const TextStyle(fontSize: 80),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isWin ? 'Nice Win!' : 'Match Logged!',
-                      style: GoogleFonts.poppins(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: isWin ? Colors.green.shade700 : Colors.blue.shade700,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spaceMD),
+            child: Column(
+              children: [
+                // Close button
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context, true);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(AppTheme.spaceSM),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceCard,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: AppTheme.textSecondary,
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$_setsWon - $_setsLost vs ${_opponentController.text.isEmpty ? "Opponent" : _opponentController.text}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        color: Colors.grey[700],
+                  ),
+                ),
+                
+                const Spacer(),
+                
+                // Confirmation
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: (isWin ? AppTheme.win : AppTheme.primary).withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check,
+                    size: 32,
+                    color: isWin ? AppTheme.win : AppTheme.primary,
+                  ),
+                ),
+                
+                const SizedBox(height: AppTheme.spaceLG),
+                
+                Text(
+                  'Match Saved',
+                  style: AppTheme.headingLarge,
+                ),
+                
+                const SizedBox(height: AppTheme.spaceSM),
+                
+                Text(
+                  '${isWin ? "Win" : "Loss"} · $_setsWon-$_setsLost vs ${_opponentController.text.isEmpty ? "Opponent" : _opponentController.text}',
+                  style: AppTheme.bodyLarge,
+                ),
+                
+                const SizedBox(height: AppTheme.spaceXL),
+                
+                // AI Insight card (if available)
+                if (_aiInsight != null && _aiInsight!.isNotEmpty)
+                  Expanded(
+                    child: TGCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline,
+                                size: 18,
+                                color: AppTheme.warning,
+                              ),
+                              const SizedBox(width: AppTheme.spaceSM),
+                              Text('Quick Insight', style: AppTheme.headingSmall),
+                            ],
+                          ),
+                          const SizedBox(height: AppTheme.spaceMD),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Text(
+                                _aiInsight!,
+                                style: AppTheme.bodyMedium.copyWith(
+                                  color: AppTheme.textPrimary,
+                                  height: 1.6,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                
+                const SizedBox(height: AppTheme.spaceMD),
+                
+                // Actions
+                Row(
+                  children: [
+                    // Share
+                    Expanded(
+                      child: Container(
+                        decoration: AppTheme.cardDecoration,
+                        child: ShareButton(
+                          shareText: ShareTextGenerator.matchResult(
+                            result: _result!,
+                            opponent: _opponentController.text.isEmpty 
+                                ? 'Opponent' 
+                                : _opponentController.text,
+                            setsWon: _setsWon,
+                            setsLost: _setsLost,
+                            insight: null,
+                          ),
+                          subject: 'My tennis match',
+                          color: AppTheme.textSecondary,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 32),
-              if (_aiInsight != null)
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
+                
+                const SizedBox(height: AppTheme.spaceSM),
+                
+                // Reflect option (Stage 2 entry)
+                if (_savedMatch != null)
+                  GestureDetector(
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MatchReflectionScreen(match: _savedMatch!),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.psychology, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            Text(
-                              'AI Analysis',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Text(
-                              _aiInsight!,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                height: 1.6,
-                                color: Colors.grey[800],
-                              ),
-                            ),
+                      );
+                      if (result != null && result is Map) {
+                        final patternService = PatternService();
+                        await patternService.saveReflection(
+                          matchId: _savedMatch!.id,
+                          strengths: List<String>.from(result['strengths'] ?? []),
+                          weaknesses: List<String>.from(result['weaknesses'] ?? []),
+                          result: _savedMatch!.result,
+                          date: _savedMatch!.date,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceCard,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        border: Border.all(color: AppTheme.surfaceBorder),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Add Reflection',
+                          style: AppTheme.headingSmall.copyWith(
+                            color: AppTheme.textSecondary,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              // Share button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ShareButton(
-                    shareText: ShareTextGenerator.matchResult(
-                      result: _result!,
-                      opponent: _opponentController.text.isEmpty ? 'Opponent' : _opponentController.text,
-                      setsWon: _setsWon,
-                      setsLost: _setsLost,
-                      insight: _aiInsight != null 
-                          ? ShareTextGenerator.tacticalAnalysis(_aiInsight!).split('\n').take(2).join(' ') 
-                          : null,
-                    ),
-                    subject: isWin ? 'I won my tennis match!' : 'Match logged on TennisGPT',
-                    color: isWin ? Colors.green : Colors.blue,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Reflect button
-              if (_savedMatch != null)
-                GestureDetector(
-                  onTap: () async {
-                    HapticFeedback.lightImpact();
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MatchReflectionScreen(match: _savedMatch!),
                       ),
-                    );
-                    // Save reflection data for pattern detection
-                    if (result != null && result is Map) {
-                      final patternService = PatternService();
-                      await patternService.saveReflection(
-                        matchId: _savedMatch!.id,
-                        strengths: List<String>.from(result['strengths'] ?? []),
-                        weaknesses: List<String>.from(result['weaknesses'] ?? []),
-                        result: _savedMatch!.result,
-                        date: _savedMatch!.date,
-                      );
-                    }
+                    ),
+                  ),
+                
+                const SizedBox(height: AppTheme.spaceSM),
+                
+                // Done - Primary
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.pop(context, true);
                   },
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
                     decoration: BoxDecoration(
-                      color: isWin ? Colors.green.shade50 : Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isWin ? Colors.green.shade300 : Colors.blue.shade300,
-                        width: 2,
-                      ),
+                      color: AppTheme.primary,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     ),
                     child: Center(
                       child: Text(
-                        '📝 Reflect on Match',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isWin ? Colors.green.shade700 : Colors.blue.shade700,
-                        ),
+                        'Done',
+                        style: AppTheme.headingSmall.copyWith(color: Colors.white),
                       ),
                     ),
                   ),
                 ),
-              if (_savedMatch != null) const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _goBack,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isWin
-                          ? [Colors.green.shade500, Colors.green.shade700]
-                          : [Colors.blue.shade500, Colors.blue.shade700],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isWin ? Colors.green : Colors.blue).withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Done',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
