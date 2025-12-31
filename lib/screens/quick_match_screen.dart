@@ -316,28 +316,32 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildScoreSelector(
-                    value: _setsWon,
-                    label: 'You',
-                    isWinner: _result == 'Win',
-                    onChanged: (val) => setState(() => _setsWon = val),
+                  Expanded(
+                    child: _buildScoreSelector(
+                      value: _setsWon,
+                      label: 'You',
+                      isWinner: _result == 'Win',
+                      onChanged: (val) => setState(() => _setsWon = val),
+                    ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       '-',
                       style: GoogleFonts.poppins(
-                        fontSize: 32,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[400],
                       ),
                     ),
                   ),
-                  _buildScoreSelector(
-                    value: _setsLost,
-                    label: 'Opp',
-                    isWinner: _result == 'Loss',
-                    onChanged: (val) => setState(() => _setsLost = val),
+                  Expanded(
+                    child: _buildScoreSelector(
+                      value: _setsLost,
+                      label: 'Opp',
+                      isWinner: _result == 'Loss',
+                      onChanged: (val) => setState(() => _setsLost = val),
+                    ),
                   ),
                 ],
               ),
@@ -560,24 +564,31 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              onPressed: value > 0
-                  ? () {
-                      HapticFeedback.selectionClick();
-                      onChanged(value - 1);
-                    }
-                  : null,
-              icon: Icon(
-                Icons.remove_circle_outline,
-                color: value > 0 ? Colors.grey[600] : Colors.grey[300],
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: value > 0
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        onChanged(value - 1);
+                      }
+                    : null,
+                icon: Icon(
+                  Icons.remove_circle_outline,
+                  size: 28,
+                  color: value > 0 ? Colors.grey[600] : Colors.grey[300],
+                ),
               ),
             ),
             Container(
-              width: 50,
-              height: 50,
+              width: 44,
+              height: 44,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 color: isWinner ? Colors.green.shade50 : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isWinner ? Colors.green.shade200 : Colors.grey.shade200,
                 ),
@@ -586,23 +597,29 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                 child: Text(
                   '$value',
                   style: GoogleFonts.poppins(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: isWinner ? Colors.green.shade700 : Colors.grey[700],
                   ),
                 ),
               ),
             ),
-            IconButton(
-              onPressed: value < 3
-                  ? () {
-                      HapticFeedback.selectionClick();
-                      onChanged(value + 1);
-                    }
-                  : null,
-              icon: Icon(
-                Icons.add_circle_outline,
-                color: value < 3 ? Colors.grey[600] : Colors.grey[300],
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: value < 3
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        onChanged(value + 1);
+                      }
+                    : null,
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  size: 28,
+                  color: value < 3 ? Colors.grey[600] : Colors.grey[300],
+                ),
               ),
             ),
           ],

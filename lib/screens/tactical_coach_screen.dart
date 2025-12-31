@@ -23,11 +23,13 @@ class TacticalCoachScreen extends StatefulWidget {
 
 class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   final TextEditingController _queryController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   
   List<MatchPerformance> _recentMatches = [];
   String? _selectedTopic;
   String? _analysisResponse;
+  String? _errorMessage;
   bool _isAnalyzing = false;
   bool _isLoading = true;
   
@@ -76,7 +78,20 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   @override
   void dispose() {
     _queryController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> _loadData() async {
@@ -198,6 +213,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     setState(() {
       _isAnalyzing = true;
       _analysisResponse = null;
+      _errorMessage = null;
     });
     
     HapticFeedback.mediumImpact();
@@ -206,15 +222,36 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       final apiService = Provider.of<ApiService>(context, listen: false);
       final response = await apiService.tacticalAnalysis(query, _recentMatches);
       
-      // Record usage for free users
-      if (!purchaseService.isPremium) {
-        await usageService.recordTacticalAnalysis();
-      }
-      
       setState(() {
         _isAnalyzing = false;
         _analysisResponse = response;
       });
+      
+      // Auto-scroll to show the response
+      if (response != null) {
+        _scrollToBottom();
+      }
+      
+      // Show error if no response
+      if (response == null && mounted) {
+        final errorMsg = apiService.error ?? 'No response from server';
+        setState(() {
+          _errorMessage = errorMsg;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg, style: GoogleFonts.poppins()),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+      
+      // Record usage for free users
+      if (!purchaseService.isPremium) {
+        await usageService.recordTacticalAnalysis();
+      }
       
       HapticFeedback.lightImpact();
       
@@ -241,7 +278,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Error: $e', style: GoogleFonts.poppins()),
             backgroundColor: Colors.red,
           ),
         );
@@ -267,6 +304,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -289,8 +327,77 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   // Get Analysis Button
                   _buildAnalyzeButton(),
                   
+                  // Loading indicator
+                  if (_isAnalyzing) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(40),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Analyzing...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
+                  // Error display
+                  if (_errorMessage != null && !_isAnalyzing) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red.shade400, size: 48),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Something went wrong',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.red.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() => _errorMessage = null);
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: Text('Try Again', style: GoogleFonts.poppins()),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
                   // Analysis Response
-                  if (_analysisResponse != null) ...[
+                  if (_analysisResponse != null && !_isAnalyzing) ...[
                     const SizedBox(height: 24),
                     _buildResponseCard(),
                   ],
@@ -662,14 +769,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   Widget _buildResponseCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -683,7 +792,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: isDark ? Colors.blue.shade900 : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.psychology, color: Colors.blue, size: 24),
@@ -694,6 +803,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               const Spacer(),
@@ -718,7 +828,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             style: GoogleFonts.poppins(
               fontSize: 15,
               height: 1.7,
-              color: Colors.grey[800],
+              color: isDark ? Colors.grey[300] : Colors.grey[800],
             ),
           ),
           const SizedBox(height: 20),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -7,6 +8,7 @@ import 'token_service.dart';
 class ApiService extends ChangeNotifier {
   final String _baseUrl = 'https://tennisgpt-production.up.railway.app';
   final TokenService _tokenService = TokenService();
+  static const Duration _timeout = Duration(seconds: 60);
 
   bool _isLoading = false;
   String? _error;
@@ -18,12 +20,25 @@ class ApiService extends ChangeNotifier {
 
   /// Safely decode JSON, handling empty responses
   Map<String, dynamic>? _safeJsonDecode(String body) {
-    if (body.isEmpty) return null;
+    if (body.isEmpty) {
+      if (kDebugMode) {
+        print('ApiService: Empty response body');
+      }
+      return null;
+    }
     try {
-      return jsonDecode(body) as Map<String, dynamic>;
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      if (kDebugMode) {
+        print('ApiService: Response is not a Map: $decoded');
+      }
+      return null;
     } catch (e) {
       if (kDebugMode) {
         print('ApiService: JSON decode error - $e');
+        print('ApiService: Body was: $body');
       }
       return null;
     }
@@ -135,6 +150,11 @@ class ApiService extends ChangeNotifier {
           ? recentMatches.take(3).map((match) => match.toJson()).toList()
           : null;
 
+      if (kDebugMode) {
+        print('ApiService: Calling tactical-analysis...');
+        print('ApiService: Headers: $headers');
+      }
+
       final response = await http.post(
         Uri.parse('$_baseUrl/api/coaching/tactical-analysis'),
         headers: headers,
@@ -142,25 +162,45 @@ class ApiService extends ChangeNotifier {
           'matchDescription': matchDescription,
           'recentMatches': matchesJson,
         }),
-      );
+      ).timeout(_timeout);
+
+      if (kDebugMode) {
+        print('ApiService: Response status: ${response.statusCode}');
+        print('ApiService: Response body: ${response.body.substring(0, response.body.length.clamp(0, 500))}');
+      }
 
       if (response.statusCode == 200) {
         final data = _safeJsonDecode(response.body);
         if (data == null) {
-          _error = 'Invalid response from server';
+          _error = 'Server returned invalid data';
           notifyListeners();
           return null;
         }
-        _lastResponse = data['response'];
+        _lastResponse = data['response'] ?? data['message'] ?? data.toString();
         notifyListeners();
         return _lastResponse;
+      } else if (response.statusCode == 401) {
+        _error = 'Please sign in again';
+        notifyListeners();
+        return null;
       } else {
-        _error = 'Error: ${response.statusCode} - ${response.body}';
+        _error = 'Server error (${response.statusCode})';
         notifyListeners();
         return null;
       }
+    } on TimeoutException {
+      _error = 'Request timed out. Please try again.';
+      notifyListeners();
+      return null;
     } catch (e) {
-      _error = 'Error: $e';
+      if (kDebugMode) {
+        print('ApiService: Exception - $e');
+      }
+      if (e.toString().contains('SocketException') || e.toString().contains('Connection')) {
+        _error = 'No internet connection';
+      } else {
+        _error = 'Connection failed. Please try again.';
+      }
       notifyListeners();
       return null;
     } finally {
