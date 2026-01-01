@@ -50,6 +50,11 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
   Future<Map<String, String>> _getHeaders() async {
     final token = await _tokenService.getAccessToken();
     return {
