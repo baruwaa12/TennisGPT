@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../services/purchase_service.dart';
@@ -11,6 +11,15 @@ import '../models/check_in_entry.dart';
 import '../utils/tennis_validator.dart';
 import 'paywall_screen.dart';
 
+/// Pre-Match Prep Screen
+/// 
+/// UX Philosophy: Focused pre-match briefing, not gamification
+/// 
+/// Key principles:
+/// - Clarity over complexity (1 primary tactic, optional secondary)
+/// - Readiness over confidence (grounded, not ego-driven)
+/// - Completable in under 60 seconds
+/// - Feels like "locking in the plan"
 class MentalCheckInScreen extends StatefulWidget {
   const MentalCheckInScreen({super.key});
 
@@ -20,566 +29,751 @@ class MentalCheckInScreen extends StatefulWidget {
 
 class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
   final TextEditingController _opponentController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   
-  int _confidenceLevel = 7;
-  String? _selectedGamePlan;
+  int _readinessLevel = 7;
+  String? _primaryTactic;
+  String? _secondaryTactic;
   bool _isLoading = false;
   bool _hasSubmitted = false;
   String? _briefingResponse;
+  String? _errorMessage;
 
-  static const List<Map<String, String>> gamePlanOptions = [
-    {'id': 'attack_backhand', 'label': 'Attack their backhand', 'emoji': '🎯'},
-    {'id': 'consistent', 'label': 'Stay consistent, wait for errors', 'emoji': '🛡️'},
-    {'id': 'serve_volley', 'label': 'Serve and volley', 'emoji': '⚡'},
-    {'id': 'change_pace', 'label': 'Change pace frequently', 'emoji': '🔄'},
-    {'id': 'aggressive', 'label': 'Be aggressive, dictate play', 'emoji': '💪'},
-    {'id': 'angles', 'label': 'Move them with angles', 'emoji': '📐'},
+  /// Tactical options - clear, intentional choices
+  /// Structured for primary (pick one) + optional secondary
+  static const List<Map<String, dynamic>> _tacticOptions = [
+    {
+      'id': 'control_rallies',
+      'label': 'Control the rallies',
+      'description': 'Dictate pace and direction',
+      'icon': Icons.adjust_rounded,
+    },
+    {
+      'id': 'attack_weakness',
+      'label': 'Target their weakness',
+      'description': 'Exploit patterns',
+      'icon': Icons.gps_fixed_rounded,
+    },
+    {
+      'id': 'stay_solid',
+      'label': 'Stay solid',
+      'description': 'Minimize errors, wait for openings',
+      'icon': Icons.shield_outlined,
+    },
+    {
+      'id': 'move_them',
+      'label': 'Move them around',
+      'description': 'Use angles and depth',
+      'icon': Icons.swap_horiz_rounded,
+    },
+    {
+      'id': 'serve_plus_one',
+      'label': 'Serve + 1 patterns',
+      'description': 'Win points early',
+      'icon': Icons.bolt_rounded,
+    },
+    {
+      'id': 'vary_pace',
+      'label': 'Vary the pace',
+      'description': 'Disrupt their timing',
+      'icon': Icons.speed_rounded,
+    },
   ];
+
+  /// Readiness labels - calm, grounded (not emotional)
+  String _getReadinessLabel(int level) {
+    if (level <= 3) return 'Building focus';
+    if (level <= 5) return 'Getting there';
+    if (level <= 7) return 'Feeling steady';
+    if (level <= 9) return 'Locked in';
+    return 'Peak readiness';
+  }
 
   @override
   void dispose() {
     _opponentController.dispose();
-    _notesController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     if (_hasSubmitted && _briefingResponse != null) {
-      return _buildBriefingView(isDark);
+      return _buildBriefingView();
     }
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
-      appBar: AppBar(
-        title: Text(
-          '🧠 Pre-Match Prep',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade400, Colors.blue.shade600],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
+      backgroundColor: AppTheme.surfaceDark,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          // Subtle header
+          SliverAppBar(
+            backgroundColor: AppTheme.surfaceDark,
+            elevation: 0,
+            pinned: true,
+            centerTitle: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              'Pre-Match Prep',
+              style: AppTheme.headingSmall.copyWith(
+                color: AppTheme.textSecondary,
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.psychology, color: Colors.white, size: 32),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tactical Preparation',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Get focused before you step on court',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            ),
+          ),
+          
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Compact intro
+                _buildIntroSection(),
+                
+                const SizedBox(height: AppTheme.spaceMD),
+                
+                // Opponent (optional, compact)
+                _buildOpponentInput(),
+                
+                const SizedBox(height: AppTheme.spaceLG),
+                
+                // Primary Tactic (main interaction)
+                _buildTacticSection(),
+                
+                const SizedBox(height: AppTheme.spaceLG),
+                
+                // Readiness Level (reframed slider)
+                _buildReadinessSection(),
+                
+                const SizedBox(height: AppTheme.spaceLG),
+                
+                // Error display
+                if (_errorMessage != null) ...[
+                  _buildErrorCard(),
+                  const SizedBox(height: AppTheme.spaceMD),
                 ],
-              ),
+                
+                // Primary CTA
+                _buildPrimaryCTA(),
+                
+                const SizedBox(height: AppTheme.spaceXL),
+              ]),
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Opponent (optional)
-            Text(
-              'Playing against (optional)',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _opponentController,
-              style: GoogleFonts.poppins(
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
-              decoration: InputDecoration(
-                hintText: 'Opponent name...',
-                hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Game Plan
-            Text(
-              "What's your game plan?",
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: gamePlanOptions.map((option) {
-                final isSelected = _selectedGamePlan == option['id'];
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedGamePlan = isSelected ? null : option['id'];
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Colors.blue.withOpacity(isDark ? 0.3 : 0.15)
-                          : (isDark ? const Color(0xFF2C2C2C) : Colors.white),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected 
-                            ? Colors.blue 
-                            : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(option['emoji'] ?? '', style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 6),
-                        Text(
-                          option['label'] ?? '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected 
-                                ? Colors.blue 
-                                : (isDark ? Colors.grey[300] : Colors.grey[700]),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Confidence Level
-            Text(
-              'Confidence Level',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$_confidenceLevel',
-                        style: GoogleFonts.poppins(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: _getConfidenceColor(_confidenceLevel),
-                        ),
-                      ),
-                      Text(
-                        '/10',
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: _confidenceLevel.toDouble(),
-                    min: 1,
-                    max: 10,
-                    divisions: 9,
-                    activeColor: _getConfidenceColor(_confidenceLevel),
-                    onChanged: (value) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _confidenceLevel = value.round();
-                      });
-                    },
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Nervous',
-                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                      Text(
-                        'Ready to dominate',
-                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Additional Notes
-            Text(
-              'Anything else on your mind? (optional)',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _notesController,
-              maxLines: 3,
-              style: GoogleFonts.poppins(
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
-              decoration: InputDecoration(
-                hintText: 'Concerns, focus areas, recent form...',
-                hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Get Briefing Button
-            GestureDetector(
-              onTap: _isLoading ? null : _getBriefing,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade500, Colors.blue.shade700],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blue.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: _isLoading
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Preparing your briefing...',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          'Get Pre-Match Briefing 🎯',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBriefingView(bool isDark) {
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
-      appBar: AppBar(
-        title: Text(
-          '🎯 Your Briefing',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+  /// Compact intro - sets the tone without taking space
+  Widget _buildIntroSection() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.surfaceBorder),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Summary Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.blue, size: 32),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _opponentController.text.isNotEmpty 
-                              ? 'vs ${_opponentController.text}'
-                              : 'Match Prep Complete',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800,
-                          ),
-                        ),
-                        if (_selectedGamePlan != null)
-                          Text(
-                            'Plan: ${gamePlanOptions.firstWhere((o) => o['id'] == _selectedGamePlan)['label']}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: Colors.blue.shade600,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSM),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
-            
-            const SizedBox(height: 20),
-            
-            // Briefing Response
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.psychology, color: Colors.blue, size: 24),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Tactical Briefing',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.grey[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  Text(
-                    _briefingResponse!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      height: 1.7,
-                      color: isDark ? Colors.grey[300] : Colors.grey[800],
-                    ),
-                  ),
-                ],
-              ),
+            child: const Icon(
+              Icons.sports_tennis_rounded,
+              color: AppTheme.primary,
+              size: 20,
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Action Buttons
-            Row(
+          ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() {
-                        _hasSubmitted = false;
-                        _briefingResponse = null;
-                        _opponentController.clear();
-                        _notesController.clear();
-                        _selectedGamePlan = null;
-                        _confidenceLevel = 7;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'New Prep',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                Text(
+                  'Lock in your game plan',
+                  style: AppTheme.headingSmall,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.green.shade500, Colors.green.shade700],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Ready to Play! 🎾',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                Text(
+                  'Clear focus. Calm mind. Ready to compete.',
+                  style: AppTheme.bodySmall,
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Compact opponent input
+  Widget _buildOpponentInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Opponent', style: AppTheme.label),
+            const SizedBox(width: AppTheme.spaceXS),
+            Text(
+              '(optional)',
+              style: AppTheme.label.copyWith(
+                color: AppTheme.textMuted.withOpacity(0.6),
+              ),
+            ),
           ],
+        ),
+        const SizedBox(height: AppTheme.spaceSM),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            border: Border.all(color: AppTheme.surfaceBorder),
+          ),
+          child: TextField(
+            controller: _opponentController,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Who are you playing?',
+              hintStyle: AppTheme.bodySmall.copyWith(
+                color: AppTheme.textMuted.withOpacity(0.5),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMD,
+                vertical: AppTheme.spaceSM,
+              ),
+              isDense: true,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Tactic selection - primary focus, optional secondary
+  Widget _buildTacticSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Pick your primary focus', style: AppTheme.headingMedium),
+        const SizedBox(height: AppTheme.spaceXS),
+        Text(
+          'What\'s your main approach today?',
+          style: AppTheme.bodySmall,
+        ),
+        const SizedBox(height: AppTheme.spaceMD),
+        
+        // Primary tactics grid (2 columns, compact)
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 2.0,
+          ),
+          itemCount: _tacticOptions.length,
+          itemBuilder: (context, index) {
+            final tactic = _tacticOptions[index];
+            final isPrimary = _primaryTactic == tactic['id'];
+            final isSecondary = _secondaryTactic == tactic['id'];
+            final isSelected = isPrimary || isSecondary;
+            
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  if (isPrimary) {
+                    // Deselect primary
+                    _primaryTactic = null;
+                  } else if (isSecondary) {
+                    // Deselect secondary
+                    _secondaryTactic = null;
+                  } else if (_primaryTactic == null) {
+                    // Set as primary
+                    _primaryTactic = tactic['id'];
+                  } else if (_secondaryTactic == null) {
+                    // Set as secondary (optional)
+                    _secondaryTactic = tactic['id'];
+                  } else {
+                    // Replace secondary
+                    _secondaryTactic = tactic['id'];
+                  }
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.all(AppTheme.spaceSM),
+                decoration: BoxDecoration(
+                  color: isPrimary 
+                      ? AppTheme.primary.withOpacity(0.15)
+                      : isSecondary
+                          ? AppTheme.neutral.withOpacity(0.1)
+                          : AppTheme.surfaceCard,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                  border: Border.all(
+                    color: isPrimary 
+                        ? AppTheme.primary
+                        : isSecondary
+                            ? AppTheme.neutral
+                            : AppTheme.surfaceBorder,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      tactic['icon'] as IconData,
+                      size: 18,
+                      color: isPrimary 
+                          ? AppTheme.primary
+                          : isSecondary
+                              ? AppTheme.neutral
+                              : AppTheme.textMuted,
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Expanded(
+                      child: Text(
+                        tactic['label'] as String,
+                        style: AppTheme.bodySmall.copyWith(
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected 
+                              ? AppTheme.textPrimary
+                              : AppTheme.textSecondary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isPrimary)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '1',
+                          style: AppTheme.label.copyWith(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                        ),
+                      )
+                    else if (isSecondary)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neutral,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '2',
+                          style: AppTheme.label.copyWith(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        
+        // Helper text
+        if (_primaryTactic != null) ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            _secondaryTactic != null
+                ? 'Primary + backup selected'
+                : 'Tap another for optional backup',
+            style: AppTheme.label.copyWith(
+              color: AppTheme.textMuted,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Readiness section - grounded, not gamified
+  Widget _buildReadinessSection() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceCard,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.surfaceBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Match readiness', style: AppTheme.headingSmall),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceSM,
+                  vertical: AppTheme.spaceXS,
+                ),
+                decoration: BoxDecoration(
+                  color: _getReadinessColor(_readinessLevel).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: Text(
+                  _getReadinessLabel(_readinessLevel),
+                  style: AppTheme.label.copyWith(
+                    color: _getReadinessColor(_readinessLevel),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: AppTheme.spaceMD),
+          
+          // Compact slider
+          Row(
+            children: [
+              Text(
+                '$_readinessLevel',
+                style: AppTheme.statMedium.copyWith(
+                  color: _getReadinessColor(_readinessLevel),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 4,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                    activeTrackColor: _getReadinessColor(_readinessLevel),
+                    inactiveTrackColor: AppTheme.surfaceBorder,
+                    thumbColor: _getReadinessColor(_readinessLevel),
+                    overlayColor: _getReadinessColor(_readinessLevel).withOpacity(0.2),
+                  ),
+                  child: Slider(
+                    value: _readinessLevel.toDouble(),
+                    min: 1,
+                    max: 10,
+                    divisions: 9,
+                    onChanged: (value) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _readinessLevel = value.round());
+                    },
+                  ),
+                ),
+              ),
+              Text('/10', style: AppTheme.bodySmall),
+            ],
+          ),
+          
+          // Calm labels
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Still warming up', style: AppTheme.label.copyWith(fontSize: 11)),
+                Text('Ready to go', style: AppTheme.label.copyWith(fontSize: 11)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getReadinessColor(int level) {
+    if (level <= 3) return AppTheme.warning;
+    if (level <= 6) return AppTheme.neutral;
+    return AppTheme.win;
+  }
+
+  /// Error card
+  Widget _buildErrorCard() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: BoxDecoration(
+        color: AppTheme.loss.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.loss.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 18),
+          const SizedBox(width: AppTheme.spaceSM),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: AppTheme.bodySmall.copyWith(color: AppTheme.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => setState(() => _errorMessage = null),
+            child: Text('Dismiss', style: AppTheme.label.copyWith(color: AppTheme.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Primary CTA - "locking in the plan"
+  Widget _buildPrimaryCTA() {
+    final hasSelection = _primaryTactic != null;
+    
+    return GestureDetector(
+      onTap: _isLoading || !hasSelection ? null : _confirmGamePlan,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: hasSelection ? AppTheme.primary : AppTheme.surfaceElevated,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+          border: hasSelection ? null : Border.all(color: AppTheme.surfaceBorder),
+        ),
+        child: Center(
+          child: _isLoading
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Text(
+                      'Preparing briefing...',
+                      style: AppTheme.headingSmall.copyWith(
+                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                      ),
+                    ),
+                  ],
+                )
+              : Text(
+                  'Confirm game plan',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: hasSelection ? Colors.white : AppTheme.textMuted,
+                  ),
+                ),
         ),
       ),
     );
   }
 
-  Color _getConfidenceColor(int level) {
-    if (level <= 3) return Colors.red;
-    if (level <= 5) return Colors.orange;
-    if (level <= 7) return Colors.amber;
-    return Colors.green;
+  /// Briefing result view
+  Widget _buildBriefingView() {
+    final primaryLabel = _tacticOptions.firstWhere(
+      (t) => t['id'] == _primaryTactic,
+      orElse: () => {'label': 'Custom'},
+    )['label'];
+    
+    return Scaffold(
+      backgroundColor: AppTheme.surfaceDark,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            backgroundColor: AppTheme.surfaceDark,
+            elevation: 0,
+            pinned: true,
+            centerTitle: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              'Game Plan',
+              style: AppTheme.headingSmall.copyWith(color: AppTheme.textSecondary),
+            ),
+          ),
+          
+          SliverPadding(
+            padding: AppTheme.screenPadding,
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Summary header
+                Container(
+                  padding: AppTheme.cardPadding,
+                  decoration: BoxDecoration(
+                    color: AppTheme.win.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    border: Border.all(color: AppTheme.win.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, color: AppTheme.win, size: 20),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _opponentController.text.isNotEmpty
+                                  ? 'vs ${_opponentController.text}'
+                                  : 'Ready to compete',
+                              style: AppTheme.headingSmall.copyWith(color: AppTheme.win),
+                            ),
+                            Text(
+                              'Focus: $primaryLabel',
+                              style: AppTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: AppTheme.spaceLG),
+                
+                // Briefing content
+                Container(
+                  padding: AppTheme.cardPaddingLarge,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceCard,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                    border: Border.all(color: AppTheme.surfaceBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(AppTheme.spaceSM),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                            ),
+                            child: const Icon(
+                              Icons.lightbulb_outline_rounded,
+                              color: AppTheme.primary,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.spaceSM),
+                          Text('Match Briefing', style: AppTheme.headingMedium),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spaceMD),
+                      Divider(color: AppTheme.surfaceBorder, height: 1),
+                      const SizedBox(height: AppTheme.spaceMD),
+                      
+                      Text(
+                        _briefingResponse!,
+                        style: AppTheme.bodyLarge.copyWith(
+                          height: 1.7,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: AppTheme.spaceLG),
+                
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() {
+                            _hasSubmitted = false;
+                            _briefingResponse = null;
+                            _opponentController.clear();
+                            _primaryTactic = null;
+                            _secondaryTactic = null;
+                            _readinessLevel = 7;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceCard,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                            border: Border.all(color: AppTheme.surfaceBorder),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'New prep',
+                              style: AppTheme.headingSmall.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceMD),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Ready to play',
+                              style: AppTheme.headingSmall.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: AppTheme.spaceXXL),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> _getBriefing() async {
-    // Build context for AI
-    final gamePlanLabel = _selectedGamePlan != null
-        ? gamePlanOptions.firstWhere((o) => o['id'] == _selectedGamePlan)['label']
-        : 'No specific plan';
-    
-    // Validate notes if substantial
-    if (_notesController.text.trim().length > 20) {
-      final validationError = TennisValidator.validate(_notesController.text);
-      if (validationError != null) {
-        HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(validationError, style: GoogleFonts.poppins()),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-    }
+  Future<void> _confirmGamePlan() async {
+    if (_primaryTactic == null) return;
+
+    // Get tactic labels
+    final primaryLabel = _tacticOptions.firstWhere(
+      (t) => t['id'] == _primaryTactic,
+    )['label'];
+    final secondaryLabel = _secondaryTactic != null
+        ? _tacticOptions.firstWhere((t) => t['id'] == _secondaryTactic)['label']
+        : null;
 
     // Check usage limits
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
@@ -596,7 +790,10 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       if (result != true) return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     HapticFeedback.mediumImpact();
 
     try {
@@ -606,17 +803,25 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       final briefingRequest = '''
 $playerContext
 
-Pre-Match Preparation Request:
+Pre-Match Game Plan:
 - Opponent: ${_opponentController.text.isNotEmpty ? _opponentController.text : 'Unknown'}
-- Game Plan: $gamePlanLabel
-- Confidence Level: $_confidenceLevel/10
-- Additional Notes: ${_notesController.text.isNotEmpty ? _notesController.text : 'None'}
+- Primary tactic: $primaryLabel
+${secondaryLabel != null ? '- Backup tactic: $secondaryLabel' : ''}
+- Current readiness: $_readinessLevel/10 (${_getReadinessLabel(_readinessLevel)})
 
-Please provide a focused tactical briefing.
+Provide a focused, actionable match briefing. Keep it concise and confidence-building.
 ''';
 
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.mentalCheckIn(_confidenceLevel, briefingRequest);
+      final response = await apiService.mentalCheckIn(_readinessLevel, briefingRequest);
+      
+      if (response == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Couldn\'t generate your briefing. Please try again.';
+        });
+        return;
+      }
       
       // Record usage
       if (!purchaseService.isPremium) {
@@ -626,7 +831,7 @@ Please provide a focused tactical briefing.
       // Save to storage
       final entry = CheckInEntry(
         timestamp: DateTime.now().millisecondsSinceEpoch,
-        rating: _confidenceLevel,
+        rating: _readinessLevel,
         journalText: briefingRequest,
       );
       await StorageService.saveCheckIn(entry);
@@ -639,15 +844,10 @@ Please provide a focused tactical briefing.
       
       HapticFeedback.lightImpact();
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Something went wrong. Please try again.';
+      });
     }
   }
 }
