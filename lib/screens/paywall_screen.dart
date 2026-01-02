@@ -30,15 +30,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
   String get _triggerMessage {
     switch (widget.trigger) {
       case PaywallTrigger.matchLimit:
-        return "You've logged 5 matches! 🎾\nUnlock unlimited tracking.";
+        return "You've logged 5 matches!\nUnlock unlimited tracking.";
       case PaywallTrigger.tacticalAnalysisLimit:
-        return "You've used your free analysis! 🎯\nGet unlimited tactical insights.";
+        return "You've used your 4 free analyses.\nUnlock unlimited tactical insights.";
       case PaywallTrigger.prepSessionLimit:
-        return "You've used 3 prep sessions! 🧠\nUnlock unlimited preparation.";
+        return "You've used your 4 free analyses.\nUnlock unlimited preparation.";
       case PaywallTrigger.debriefLimit:
-        return "You've used 3 debriefs! 💬\nGet unlimited post-match analysis.";
+        return "You've used your 4 free analyses.\nUnlock unlimited post-match analysis.";
       case PaywallTrigger.general:
-        return "Level up your tennis game 🚀";
+        return "Level up your tennis game";
     }
   }
 
@@ -214,7 +214,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildFeatureRow('5 matches logged', false),
-                _buildFeatureRow('1 tactical analysis/month', false),
+                _buildFeatureRow('4 free AI analyses', false),
                 _buildFeatureRow('Basic performance stats', false),
               ],
             ),
@@ -250,7 +250,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                 const SizedBox(height: 12),
                 _buildFeatureRow('Unlimited match logging', true),
                 _buildFeatureRow('Unlimited tactical analysis', true),
-                _buildFeatureRow('Opponent profiling', true),
+                _buildFeatureRow('Opponent scouting', true),
                 _buildFeatureRow('Advanced analytics', true),
                 _buildFeatureRow('AI weekly insights', true),
                 _buildFeatureRow('Export your data', true),

@@ -65,6 +65,12 @@ class MatchHistoryService {
     await prefs.setString(_storageKey, json.encode(matchesJson));
   }
   
+  // Clear all matches (for dev reset)
+  Future<void> clearAllMatches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey);
+  }
+  
   // Get matches by surface type
   Future<List<MatchPerformance>> getMatchesBySurface(String surface) async {
     final List<MatchPerformance> matches = await getAllMatches();

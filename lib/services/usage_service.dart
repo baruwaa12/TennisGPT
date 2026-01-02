@@ -3,49 +3,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// UsageService tracks free tier usage limits.
 /// 
-/// Free tier limits:
+/// Free tier limits (LIFETIME, not monthly):
 /// - 5 total matches logged
-/// - 1 tactical analysis per month
-/// - 3 pre-match prep sessions per month
-/// - 3 post-match debriefs per month
+/// - 4 AI analyses total (shared across Tactical/Prep/Debrief)
 class UsageService extends ChangeNotifier {
   // FREE TIER LIMITS
   static const int freeMatchesLimit = 5;
-  static const int freeTacticalAnalysesPerMonth = 1;
-  static const int freePrepSessionsPerMonth = 3;
-  static const int freeDebriefsPerMonth = 3;
+  static const int freeAIAnalysesLimit = 4; // 4 lifetime total across all AI features
   
   // Storage keys
   static const String _matchCountKey = 'usage_match_count';
-  static const String _tacticalAnalysesKey = 'usage_tactical_analyses';
-  static const String _prepSessionsKey = 'usage_prep_sessions';
-  static const String _debriefsKey = 'usage_debriefs';
-  static const String _lastResetKey = 'usage_last_reset_month';
+  static const String _aiAnalysesKey = 'usage_ai_analyses_lifetime'; // Lifetime counter
+  
+  // Legacy keys (for migration)
+  static const String _legacyTacticalKey = 'usage_tactical_analyses';
+  static const String _legacyPrepKey = 'usage_prep_sessions';
+  static const String _legacyDebriefKey = 'usage_debriefs';
 
   int _matchCount = 0;
-  int _tacticalAnalysesThisMonth = 0;
-  int _prepSessionsThisMonth = 0;
-  int _debriefsThisMonth = 0;
+  int _aiAnalysesUsed = 0;
   bool _isLoaded = false;
 
   // Getters
   int get matchCount => _matchCount;
-  int get tacticalAnalysesThisMonth => _tacticalAnalysesThisMonth;
-  int get prepSessionsThisMonth => _prepSessionsThisMonth;
-  int get debriefsThisMonth => _debriefsThisMonth;
+  int get aiAnalysesUsed => _aiAnalysesUsed;
   bool get isLoaded => _isLoaded;
 
-  // Limit checkers
+  // Limit checkers (all AI features share the same pool)
   bool get canLogMatch => _matchCount < freeMatchesLimit;
-  bool get canUseTacticalAnalysis => _tacticalAnalysesThisMonth < freeTacticalAnalysesPerMonth;
-  bool get canUsePrepSession => _prepSessionsThisMonth < freePrepSessionsPerMonth;
-  bool get canUseDebrief => _debriefsThisMonth < freeDebriefsPerMonth;
+  bool get canUseTacticalAnalysis => _aiAnalysesUsed < freeAIAnalysesLimit;
+  bool get canUsePrepSession => _aiAnalysesUsed < freeAIAnalysesLimit;
+  bool get canUseDebrief => _aiAnalysesUsed < freeAIAnalysesLimit;
 
   // Remaining counts
   int get matchesRemaining => (freeMatchesLimit - _matchCount).clamp(0, freeMatchesLimit);
-  int get tacticalAnalysesRemaining => (freeTacticalAnalysesPerMonth - _tacticalAnalysesThisMonth).clamp(0, freeTacticalAnalysesPerMonth);
-  int get prepSessionsRemaining => (freePrepSessionsPerMonth - _prepSessionsThisMonth).clamp(0, freePrepSessionsPerMonth);
-  int get debriefsRemaining => (freeDebriefsPerMonth - _debriefsThisMonth).clamp(0, freeDebriefsPerMonth);
+  int get aiAnalysesRemaining => (freeAIAnalysesLimit - _aiAnalysesUsed).clamp(0, freeAIAnalysesLimit);
 
   /// Initialize and load saved usage data
   Future<void> initialize() async {
@@ -53,43 +45,46 @@ class UsageService extends ChangeNotifier {
     
     final prefs = await SharedPreferences.getInstance();
     
-    // Check if we need to reset monthly counters
-    await _checkMonthlyReset(prefs);
+    // Migrate from legacy monthly counters if needed
+    await _migrateFromLegacy(prefs);
     
     // Load counts
     _matchCount = prefs.getInt(_matchCountKey) ?? 0;
-    _tacticalAnalysesThisMonth = prefs.getInt(_tacticalAnalysesKey) ?? 0;
-    _prepSessionsThisMonth = prefs.getInt(_prepSessionsKey) ?? 0;
-    _debriefsThisMonth = prefs.getInt(_debriefsKey) ?? 0;
+    _aiAnalysesUsed = prefs.getInt(_aiAnalysesKey) ?? 0;
     
     _isLoaded = true;
     notifyListeners();
     
     if (kDebugMode) {
-      print('UsageService: Loaded - Matches: $_matchCount, Analyses: $_tacticalAnalysesThisMonth');
+      print('UsageService: Loaded - Matches: $_matchCount, AI Analyses: $_aiAnalysesUsed/$freeAIAnalysesLimit');
     }
   }
 
-  /// Check and reset monthly counters if new month
-  Future<void> _checkMonthlyReset(SharedPreferences prefs) async {
-    final currentMonth = '${DateTime.now().year}-${DateTime.now().month}';
-    final lastReset = prefs.getString(_lastResetKey);
+  /// Migrate from legacy monthly counters to new lifetime counter
+  Future<void> _migrateFromLegacy(SharedPreferences prefs) async {
+    // Check if we already have the new key
+    if (prefs.containsKey(_aiAnalysesKey)) return;
     
-    if (lastReset != currentMonth) {
-      // New month - reset monthly counters
-      await prefs.setInt(_tacticalAnalysesKey, 0);
-      await prefs.setInt(_prepSessionsKey, 0);
-      await prefs.setInt(_debriefsKey, 0);
-      await prefs.setString(_lastResetKey, currentMonth);
-      
-      _tacticalAnalysesThisMonth = 0;
-      _prepSessionsThisMonth = 0;
-      _debriefsThisMonth = 0;
+    // Sum up all legacy usage
+    final legacyTactical = prefs.getInt(_legacyTacticalKey) ?? 0;
+    final legacyPrep = prefs.getInt(_legacyPrepKey) ?? 0;
+    final legacyDebrief = prefs.getInt(_legacyDebriefKey) ?? 0;
+    final totalLegacy = legacyTactical + legacyPrep + legacyDebrief;
+    
+    if (totalLegacy > 0) {
+      // Migrate: give them credit for what they've used, but cap at new limit
+      await prefs.setInt(_aiAnalysesKey, totalLegacy.clamp(0, freeAIAnalysesLimit));
       
       if (kDebugMode) {
-        print('UsageService: Monthly counters reset');
+        print('UsageService: Migrated $totalLegacy legacy uses to lifetime counter');
       }
     }
+    
+    // Clean up legacy keys
+    await prefs.remove(_legacyTacticalKey);
+    await prefs.remove(_legacyPrepKey);
+    await prefs.remove(_legacyDebriefKey);
+    await prefs.remove('usage_last_reset_month');
   }
 
   /// Record a match logged
@@ -104,72 +99,49 @@ class UsageService extends ChangeNotifier {
     }
   }
 
-  /// Record a tactical analysis used
-  Future<void> recordTacticalAnalysis() async {
-    _tacticalAnalysesThisMonth++;
+  /// Record an AI analysis used (shared pool)
+  Future<void> _recordAIAnalysis() async {
+    _aiAnalysesUsed++;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_tacticalAnalysesKey, _tacticalAnalysesThisMonth);
+    await prefs.setInt(_aiAnalysesKey, _aiAnalysesUsed);
     notifyListeners();
     
     if (kDebugMode) {
-      print('UsageService: Tactical analysis used - Count: $_tacticalAnalysesThisMonth');
+      print('UsageService: AI analysis used - Count: $_aiAnalysesUsed/$freeAIAnalysesLimit');
     }
   }
+
+  /// Record a tactical analysis used
+  Future<void> recordTacticalAnalysis() async => _recordAIAnalysis();
 
   /// Record a prep session used
-  Future<void> recordPrepSession() async {
-    _prepSessionsThisMonth++;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_prepSessionsKey, _prepSessionsThisMonth);
-    notifyListeners();
-    
-    if (kDebugMode) {
-      print('UsageService: Prep session used - Count: $_prepSessionsThisMonth');
-    }
-  }
+  Future<void> recordPrepSession() async => _recordAIAnalysis();
 
   /// Record a debrief used
-  Future<void> recordDebrief() async {
-    _debriefsThisMonth++;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_debriefsKey, _debriefsThisMonth);
-    notifyListeners();
-    
-    if (kDebugMode) {
-      print('UsageService: Debrief used - Count: $_debriefsThisMonth');
-    }
-  }
+  Future<void> recordDebrief() async => _recordAIAnalysis();
 
   /// Get usage summary text
   String getMatchUsageText() {
     return '$_matchCount / $freeMatchesLimit matches';
   }
 
-  String getTacticalUsageText() {
-    return '$_tacticalAnalysesThisMonth / $freeTacticalAnalysesPerMonth this month';
+  String getAIUsageText() {
+    return '$_aiAnalysesUsed / $freeAIAnalysesLimit free analyses used';
   }
 
-  String getPrepUsageText() {
-    return '$_prepSessionsThisMonth / $freePrepSessionsPerMonth this month';
-  }
-
-  String getDebriefUsageText() {
-    return '$_debriefsThisMonth / $freeDebriefsPerMonth this month';
-  }
-
-  /// Reset all usage (for testing or premium users)
+  /// Reset all usage (for dev testing)
   Future<void> resetAllUsage() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_matchCountKey);
-    await prefs.remove(_tacticalAnalysesKey);
-    await prefs.remove(_prepSessionsKey);
-    await prefs.remove(_debriefsKey);
+    await prefs.remove(_aiAnalysesKey);
     
     _matchCount = 0;
-    _tacticalAnalysesThisMonth = 0;
-    _prepSessionsThisMonth = 0;
-    _debriefsThisMonth = 0;
+    _aiAnalysesUsed = 0;
     
     notifyListeners();
+    
+    if (kDebugMode) {
+      print('UsageService: All usage reset');
+    }
   }
 }
