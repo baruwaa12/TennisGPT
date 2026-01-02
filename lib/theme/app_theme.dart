@@ -3,6 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// TennisGPT Design System
 /// Inspired by Whoop + Strava: calm, confident, premium sports aesthetic
+/// 
+/// Typography sized for:
+/// - One-handed mobile use
+/// - Outdoor lighting conditions
+/// - Post-match fatigue readability
 
 class AppTheme {
   AppTheme._();
@@ -22,8 +27,8 @@ class AppTheme {
   
   /// Text colors - clear hierarchy
   static const Color textPrimary = Color(0xFFF5F5F5);
-  static const Color textSecondary = Color(0xFF9CA3AF);
-  static const Color textMuted = Color(0xFF6B7280);
+  static const Color textSecondary = Color(0xFFB0B5BE);
+  static const Color textMuted = Color(0xFF787D85);
   
   /// Accent colors for data/stats
   static const Color win = Color(0xFF22C55E);
@@ -59,75 +64,91 @@ class AppTheme {
   static const double radiusXL = 20.0;
 
   // ============ TYPOGRAPHY ============
+  // Sized for glanceability, outdoor use, and post-match fatigue
   
-  /// Screen titles - bold, commanding
+  /// Screen titles - bold, commanding (increased ~15%)
   static TextStyle get headingLarge => GoogleFonts.inter(
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: textPrimary,
+    letterSpacing: -0.5,
+    height: 1.25,
+  );
+  
+  /// Section/Card headers (increased ~18%)
+  static TextStyle get headingMedium => GoogleFonts.inter(
+    fontSize: 21,
+    fontWeight: FontWeight.w600,
+    color: textPrimary,
+    letterSpacing: -0.3,
+    height: 1.35,
+  );
+  
+  /// Card titles / Row headers (increased ~15%)
+  static TextStyle get headingSmall => GoogleFonts.inter(
+    fontSize: 17,
+    fontWeight: FontWeight.w600,
+    color: textPrimary,
+    letterSpacing: -0.2,
+    height: 1.3,
+  );
+  
+  /// Body text - readable, calm (increased ~15%)
+  static TextStyle get bodyLarge => GoogleFonts.inter(
+    fontSize: 18,
+    fontWeight: FontWeight.w400,
+    color: textSecondary,
+    height: 1.6,
+  );
+  
+  /// Standard body (increased ~14%)
+  static TextStyle get bodyMedium => GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: textSecondary,
+    height: 1.55,
+  );
+  
+  /// Helper text, descriptions (increased ~15%)
+  static TextStyle get bodySmall => GoogleFonts.inter(
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
+    color: textMuted,
+    height: 1.5,
+  );
+  
+  /// Labels and captions (increased ~17%)
+  static TextStyle get label => GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: textMuted,
+    letterSpacing: 0.3,
+    height: 1.4,
+  );
+  
+  /// Stats/numbers - large display
+  static TextStyle get statLarge => GoogleFonts.inter(
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    color: textPrimary,
+    letterSpacing: -1,
+    height: 1.1,
+  );
+  
+  /// Stats - medium display
+  static TextStyle get statMedium => GoogleFonts.inter(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: textPrimary,
+    height: 1.2,
+  );
+  
+  /// Score display - prominent
+  static TextStyle get scoreDisplay => GoogleFonts.inter(
     fontSize: 28,
     fontWeight: FontWeight.w700,
     color: textPrimary,
     letterSpacing: -0.5,
-    height: 1.2,
-  );
-  
-  /// Section/Card headers
-  static TextStyle get headingMedium => GoogleFonts.inter(
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    letterSpacing: -0.3,
-    height: 1.3,
-  );
-  
-  /// Card titles
-  static TextStyle get headingSmall => GoogleFonts.inter(
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    letterSpacing: -0.2,
-  );
-  
-  /// Body text - readable, calm
-  static TextStyle get bodyLarge => GoogleFonts.inter(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: textSecondary,
-    height: 1.5,
-  );
-  
-  static TextStyle get bodyMedium => GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    color: textSecondary,
-    height: 1.5,
-  );
-  
-  static TextStyle get bodySmall => GoogleFonts.inter(
-    fontSize: 13,
-    fontWeight: FontWeight.w400,
-    color: textMuted,
-    height: 1.4,
-  );
-  
-  /// Labels and captions
-  static TextStyle get label => GoogleFonts.inter(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    color: textMuted,
-    letterSpacing: 0.5,
-  );
-  
-  /// Stats/numbers - tabular for alignment
-  static TextStyle get statLarge => GoogleFonts.inter(
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    color: textPrimary,
-    letterSpacing: -1,
-  );
-  
-  static TextStyle get statMedium => GoogleFonts.inter(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
   );
 
   // ============ SHADOWS ============
@@ -160,6 +181,38 @@ class AppTheme {
     color: surfaceElevated,
     borderRadius: BorderRadius.circular(radiusLG),
     boxShadow: cardShadow,
+  );
+  
+  // ============ INPUT DECORATION ============
+  
+  static InputDecoration inputDecoration({
+    String? label,
+    String? hint,
+    IconData? prefixIcon,
+  }) => InputDecoration(
+    labelText: label,
+    hintText: hint,
+    labelStyle: bodyMedium.copyWith(color: textMuted),
+    hintStyle: bodyMedium.copyWith(color: textMuted.withOpacity(0.5)),
+    prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: textMuted) : null,
+    filled: true,
+    fillColor: surfaceCard,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radiusMD),
+      borderSide: BorderSide(color: surfaceBorder),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radiusMD),
+      borderSide: BorderSide(color: surfaceBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radiusMD),
+      borderSide: const BorderSide(color: primary, width: 1.5),
+    ),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: spaceMD,
+      vertical: spaceMD,
+    ),
   );
 }
 
@@ -214,7 +267,7 @@ class TGCardWithHeader extends StatelessWidget {
               if (icon != null) ...[
                 Icon(
                   icon,
-                  size: 18,
+                  size: 20,
                   color: iconColor ?? AppTheme.primary,
                 ),
                 const SizedBox(width: AppTheme.spaceSM),
@@ -267,3 +320,76 @@ class TGBulletPoint extends StatelessWidget {
   }
 }
 
+/// Collapsible section for optional content
+class TGCollapsibleSection extends StatefulWidget {
+  final String title;
+  final Widget child;
+  final bool initiallyExpanded;
+  
+  const TGCollapsibleSection({
+    super.key,
+    required this.title,
+    required this.child,
+    this.initiallyExpanded = false,
+  });
+  
+  @override
+  State<TGCollapsibleSection> createState() => _TGCollapsibleSectionState();
+}
+
+class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
+  late bool _isExpanded;
+  
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.initiallyExpanded;
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: AppTheme.cardDecoration,
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            child: Container(
+              padding: AppTheme.cardPadding,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(widget.title, style: AppTheme.headingSmall),
+                  AnimatedRotation(
+                    turns: _isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMD,
+                0,
+                AppTheme.spaceMD,
+                AppTheme.spaceMD,
+              ),
+              child: widget.child,
+            ),
+            crossFadeState: _isExpanded 
+                ? CrossFadeState.showSecond 
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
+        ],
+      ),
+    );
+  }
+}

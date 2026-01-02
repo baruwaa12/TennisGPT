@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../services/api_service.dart';
 
+/// Add Match Screen (Detailed)
+/// 
+/// UX Philosophy: Fast, frictionless post-match logging
+/// 
+/// Key refinements:
+/// - Performance ratings collapsed by default (optional)
+/// - Single key moment input (not a list builder)
+/// - Notes de-emphasized as optional
+/// - Clear CTA prominence
+/// 
+/// Goal: Complete in under 60 seconds
 class AddMatchScreen extends StatefulWidget {
   const AddMatchScreen({super.key});
 
@@ -17,6 +30,7 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   
   final TextEditingController _opponentController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _keyMomentController = TextEditingController();
   
   String _result = 'Win';
   int _setsWon = 2;
@@ -24,7 +38,9 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   String _surface = 'Hard';
   String _weather = 'Sunny';
   
-  final Map<String, int> _strengths = {
+  bool _showRatings = false;
+  
+  final Map<String, int> _ratings = {
     'Serve': 7,
     'Forehand': 7,
     'Backhand': 7,
@@ -32,19 +48,8 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
     'Footwork': 7,
   };
   
-  final Map<String, int> _weaknesses = {
-    'Serve': 5,
-    'Forehand': 5,
-    'Backhand': 5,
-    'Volley': 5,
-    'Footwork': 5,
-  };
-  
-  final List<String> _keyMoments = [];
-  final TextEditingController _keyMomentController = TextEditingController();
-  
   bool _isSaving = false;
-  String? _analysisResponse;
+  String? _errorMessage;
 
   final List<String> _surfaces = ['Hard', 'Clay', 'Grass', 'Carpet', 'Indoor'];
   final List<String> _weatherConditions = ['Sunny', 'Cloudy', 'Rainy', 'Windy', 'Hot', 'Cold'];
@@ -57,42 +62,33 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
     super.dispose();
   }
 
-  void _addKeyMoment() {
-    if (_keyMomentController.text.trim().isNotEmpty) {
-      setState(() {
-        _keyMoments.add(_keyMomentController.text.trim());
-        _keyMomentController.clear();
-      });
-    }
-  }
-
-  void _removeKeyMoment(int index) {
-    setState(() {
-      _keyMoments.removeAt(index);
-    });
-  }
-
   Future<void> _saveMatch() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isSaving = true;
+      _errorMessage = null;
     });
+    
+    HapticFeedback.mediumImpact();
 
     try {
-      // Generate match ID
       final String matchId = DateTime.now().millisecondsSinceEpoch.toString();
       
-      // Create match description for AI analysis
+      // Collect key moment if provided
+      final keyMoments = _keyMomentController.text.trim().isNotEmpty 
+          ? [_keyMomentController.text.trim()] 
+          : <String>[];
+      
+      // Build match description for analysis
       final String matchDescription = '''
 Opponent: ${_opponentController.text}
 Result: $_result (${_setsWon}-${_setsLost})
 Surface: $_surface
 Weather: $_weather
-Strengths: ${_strengths.entries.map((e) => '${e.key}(${e.value}/10)').join(', ')}
-Weaknesses: ${_weaknesses.entries.map((e) => '${e.key}(${e.value}/10)').join(', ')}
-Key Moments: ${_keyMoments.join('; ')}
-Notes: ${_notesController.text}
+${_showRatings ? 'Ratings: ${_ratings.entries.map((e) => '${e.key}(${e.value}/10)').join(', ')}' : ''}
+${keyMoments.isNotEmpty ? 'Key moment: ${keyMoments.first}' : ''}
+${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
       '''.trim();
 
       // Get AI analysis
@@ -112,16 +108,16 @@ Notes: ${_notesController.text}
         surface: _surface,
         weather: _weather,
         notes: _notesController.text,
-        strengths: Map.from(_strengths),
-        weaknesses: Map.from(_weaknesses),
-        keyMoments: List.from(_keyMoments),
-        tacticalAnalysis: analysis ?? 'Analysis pending',
+        strengths: _showRatings ? Map.from(_ratings) : {},
+        weaknesses: {},
+        keyMoments: keyMoments,
+        tacticalAnalysis: analysis ?? '',
         recommendedDrills: [],
       ));
       
       final drills = await apiService.generateDrillsFromHistory(allMatches);
       
-      // Create final match performance
+      // Create final match
       final match = MatchPerformance(
         id: matchId,
         date: DateTime.now(),
@@ -132,384 +128,445 @@ Notes: ${_notesController.text}
         surface: _surface,
         weather: _weather,
         notes: _notesController.text,
-        strengths: Map.from(_strengths),
-        weaknesses: Map.from(_weaknesses),
-        keyMoments: List.from(_keyMoments),
-        tacticalAnalysis: analysis ?? 'Analysis pending',
+        strengths: _showRatings ? Map.from(_ratings) : {},
+        weaknesses: {},
+        keyMoments: keyMoments,
+        tacticalAnalysis: analysis ?? '',
         recommendedDrills: drills?.split('\n').where((line) => line.trim().isNotEmpty).toList() ?? [],
       );
 
       await _matchHistoryService.saveMatch(match);
 
-      setState(() {
-        _isSaving = false;
-        _analysisResponse = analysis;
-      });
+      setState(() => _isSaving = false);
+      
+      HapticFeedback.lightImpact();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Match saved successfully!')),
-        );
         Navigator.pop(context, true);
       }
     } catch (e) {
       setState(() {
         _isSaving = false;
+        _errorMessage = 'Couldn\'t save match. Please try again.';
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving match: $e')),
-        );
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : null,
-      appBar: AppBar(
-        title: const Text('📝 Add Match'),
-        centerTitle: true,
-      ),
+      backgroundColor: AppTheme.surfaceDark,
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Basic Match Info
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Match Details',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _opponentController,
-                        decoration: const InputDecoration(
-                          labelText: 'Opponent Name',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value?.trim().isEmpty ?? true) {
-                            return 'Please enter opponent name';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: _result,
-                              decoration: const InputDecoration(
-                                labelText: 'Result',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: const [
-                                DropdownMenuItem(value: 'Win', child: Text('Win')),
-                                DropdownMenuItem(value: 'Loss', child: Text('Loss')),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _result = value!;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButtonFormField<int>(
-                                    value: _setsWon,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Sets Won',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    items: List.generate(4, (index) => 
-                                      DropdownMenuItem(value: index, child: Text('$index'))
-                                    ),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _setsWon = value!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                  child: Text('-'),
-                                ),
-                                Expanded(
-                                  child: DropdownButtonFormField<int>(
-                                    value: _setsLost,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Sets Lost',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    items: List.generate(4, (index) => 
-                                      DropdownMenuItem(value: index, child: Text('$index'))
-                                    ),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _setsLost = value!;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: _surface,
-                              decoration: const InputDecoration(
-                                labelText: 'Surface',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: _surfaces.map((surface) => 
-                                DropdownMenuItem(value: surface, child: Text(surface))
-                              ).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _surface = value!;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: _weather,
-                              decoration: const InputDecoration(
-                                labelText: 'Weather',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: _weatherConditions.map((weather) => 
-                                DropdownMenuItem(value: weather, child: Text(weather))
-                              ).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _weather = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+        child: CustomScrollView(
+          slivers: [
+            // App Bar
+            SliverAppBar(
+              backgroundColor: AppTheme.surfaceDark,
+              elevation: 0,
+              pinned: true,
+              centerTitle: true,
+              leading: IconButton(
+                icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary),
+                onPressed: () => Navigator.pop(context),
               ),
-
-              const SizedBox(height: 16),
-
-              // Performance Ratings
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Performance Ratings (1-10)',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ..._strengths.keys.map((skill) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Text(skill),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Strengths: ${_strengths[skill]}/10'),
-                                  Slider(
-                                    value: _strengths[skill]!.toDouble(),
-                                    min: 1,
-                                    max: 10,
-                                    divisions: 9,
-                                    label: _strengths[skill].toString(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _strengths[skill] = value.round();
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Weaknesses: ${_weaknesses[skill]}/10'),
-                                  Slider(
-                                    value: _weaknesses[skill]!.toDouble(),
-                                    min: 1,
-                                    max: 10,
-                                    divisions: 9,
-                                    label: _weaknesses[skill].toString(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _weaknesses[skill] = value.round();
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                    ],
-                  ),
-                ),
+              title: Text(
+                'Log Match',
+                style: AppTheme.headingSmall.copyWith(color: AppTheme.textSecondary),
               ),
-
-              const SizedBox(height: 16),
-
-              // Key Moments
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Key Moments',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _keyMomentController,
-                              decoration: const InputDecoration(
-                                hintText: 'Add a key moment...',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: _addKeyMoment,
-                            child: const Text('Add'),
-                          ),
-                        ],
-                      ),
-                      if (_keyMoments.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        ..._keyMoments.asMap().entries.map((entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text('• ${entry.value}'),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _removeKeyMoment(entry.key),
-                              ),
-                            ],
-                          ),
-                        )),
-                      ],
-                    ],
-                  ),
-                ),
+            ),
+            
+            SliverPadding(
+              padding: AppTheme.screenPadding,
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Error message
+                  if (_errorMessage != null) ...[
+                    _buildErrorCard(),
+                    const SizedBox(height: AppTheme.spaceMD),
+                  ],
+                  
+                  // Match Details (required)
+                  _buildMatchDetailsSection(),
+                  
+                  const SizedBox(height: AppTheme.spaceLG),
+                  
+                  // Key Moment (optional, single input)
+                  _buildKeyMomentSection(),
+                  
+                  const SizedBox(height: AppTheme.spaceLG),
+                  
+                  // Performance Ratings (collapsible, optional)
+                  _buildRatingsSection(),
+                  
+                  const SizedBox(height: AppTheme.spaceLG),
+                  
+                  // Notes (optional, de-emphasized)
+                  _buildNotesSection(),
+                  
+                  const SizedBox(height: AppTheme.spaceXL),
+                  
+                  // Save Button (prominent)
+                  _buildSaveButton(),
+                  
+                  const SizedBox(height: AppTheme.spaceXXL),
+                ]),
               ),
-
-              const SizedBox(height: 16),
-
-              // Notes
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Additional Notes',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _notesController,
-                        maxLines: 4,
-                        decoration: const InputDecoration(
-                          hintText: 'Any additional thoughts about the match...',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _saveMatch,
-                  icon: _isSaving 
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                  label: Text(_isSaving ? 'Saving...' : 'Save Match'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-} 
+
+  Widget _buildErrorCard() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: BoxDecoration(
+        color: AppTheme.loss.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.loss.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 20),
+          const SizedBox(width: AppTheme.spaceSM),
+          Expanded(
+            child: Text(_errorMessage!, style: AppTheme.bodySmall),
+          ),
+          TextButton(
+            onPressed: () => setState(() => _errorMessage = null),
+            child: Text('Dismiss', style: AppTheme.label.copyWith(color: AppTheme.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchDetailsSection() {
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: AppTheme.cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Match details', style: AppTheme.headingMedium),
+          const SizedBox(height: AppTheme.spaceLG),
+          
+          // Opponent
+          TextFormField(
+            controller: _opponentController,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            decoration: AppTheme.inputDecoration(
+              label: 'Opponent',
+              hint: 'Who did you play?',
+            ),
+            validator: (value) {
+              if (value?.trim().isEmpty ?? true) {
+                return 'Enter opponent name';
+              }
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: AppTheme.spaceMD),
+          
+          // Result + Score
+          Row(
+            children: [
+              // Result
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Result',
+                  value: _result,
+                  items: ['Win', 'Loss'],
+                  onChanged: (value) => setState(() => _result = value!),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceMD),
+              
+              // Score
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildDropdown(
+                        label: 'Sets won',
+                        value: _setsWon,
+                        items: [0, 1, 2, 3],
+                        onChanged: (value) => setState(() => _setsWon = value!),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('–', style: AppTheme.headingMedium),
+                    ),
+                    Expanded(
+                      child: _buildDropdown(
+                        label: 'Sets lost',
+                        value: _setsLost,
+                        items: [0, 1, 2, 3],
+                        onChanged: (value) => setState(() => _setsLost = value!),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: AppTheme.spaceMD),
+          
+          // Surface + Weather
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Surface',
+                  value: _surface,
+                  items: _surfaces,
+                  onChanged: (value) => setState(() => _surface = value!),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceMD),
+              Expanded(
+                child: _buildDropdown(
+                  label: 'Weather',
+                  value: _weather,
+                  items: _weatherConditions,
+                  onChanged: (value) => setState(() => _weather = value!),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown<T>({
+    required String label,
+    required T value,
+    required List<T> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return DropdownButtonFormField<T>(
+      value: value,
+      dropdownColor: AppTheme.surfaceElevated,
+      style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+      decoration: AppTheme.inputDecoration(label: label),
+      items: items.map((item) => DropdownMenuItem<T>(
+        value: item,
+        child: Text(item.toString()),
+      )).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildKeyMomentSection() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: AppTheme.cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Key moment', style: AppTheme.headingSmall),
+              const SizedBox(width: AppTheme.spaceSM),
+              Text('optional', style: AppTheme.label),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            'One thing that stood out from this match',
+            style: AppTheme.bodySmall,
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          TextField(
+            controller: _keyMomentController,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            decoration: AppTheme.inputDecoration(
+              hint: 'e.g., Stayed calm in the tiebreak',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingsSection() {
+    return Container(
+      decoration: AppTheme.cardDecoration,
+      child: Column(
+        children: [
+          // Toggle header
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _showRatings = !_showRatings);
+            },
+            child: Container(
+              padding: AppTheme.cardPadding,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text('Rate performance', style: AppTheme.headingSmall),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Text('optional', style: AppTheme.label),
+                    ],
+                  ),
+                  AnimatedRotation(
+                    turns: _showRatings ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Collapsed content
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.spaceMD,
+                0,
+                AppTheme.spaceMD,
+                AppTheme.spaceMD,
+              ),
+              child: Column(
+                children: _ratings.keys.map((skill) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(skill, style: AppTheme.bodyMedium),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: SliderTheme(
+                          data: SliderThemeData(
+                            trackHeight: 4,
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                            activeTrackColor: AppTheme.primary,
+                            inactiveTrackColor: AppTheme.surfaceBorder,
+                            thumbColor: AppTheme.primary,
+                            overlayColor: AppTheme.primary.withOpacity(0.2),
+                          ),
+                          child: Slider(
+                            value: _ratings[skill]!.toDouble(),
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            onChanged: (value) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _ratings[skill] = value.round());
+                            },
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 28,
+                        child: Text(
+                          '${_ratings[skill]}',
+                          style: AppTheme.label.copyWith(color: AppTheme.textSecondary),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                )).toList(),
+              ),
+            ),
+            crossFadeState: _showRatings 
+                ? CrossFadeState.showSecond 
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Notes', style: AppTheme.label),
+            const SizedBox(width: AppTheme.spaceSM),
+            Text('optional', style: AppTheme.label.copyWith(color: AppTheme.textMuted.withOpacity(0.6))),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spaceSM),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceCard,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            border: Border.all(color: AppTheme.surfaceBorder),
+          ),
+          child: TextField(
+            controller: _notesController,
+            maxLines: 2,
+            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Anything else to remember...',
+              hintStyle: AppTheme.bodySmall.copyWith(color: AppTheme.textMuted.withOpacity(0.5)),
+              border: InputBorder.none,
+              contentPadding: AppTheme.cardPadding,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return GestureDetector(
+      onTap: _isSaving ? null : _saveMatch,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: AppTheme.primary,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        ),
+        child: Center(
+          child: _isSaving
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Text(
+                      'Saving...',
+                      style: AppTheme.headingSmall.copyWith(color: Colors.white),
+                    ),
+                  ],
+                )
+              : Text(
+                  'Save match',
+                  style: AppTheme.headingSmall.copyWith(color: Colors.white),
+                ),
+        ),
+      ),
+    );
+  }
+}
