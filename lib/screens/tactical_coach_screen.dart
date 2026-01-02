@@ -36,6 +36,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   final TextEditingController _contextController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
+  final GlobalKey _insightCardKey = GlobalKey();
   
   List<MatchPerformance> _recentMatches = [];
   String? _selectedFocus;
@@ -96,15 +97,27 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     super.dispose();
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeOut,
-        );
-      }
+  void _scrollToInsight() {
+    // Use post-frame callback to ensure widget is built first
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Additional delay for iOS rendering
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_insightCardKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _insightCardKey.currentContext!,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            alignment: 0.1, // Show slightly below top
+          );
+        } else if (_scrollController.hasClients) {
+          // Fallback: scroll to bottom
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     });
   }
 
@@ -257,7 +270,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       });
       
       if (response != null) {
-        _scrollToBottom();
+        _scrollToInsight();
       }
       
       if (response == null && mounted) {
@@ -826,6 +839,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   /// Presented as prepared coaching insight
   Widget _buildInsightCard() {
     return Container(
+      key: _insightCardKey,
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
         color: AppTheme.surfaceCard,

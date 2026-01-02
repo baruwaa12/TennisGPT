@@ -27,6 +27,7 @@ class EmotionalResetScreen extends StatefulWidget {
 class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   final TextEditingController _customController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _responseCardKey = GlobalKey();
   String? _selectedSituation;
   bool _showCustomInput = false;
   String? _localError;
@@ -80,15 +81,25 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     super.dispose();
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeOut,
-        );
-      }
+  void _scrollToResponse() {
+    // Use post-frame callback to ensure widget is built first
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_responseCardKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _responseCardKey.currentContext!,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            alignment: 0.1,
+          );
+        } else if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     });
   }
 
@@ -581,6 +592,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               
               // Response card
               Container(
+                key: _responseCardKey,
                 padding: AppTheme.cardPaddingLarge,
                 decoration: BoxDecoration(
                   color: AppTheme.surfaceCard,
@@ -754,7 +766,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
       }
       
       if (response != null && context.mounted) {
-        _scrollToBottom();
+        _scrollToResponse();
       }
     } catch (e) {
       setState(() {
