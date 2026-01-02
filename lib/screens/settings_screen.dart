@@ -196,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: GestureDetector(
                 onTap: _handleVersionTap,
                 child: Text(
-                  'TennisGPT v1.0.0 (Build 14)',
+                  'TennisGPT v1.0.0 (Build 16)',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey[500],
