@@ -20,7 +20,7 @@ public class OpenAIClient : IOpenAIClient
         _httpClient.BaseAddress = new Uri("https://api.openai.com/v1/");
         _httpClient.Timeout = TimeSpan.FromSeconds(60);
 
-        var apiKey = configuration["OpenAI:ApiKey"];
+        var apiKey = configuration["OpenAI:ApiKey"]?.Trim();
         
         if (string.IsNullOrEmpty(apiKey) || apiKey == "REPLACE_WITH_ENV_VAR")
         {
