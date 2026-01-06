@@ -104,9 +104,13 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: CustomScrollView(
+          controller: _scrollController,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
           // Subtle header
           SliverAppBar(
             backgroundColor: AppTheme.surfaceDark,
@@ -163,6 +167,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

@@ -87,6 +87,13 @@ class ThemeService extends ChangeNotifier {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.green, width: 2),
         ),
+        hintStyle: TextStyle(color: Colors.grey[500]),
+        labelStyle: TextStyle(color: Colors.grey[700]),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: Colors.green,
+        selectionColor: Colors.green.withOpacity(0.3),
+        selectionHandleColor: Colors.green,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -147,6 +154,12 @@ class ThemeService extends ChangeNotifier {
           borderSide: const BorderSide(color: Colors.green, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
+        labelStyle: TextStyle(color: Colors.grey[400]),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: Colors.green,
+        selectionColor: Colors.green.withOpacity(0.3),
+        selectionHandleColor: Colors.green,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

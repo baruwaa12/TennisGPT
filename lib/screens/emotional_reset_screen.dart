@@ -122,9 +122,13 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   }
 
   Widget _buildInputView(BuildContext context, ApiService apiService) {
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: CustomScrollView(
+        controller: _scrollController,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        slivers: [
         // Subtle header
         SliverAppBar(
           backgroundColor: AppTheme.surfaceDark,
@@ -218,6 +222,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
           ),
         ),
       ],
+      ),
     );
   }
 

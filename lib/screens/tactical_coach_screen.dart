@@ -314,12 +314,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.surfaceDark,
-      body: _isLoading
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.primary),
             )
           : CustomScrollView(
               controller: _scrollController,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               slivers: [
                 // Subtle header
                 SliverAppBar(
@@ -385,6 +389,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 ),
               ],
             ),
+      ),
     );
   }
 

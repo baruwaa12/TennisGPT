@@ -65,176 +65,183 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isLoading = authService.isLoading;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Theme-aware colors
+    final backgroundColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.grey[800]!;
+    final subtitleColor = isDark ? Colors.green.shade300 : Colors.green.shade600;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark 
-              ? [const Color(0xFF1A1A1A), const Color(0xFF0D0D0D)]
-              : [Colors.green.shade50, Colors.green.shade100],
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark 
+                ? [const Color(0xFF1A1A1A), const Color(0xFF0D0D0D)]
+                : [Colors.green.shade50, Colors.green.shade100],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  /// App Logo/Icon
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-                      borderRadius: BorderRadius.circular(60),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(isDark ? 0.2 : 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    /// App Logo/Icon
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(60),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(isDark ? 0.2 : 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.sports_tennis,
+                        size: 60,
+                        color: Colors.green.shade400,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.sports_tennis,
-                      size: 60,
-                      color: Colors.green.shade400,
+
+                    const SizedBox(height: 40),
+
+                    /// App Title
+                    Text(
+                      'TennisGPT',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.green.shade800,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 40),
+                    const SizedBox(height: 8),
 
-                  /// App Title
-                  Text(
-                    'TennisGPT',
-                    style: GoogleFonts.poppins(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.green.shade800,
+                    /// Subtitle
+                    Text(
+                      'Your AI Tennis Coach',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: subtitleColor,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 60),
 
-                  /// Subtitle
-                  Text(
-                    'Your AI Tennis Coach',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: isDark ? Colors.green.shade300 : Colors.green.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 60),
-
-                  /// Google Sign In Button
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+                    /// Google Sign In Button - fully theme-aware
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
                         borderRadius: BorderRadius.circular(28),
-                        onTap: isLoading ? null : _signInWithGoogle,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (isLoading)
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.green.shade400,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(28),
+                          onTap: isLoading ? null : _signInWithGoogle,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (isLoading)
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.green.shade400,
+                                      ),
                                     ),
+                                  )
+                                else
+                                  Image.network(
+                                    'https://developers.google.com/identity/images/g-logo.png',
+                                    height: 24,
+                                    width: 24,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      // Fallback to icon if network image fails
+                                      return Icon(
+                                        Icons.g_mobiledata,
+                                        size: 24,
+                                        color: Colors.blue.shade700,
+                                      );
+                                    },
                                   ),
-                                )
-                              else
-                                Image.network(
-                                  'https://developers.google.com/identity/images/g-logo.png',
-                                  height: 24,
-                                  width: 24,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    // Fallback to icon if network image fails
-                                    return Icon(
-                                      Icons.g_mobiledata,
-                                      size: 24,
-                                      color: Colors.blue.shade700,
-                                    );
-                                  },
+                                const SizedBox(width: 12),
+                                Text(
+                                  isLoading
+                                      ? 'Signing in...'
+                                      : 'Continue with Google',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
                                 ),
-                              const SizedBox(width: 12),
-                              Text(
-                                isLoading
-                                    ? 'Signing in...'
-                                    : 'Continue with Google',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.green.shade800,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 40),
+                    const SizedBox(height: 40),
 
-                  /// Features list
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isDark 
-                        ? const Color(0xFF2C2C2C).withOpacity(0.8)
-                        : Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(16),
+                    /// Features list
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: backgroundColor.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildFeatureItem(
+                            icon: Icons.psychology,
+                            title: 'AI-Powered Analysis',
+                            subtitle: 'Get personalized coaching insights',
+                          ),
+                          const SizedBox(height: 16),
+                          _buildFeatureItem(
+                            icon: Icons.track_changes,
+                            title: 'Match Tracking',
+                            subtitle: 'Track your performance over time',
+                          ),
+                          const SizedBox(height: 16),
+                          _buildFeatureItem(
+                            icon: Icons.fitness_center,
+                            title: 'Mental Training',
+                            subtitle: 'Build mental resilience and focus',
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      children: [
-                        _buildFeatureItem(
-                          icon: Icons.psychology,
-                          title: 'AI-Powered Analysis',
-                          subtitle: 'Get personalized coaching insights',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFeatureItem(
-                          icon: Icons.track_changes,
-                          title: 'Match Tracking',
-                          subtitle: 'Track your performance over time',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFeatureItem(
-                          icon: Icons.fitness_center,
-                          title: 'Mental Training',
-                          subtitle: 'Build mental resilience and focus',
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -248,14 +255,20 @@ class _LoginScreenState extends State<LoginScreen> {
     required String title,
     required String subtitle,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Consistent theme-aware colors
+    final titleColor = isDark ? Colors.white : Colors.grey[800]!;
+    final subtitleColor = isDark ? Colors.grey[400]! : Colors.green.shade600;
+    final iconBgColor = isDark ? Colors.green.shade900 : Colors.green.shade100;
     
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isDark ? Colors.green.shade900 : Colors.green.shade100,
+            color: iconBgColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -274,14 +287,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.green.shade800,
+                  color: titleColor,
                 ),
               ),
               Text(
                 subtitle,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: isDark ? Colors.grey[400] : Colors.green.shade600,
+                  color: subtitleColor,
                 ),
               ),
             ],
