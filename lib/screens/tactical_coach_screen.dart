@@ -193,7 +193,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         SnackBar(
           content: Text(
             'Select a focus area to continue',
-            style: AppTheme.bodyMedium.copyWith(color: Colors.white),
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: Colors.white),
           ),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -218,7 +218,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(validationError, style: AppTheme.bodyMedium.copyWith(color: Colors.white)),
+            content: Text(validationError, style: AppTheme.bodyMediumThemed(context).copyWith(color: Colors.white)),
             backgroundColor: AppTheme.warning,
             behavior: SnackBarBehavior.floating,
           ),
@@ -313,7 +313,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
@@ -327,18 +327,18 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               slivers: [
                 // Subtle header
                 SliverAppBar(
-                  backgroundColor: AppTheme.surfaceDark,
+                  backgroundColor: AppTheme.scaffoldBackground(context),
                   elevation: 0,
                   pinned: true,
                   centerTitle: true,
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+                    icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
                     onPressed: () => Navigator.pop(context),
                   ),
                   title: Text(
                     'Tactical Coach',
-                    style: AppTheme.headingSmall.copyWith(
-                      color: AppTheme.textSecondary,
+                    style: AppTheme.headingSmallThemed(context).copyWith(
+                      color: AppTheme.textSecondaryColor(context),
                     ),
                   ),
                 ),
@@ -403,9 +403,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.surfaceBorder, width: 1),
+        border: Border.all(color: AppTheme.borderColor(context), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,7 +421,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               const SizedBox(width: AppTheme.spaceSM),
               Text(
                 'Current Form',
-                style: AppTheme.headingSmall,
+                style: AppTheme.headingSmallThemed(context),
               ),
             ],
           ),
@@ -435,8 +435,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               children: [
                 Text(
                   '$winPercentage%',
-                  style: AppTheme.statLarge.copyWith(
-                    color: winPercentage >= 50 ? AppTheme.win : AppTheme.textPrimary,
+                  style: AppTheme.statLargeThemed(context).copyWith(
+                    color: winPercentage >= 50 ? AppTheme.win : AppTheme.textPrimaryColor(context),
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSM),
@@ -444,7 +444,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
                     'win rate',
-                    style: AppTheme.bodySmall,
+                    style: AppTheme.bodySmallThemed(context),
                   ),
                 ),
                 if (_formTrend.isNotEmpty) ...[
@@ -475,7 +475,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         const SizedBox(width: 4),
                         Text(
                           _formTrend,
-                          style: AppTheme.label.copyWith(
+                          style: AppTheme.labelThemed(context).copyWith(
                             color: _formTrend.contains('up') 
                                 ? AppTheme.win
                                 : AppTheme.warning,
@@ -495,7 +495,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               children: [
                 Text(
                   'Last ${_recentMatches.take(5).length}',
-                  style: AppTheme.label,
+                  style: AppTheme.labelThemed(context),
                 ),
                 const SizedBox(width: AppTheme.spaceSM),
                 ..._recentMatches.take(5).map((match) {
@@ -540,7 +540,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               child: Text(
                 'Log matches to see your form analysis',
-                style: AppTheme.bodyMedium,
+                style: AppTheme.bodyMediumThemed(context),
               ),
             ),
         ],
@@ -556,7 +556,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceSM),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceElevated,
+        color: AppTheme.elevatedBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
       ),
       child: Row(
@@ -576,11 +576,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               children: [
                 Text(
                   label,
-                  style: AppTheme.label.copyWith(fontSize: 11),
+                  style: AppTheme.labelThemed(context).copyWith(fontSize: 11),
                 ),
                 Text(
                   value,
-                  style: AppTheme.headingSmall.copyWith(fontSize: 13),
+                  style: AppTheme.headingSmallThemed(context).copyWith(fontSize: 13),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -599,12 +599,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       children: [
         Text(
           'Choose a focus',
-          style: AppTheme.headingMedium,
+          style: AppTheme.headingMediumThemed(context),
         ),
         const SizedBox(height: AppTheme.spaceXS),
         Text(
           'What would you like to work on?',
-          style: AppTheme.bodySmall,
+          style: AppTheme.bodySmallThemed(context),
         ),
         const SizedBox(height: AppTheme.spaceMD),
         
@@ -629,12 +629,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 decoration: BoxDecoration(
                   color: isSelected 
                       ? AppTheme.primary.withOpacity(0.1)
-                      : AppTheme.surfaceCard,
+                      : AppTheme.cardBackground(context),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   border: Border.all(
                     color: isSelected 
                         ? AppTheme.primary
-                        : AppTheme.surfaceBorder,
+                        : AppTheme.borderColor(context),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -645,7 +645,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       decoration: BoxDecoration(
                         color: isSelected 
                             ? AppTheme.primary.withOpacity(0.2)
-                            : AppTheme.surfaceElevated,
+                            : AppTheme.elevatedBackground(context),
                         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
@@ -653,7 +653,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         size: 20,
                         color: isSelected 
                             ? AppTheme.primary
-                            : AppTheme.textSecondary,
+                            : AppTheme.textSecondaryColor(context),
                       ),
                     ),
                     const SizedBox(width: AppTheme.spaceMD),
@@ -663,16 +663,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         children: [
                           Text(
                             focus['title'] as String,
-                            style: AppTheme.headingSmall.copyWith(
+                            style: AppTheme.headingSmallThemed(context).copyWith(
                               color: isSelected 
-                                  ? AppTheme.textPrimary
-                                  : AppTheme.textSecondary,
+                                  ? AppTheme.textPrimaryColor(context)
+                                  : AppTheme.textSecondaryColor(context),
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             focus['subtitle'] as String,
-                            style: AppTheme.bodySmall,
+                            style: AppTheme.bodySmallThemed(context),
                           ),
                         ],
                       ),
@@ -701,30 +701,30 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       children: [
         Text(
           'Add context',
-          style: AppTheme.label.copyWith(color: AppTheme.textMuted),
+          style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
         ),
         Text(
           'Optional',
-          style: AppTheme.label.copyWith(
+          style: AppTheme.labelThemed(context).copyWith(
             fontSize: 11,
-            color: AppTheme.textMuted.withOpacity(0.6),
+            color: AppTheme.textMutedColor(context).withOpacity(0.6),
           ),
         ),
         const SizedBox(height: AppTheme.spaceSM),
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceCard,
+            color: AppTheme.cardBackground(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(color: AppTheme.surfaceBorder),
+            border: Border.all(color: AppTheme.borderColor(context)),
           ),
           child: TextField(
             controller: _contextController,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
             maxLines: 2,
             decoration: InputDecoration(
               hintText: 'e.g., Facing a left-handed opponent...',
-              hintStyle: AppTheme.bodySmall.copyWith(
-                color: AppTheme.textMuted.withOpacity(0.5),
+              hintStyle: AppTheme.bodySmallThemed(context).copyWith(
+                color: AppTheme.textMutedColor(context).withOpacity(0.5),
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -746,11 +746,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: hasSelection ? AppTheme.primary : AppTheme.surfaceElevated,
+          color: hasSelection ? AppTheme.primary : AppTheme.elevatedBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: hasSelection 
               ? null 
-              : Border.all(color: AppTheme.surfaceBorder),
+              : Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Center(
           child: _isGenerating
@@ -761,23 +761,23 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       'Preparing insight...',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                      style: AppTheme.headingSmallThemed(context).copyWith(
+                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                       ),
                     ),
                   ],
                 )
               : Text(
                   'View tactical insight',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: hasSelection ? Colors.white : AppTheme.textMuted,
+                  style: AppTheme.headingSmallThemed(context).copyWith(
+                    color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                   ),
                 ),
         ),
@@ -795,7 +795,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           const SizedBox(height: AppTheme.spaceMD),
           Text(
             'Analyzing your recent form...',
-            style: AppTheme.bodyMedium,
+            style: AppTheme.bodyMediumThemed(context),
           ),
         ],
       ),
@@ -817,13 +817,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             'Unable to generate insight',
-            style: AppTheme.headingSmall.copyWith(color: AppTheme.loss),
+            style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.loss),
           ),
           const SizedBox(height: AppTheme.spaceXS),
           Text(
             _errorMessage ?? 'Please try again',
             textAlign: TextAlign.center,
-            style: AppTheme.bodySmall,
+            style: AppTheme.bodySmallThemed(context),
           ),
           const SizedBox(height: AppTheme.spaceMD),
           TextButton(
@@ -832,7 +832,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             },
             child: Text(
               'Dismiss',
-              style: AppTheme.headingSmall.copyWith(color: AppTheme.primary),
+              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.primary),
             ),
           ),
         ],
@@ -847,9 +847,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       key: _insightCardKey,
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -872,29 +872,28 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               const SizedBox(width: AppTheme.spaceSM),
               Text(
                 'Tactical Insight',
-                style: AppTheme.headingMedium,
+                style: AppTheme.headingMediumThemed(context),
               ),
             ],
           ),
           
           const SizedBox(height: AppTheme.spaceMD),
           
-          Divider(color: AppTheme.surfaceBorder, height: 1),
+          Divider(color: AppTheme.borderColor(context), height: 1),
           
           const SizedBox(height: AppTheme.spaceMD),
           
           // Insight content
           Text(
             _insightResponse!,
-            style: AppTheme.bodyLarge.copyWith(
+            style: AppTheme.bodyLargeThemed(context).copyWith(
               height: 1.7,
-              color: AppTheme.textSecondary,
             ),
           ),
           
           const SizedBox(height: AppTheme.spaceLG),
           
-          Divider(color: AppTheme.surfaceBorder, height: 1),
+          Divider(color: AppTheme.borderColor(context), height: 1),
           
           const SizedBox(height: AppTheme.spaceMD),
           
@@ -920,12 +919,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 icon: Icon(
                   Icons.refresh_rounded,
                   size: 18,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.textSecondaryColor(context),
                 ),
                 label: Text(
                   'New focus',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: AppTheme.textSecondary,
+                  style: AppTheme.headingSmallThemed(context).copyWith(
+                    color: AppTheme.textSecondaryColor(context),
                   ),
                 ),
               ),

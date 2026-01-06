@@ -106,7 +106,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: Consumer<ApiService>(
         builder: (context, apiService, child) {
           // Show response view if we have a response
@@ -131,18 +131,18 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         slivers: [
         // Subtle header
         SliverAppBar(
-          backgroundColor: AppTheme.surfaceDark,
+          backgroundColor: AppTheme.scaffoldBackground(context),
           elevation: 0,
           pinned: true,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+            icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'Match Debrief',
-            style: AppTheme.headingSmall.copyWith(
-              color: AppTheme.textSecondary,
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              color: AppTheme.textSecondaryColor(context),
             ),
           ),
         ),
@@ -547,18 +547,18 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
       slivers: [
         // Header
         SliverAppBar(
-          backgroundColor: AppTheme.surfaceDark,
+          backgroundColor: AppTheme.scaffoldBackground(context),
           elevation: 0,
           pinned: true,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+            icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
             'Match Debrief',
-            style: AppTheme.headingSmall.copyWith(
-              color: AppTheme.textSecondary,
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              color: AppTheme.textSecondaryColor(context),
             ),
           ),
         ),

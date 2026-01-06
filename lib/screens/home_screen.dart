@@ -93,12 +93,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final firstName = authService.userDisplayName?.split(' ').first ?? 'Player';
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadStats,
           color: AppTheme.primary,
-          backgroundColor: AppTheme.surfaceCard,
+          backgroundColor: AppTheme.cardBackground(context),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Simple name, no greeting
           Text(
             firstName,
-            style: AppTheme.headingMedium,
+            style: AppTheme.headingMediumThemed(context),
           ),
           
           // Settings icon
@@ -174,13 +174,13 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceCard,
+                color: AppTheme.cardBackground(context),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.surfaceBorder),
+                border: Border.all(color: AppTheme.borderColor(context)),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.settings_outlined,
-                color: AppTheme.textMuted,
+                color: AppTheme.textMutedColor(context),
                 size: 20,
               ),
             ),
@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     return Container(
       padding: AppTheme.cardPaddingLarge,
-      decoration: AppTheme.cardDecoration,
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -207,9 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 '$winPercentage%',
-                style: AppTheme.statLarge.copyWith(
+                style: AppTheme.statLargeThemed(context).copyWith(
                   fontSize: 48,
-                  color: AppTheme.textPrimary,
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSM),
@@ -217,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   'win rate',
-                  style: AppTheme.label,
+                  style: AppTheme.labelThemed(context),
                 ),
               ),
             ],
@@ -226,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppTheme.spaceLG),
           
           // Divider
-          Container(height: 1, color: AppTheme.surfaceBorder),
+          Container(height: 1, color: AppTheme.borderColor(context)),
           
           const SizedBox(height: AppTheme.spaceMD),
           
@@ -265,12 +264,12 @@ class _HomeScreenState extends State<HomeScreen> {
           // Tertiary: Recent form (subtle visual)
           if (_recentMatches.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceMD),
-            Container(height: 1, color: AppTheme.surfaceBorder),
+            Container(height: 1, color: AppTheme.borderColor(context)),
             const SizedBox(height: AppTheme.spaceMD),
             
             Row(
               children: [
-                Text('Recent', style: AppTheme.label),
+                Text('Recent', style: AppTheme.labelThemed(context)),
                 const SizedBox(width: AppTheme.spaceMD),
                 ...List.generate(
                   _recentMatches.take(5).length,
@@ -305,12 +304,12 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           value,
-          style: AppTheme.statMedium.copyWith(
-            color: valueColor ?? AppTheme.textPrimary,
+          style: AppTheme.statMediumThemed(context).copyWith(
+            color: valueColor,
           ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: AppTheme.label),
+        Text(label, style: AppTheme.labelThemed(context)),
       ],
     );
   }
@@ -362,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Recent', style: AppTheme.headingSmall),
+            Text('Recent', style: AppTheme.headingSmallThemed(context)),
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -373,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: Text(
                 'View all',
-                style: AppTheme.bodySmall.copyWith(color: AppTheme.primary),
+                style: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.primary),
               ),
             ),
           ],
@@ -417,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Container(
         padding: AppTheme.cardPadding,
-        decoration: AppTheme.cardDecoration,
+        decoration: AppTheme.cardDecorationThemed(context),
         child: Row(
           children: [
             // Result indicator - subtle
@@ -441,31 +440,31 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         match.opponent,
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: AppTheme.textPrimary,
+                        style: AppTheme.bodyMediumThemed(context).copyWith(
+                          color: AppTheme.textPrimaryColor(context),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(width: AppTheme.spaceSM),
                       Text(
                         '${match.setsWon}-${match.setsLost}',
-                        style: AppTheme.bodySmall,
+                        style: AppTheme.bodySmallThemed(context),
                       ),
                     ],
                   ),
                   const SizedBox(height: 2),
                   Text(
                     _formatDate(match.date),
-                    style: AppTheme.label,
+                    style: AppTheme.labelThemed(context),
                   ),
                   // Subtle insight line
                   if (insight != null) ...[
                     const SizedBox(height: AppTheme.spaceSM),
                     Text(
                       insight,
-                      style: AppTheme.bodySmall.copyWith(
+                      style: AppTheme.bodySmallThemed(context).copyWith(
                         fontStyle: FontStyle.italic,
-                        color: AppTheme.textMuted,
+                        color: AppTheme.textMutedColor(context),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -475,9 +474,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             
-            const Icon(
+            Icon(
               Icons.chevron_right,
-              color: AppTheme.textMuted,
+              color: AppTheme.textMutedColor(context),
               size: 18,
             ),
           ],
@@ -491,7 +490,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tools', style: AppTheme.headingSmall),
+        Text('Tools', style: AppTheme.headingSmallThemed(context)),
         
         const SizedBox(height: AppTheme.spaceMD),
         
@@ -544,14 +543,14 @@ class _HomeScreenState extends State<HomeScreen> {
           horizontal: AppTheme.spaceSM,
           vertical: AppTheme.spaceMD,
         ),
-        decoration: AppTheme.cardDecoration,
+        decoration: AppTheme.cardDecorationThemed(context),
         child: Column(
           children: [
-            Icon(icon, size: 22, color: AppTheme.textSecondary),
+            Icon(icon, size: 22, color: AppTheme.textSecondaryColor(context)),
             const SizedBox(height: AppTheme.spaceSM),
             Text(
               label,
-              style: AppTheme.label.copyWith(color: AppTheme.textSecondary),
+              style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
               textAlign: TextAlign.center,
             ),
           ],

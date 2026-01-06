@@ -27,7 +27,7 @@ class AnalysisResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: Column(
           children: [

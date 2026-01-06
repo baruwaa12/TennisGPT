@@ -82,8 +82,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Select Win or Loss', style: AppTheme.bodyMedium),
-          backgroundColor: AppTheme.surfaceElevated,
+          content: Text('Select Win or Loss', style: AppTheme.bodyMediumThemed(context)),
+          backgroundColor: AppTheme.elevatedBackground(context),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -204,7 +204,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     }
     
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -577,7 +577,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     final isWin = _result == 'Win';
     
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -596,12 +596,12 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                     child: Container(
                       padding: const EdgeInsets.all(AppTheme.spaceSM),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceCard,
+                        color: AppTheme.cardBackground(context),
                         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.close,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryColor(context),
                         size: 20,
                       ),
                     ),

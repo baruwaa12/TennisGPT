@@ -155,24 +155,24 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: Form(
         key: _formKey,
         child: CustomScrollView(
           slivers: [
             // App Bar
             SliverAppBar(
-              backgroundColor: AppTheme.surfaceDark,
+              backgroundColor: AppTheme.scaffoldBackground(context),
               elevation: 0,
               pinned: true,
               centerTitle: true,
               leading: IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary),
+                icon: Icon(Icons.close_rounded, color: AppTheme.textSecondaryColor(context)),
                 onPressed: () => Navigator.pop(context),
               ),
               title: Text(
                 'Log Match',
-                style: AppTheme.headingSmall.copyWith(color: AppTheme.textSecondary),
+                style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
               ),
             ),
             

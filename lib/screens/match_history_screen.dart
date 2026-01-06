@@ -74,24 +74,24 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   Future<void> _deleteMatch(String matchId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceElevated,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.elevatedBackground(dialogContext),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         ),
-        title: Text('Delete match?', style: AppTheme.headingMedium),
+        title: Text('Delete match?', style: AppTheme.headingMediumThemed(dialogContext)),
         content: Text(
           'This action cannot be undone.',
-          style: AppTheme.bodyMedium,
+          style: AppTheme.bodyMediumThemed(dialogContext),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary)),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('Cancel', style: AppTheme.bodyMediumThemed(dialogContext).copyWith(color: AppTheme.textSecondaryColor(dialogContext))),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: AppTheme.bodyMedium.copyWith(color: AppTheme.loss)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text('Delete', style: AppTheme.bodyMediumThemed(dialogContext).copyWith(color: AppTheme.loss)),
           ),
         ],
       ),
@@ -107,22 +107,22 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: CustomScrollView(
         slivers: [
           // App Bar
           SliverAppBar(
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: AppTheme.scaffoldBackground(context),
             elevation: 0,
             pinned: true,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+              icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Match History',
-              style: AppTheme.headingSmall.copyWith(color: AppTheme.textSecondary),
+              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
             ),
             actions: [
               IconButton(
@@ -160,7 +160,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   ],
                   
                   // Section header
-                  Text('Recent matches', style: AppTheme.headingMedium),
+                  Text('Recent matches', style: AppTheme.headingMediumThemed(context)),
                   const SizedBox(height: AppTheme.spaceMD),
                   
                   // Match List
@@ -188,24 +188,24 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             Container(
               padding: const EdgeInsets.all(AppTheme.spaceLG),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceCard,
+                color: AppTheme.cardBackground(context),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.sports_tennis_rounded,
                 size: 48,
-                color: AppTheme.textMuted,
+                color: AppTheme.textMutedColor(context),
               ),
             ),
             const SizedBox(height: AppTheme.spaceLG),
             Text(
               'No matches yet',
-              style: AppTheme.headingMedium,
+              style: AppTheme.headingMediumThemed(context),
             ),
             const SizedBox(height: AppTheme.spaceSM),
             Text(
               'Log your first match to start tracking progress',
-              style: AppTheme.bodyMedium,
+              style: AppTheme.bodyMediumThemed(context),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppTheme.spaceLG),
@@ -222,7 +222,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                 ),
                 child: Text(
                   'Log first match',
-                  style: AppTheme.headingSmall.copyWith(color: Colors.white),
+                  style: AppTheme.headingSmallThemed(context).copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -245,7 +245,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 20),
           const SizedBox(width: AppTheme.spaceSM),
           Expanded(
-            child: Text(_errorMessage!, style: AppTheme.bodySmall),
+            child: Text(_errorMessage!, style: AppTheme.bodySmallThemed(context)),
           ),
         ],
       ),
@@ -260,14 +260,14 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Performance', style: AppTheme.headingSmall),
+          Text('Performance', style: AppTheme.headingSmallThemed(context)),
           const SizedBox(height: AppTheme.spaceLG),
           Row(
             children: [
@@ -281,7 +281,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
               Container(
                 width: 1,
                 height: 48,
-                color: AppTheme.surfaceBorder,
+                color: AppTheme.borderColor(context),
               ),
               Expanded(
                 child: _buildSummaryItem(
@@ -294,7 +294,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
               Container(
                 width: 1,
                 height: 48,
-                color: AppTheme.surfaceBorder,
+                color: AppTheme.borderColor(context),
               ),
               Expanded(
                 child: _buildSummaryItem(
@@ -318,16 +318,16 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   }) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: AppTheme.textMuted),
+        Icon(icon, size: 20, color: AppTheme.textMutedColor(context)),
         const SizedBox(height: AppTheme.spaceSM),
         Text(
           value,
-          style: AppTheme.statMedium.copyWith(
-            color: valueColor ?? AppTheme.textPrimary,
+          style: AppTheme.statMediumThemed(context).copyWith(
+            color: valueColor,
           ),
         ),
         const SizedBox(height: AppTheme.spaceXS),
-        Text(label, style: AppTheme.label),
+        Text(label, style: AppTheme.labelThemed(context)),
       ],
     );
   }
@@ -348,9 +348,9 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
       child: Container(
         padding: AppTheme.cardPadding,
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
+          color: AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: Border.all(color: AppTheme.surfaceBorder),
+          border: Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Row(
           children: [
@@ -373,7 +373,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   // Opponent name (secondary)
                   Text(
                     opponentName,
-                    style: AppTheme.headingSmall,
+                    style: AppTheme.headingSmallThemed(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -381,7 +381,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   // Date + surface (tertiary)
                   Text(
                     '$dateStr · ${match.surface}',
-                    style: AppTheme.label,
+                    style: AppTheme.labelThemed(context),
                   ),
                 ],
               ),
@@ -407,8 +407,8 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             
             // Menu
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: AppTheme.textMuted),
-              color: AppTheme.surfaceElevated,
+              icon: Icon(Icons.more_vert_rounded, color: AppTheme.textMutedColor(context)),
+              color: AppTheme.elevatedBackground(context),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
@@ -417,14 +417,14 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   _deleteMatch(match.id);
                 }
               },
-              itemBuilder: (context) => [
+              itemBuilder: (menuContext) => [
                 PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
                       Icon(Icons.delete_outline_rounded, color: AppTheme.loss, size: 20),
                       const SizedBox(width: AppTheme.spaceSM),
-                      Text('Delete', style: AppTheme.bodyMedium.copyWith(color: AppTheme.loss)),
+                      Text('Delete', style: AppTheme.bodyMediumThemed(menuContext).copyWith(color: AppTheme.loss)),
                     ],
                   ),
                 ),
@@ -452,12 +452,12 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   void _showMatchDetails(MatchPerformance match) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.surfaceCard,
+      backgroundColor: AppTheme.cardBackground(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXL)),
       ),
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
+      builder: (sheetContext) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.5,
         maxChildSize: 0.9,
@@ -485,7 +485,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.surfaceBorder,
+                color: AppTheme.borderColor(context),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -518,11 +518,11 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   children: [
                     Text(
                       'vs $opponentName',
-                      style: AppTheme.headingMedium,
+                      style: AppTheme.headingMediumThemed(context),
                     ),
                     Text(
                       '${_formatDate(match.date)} · ${match.surface} · ${match.weather}',
-                      style: AppTheme.label,
+                      style: AppTheme.labelThemed(context),
                     ),
                   ],
                 ),
@@ -531,12 +531,12 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           ),
           
           const SizedBox(height: AppTheme.spaceLG),
-          Divider(color: AppTheme.surfaceBorder),
+          Divider(color: AppTheme.borderColor(context)),
           const SizedBox(height: AppTheme.spaceLG),
           
           // Strengths & Weaknesses
           if (match.strengths.isNotEmpty || match.weaknesses.isNotEmpty) ...[
-            Text('Performance ratings', style: AppTheme.headingSmall),
+            Text('Performance ratings', style: AppTheme.headingSmallThemed(context)),
             const SizedBox(height: AppTheme.spaceMD),
             ...match.strengths.entries.map((entry) => Padding(
               padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
@@ -544,7 +544,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: Text(entry.key, style: AppTheme.bodyMedium),
+                    child: Text(entry.key, style: AppTheme.bodyMediumThemed(context)),
                   ),
                   Expanded(
                     flex: 3,
@@ -558,7 +558,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           
           // Key Moments
           if (match.keyMoments.isNotEmpty) ...[
-            Text('Key moments', style: AppTheme.headingSmall),
+            Text('Key moments', style: AppTheme.headingSmallThemed(context)),
             const SizedBox(height: AppTheme.spaceSM),
             ...match.keyMoments.map((moment) => Padding(
               padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
@@ -576,7 +576,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   ),
                   const SizedBox(width: AppTheme.spaceMD),
                   Expanded(
-                    child: Text(moment, style: AppTheme.bodyMedium),
+                    child: Text(moment, style: AppTheme.bodyMediumThemed(context)),
                   ),
                 ],
               ),
@@ -586,16 +586,16 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           
           // Notes
           if (match.notes.isNotEmpty) ...[
-            Text('Notes', style: AppTheme.headingSmall),
+            Text('Notes', style: AppTheme.headingSmallThemed(context)),
             const SizedBox(height: AppTheme.spaceSM),
-            Text(match.notes, style: AppTheme.bodyMedium),
+            Text(match.notes, style: AppTheme.bodyMediumThemed(context)),
             const SizedBox(height: AppTheme.spaceMD),
           ],
           
           // Tactical Analysis
           if (match.tacticalAnalysis.isNotEmpty && 
               match.tacticalAnalysis != 'Analysis pending') ...[
-            Text('Coach feedback', style: AppTheme.headingSmall),
+            Text('Coach feedback', style: AppTheme.headingSmallThemed(context)),
             const SizedBox(height: AppTheme.spaceSM),
             Container(
               padding: AppTheme.cardPadding,
@@ -606,7 +606,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
               ),
               child: Text(
                 match.tacticalAnalysis,
-                style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+                style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
               ),
             ),
             const SizedBox(height: AppTheme.spaceMD),
@@ -614,17 +614,17 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           
           // Recommended Drills
           if (match.recommendedDrills.isNotEmpty) ...[
-            Text('Recommended practice', style: AppTheme.headingSmall),
+            Text('Recommended practice', style: AppTheme.headingSmallThemed(context)),
             const SizedBox(height: AppTheme.spaceSM),
             ...match.recommendedDrills.map((drill) => Padding(
               padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.fitness_center_rounded, size: 16, color: AppTheme.textMuted),
+                  Icon(Icons.fitness_center_rounded, size: 16, color: AppTheme.textMutedColor(context)),
                   const SizedBox(width: AppTheme.spaceSM),
                   Expanded(
-                    child: Text(drill, style: AppTheme.bodyMedium),
+                    child: Text(drill, style: AppTheme.bodyMediumThemed(context)),
                   ),
                 ],
               ),
@@ -644,7 +644,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           child: Container(
             height: 6,
             decoration: BoxDecoration(
-              color: AppTheme.surfaceBorder,
+              color: AppTheme.borderColor(context),
               borderRadius: BorderRadius.circular(3),
             ),
             child: FractionallySizedBox(
@@ -662,7 +662,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         const SizedBox(width: AppTheme.spaceSM),
         Text(
           '$value',
-          style: AppTheme.label.copyWith(color: AppTheme.textSecondary),
+          style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
         ),
       ],
     );

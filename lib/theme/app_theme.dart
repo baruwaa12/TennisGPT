@@ -19,13 +19,15 @@ class AppTheme {
   static const Color primaryLight = Color(0xFF14B8A6);
   static const Color primaryDark = Color(0xFF0F766E);
   
-  /// Surface colors - layered depth system
+  /// Surface colors - layered depth system (DARK MODE DEFAULTS)
+  /// Use the theme-aware getters below for actual usage
   static const Color surfaceDark = Color(0xFF0A0A0B);
   static const Color surfaceCard = Color(0xFF141416);
   static const Color surfaceElevated = Color(0xFF1C1C1F);
   static const Color surfaceBorder = Color(0xFF2A2A2E);
   
-  /// Text colors - clear hierarchy
+  /// Text colors - clear hierarchy (DARK MODE DEFAULTS)
+  /// Use the theme-aware getters below for actual usage
   static const Color textPrimary = Color(0xFFF5F5F5);
   static const Color textSecondary = Color(0xFFB0B5BE);
   static const Color textMuted = Color(0xFF787D85);
@@ -35,6 +37,89 @@ class AppTheme {
   static const Color loss = Color(0xFFEF4444);
   static const Color neutral = Color(0xFF3B82F6);
   static const Color warning = Color(0xFFF59E0B);
+
+  // ============ LIGHT MODE COLORS ============
+  static const Color _surfaceLight = Color(0xFFFAFAFA);
+  static const Color _surfaceCardLight = Color(0xFFFFFFFF);
+  static const Color _surfaceElevatedLight = Color(0xFFF5F5F5);
+  static const Color _surfaceBorderLight = Color(0xFFE0E0E0);
+  static const Color _textPrimaryLight = Color(0xFF1A1A1A);
+  static const Color _textSecondaryLight = Color(0xFF4A4A4A);
+  static const Color _textMutedLight = Color(0xFF8A8A8A);
+
+  // ============ THEME-AWARE COLOR GETTERS ============
+  
+  /// Get scaffold background color based on theme
+  static Color scaffoldBackground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? surfaceDark 
+        : _surfaceLight;
+  }
+
+  /// Get card background color based on theme
+  static Color cardBackground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? surfaceCard 
+        : _surfaceCardLight;
+  }
+
+  /// Get elevated surface color based on theme
+  static Color elevatedBackground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? surfaceElevated 
+        : _surfaceElevatedLight;
+  }
+
+  /// Get border color based on theme
+  static Color borderColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? surfaceBorder 
+        : _surfaceBorderLight;
+  }
+
+  /// Get primary text color based on theme
+  static Color textPrimaryColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? textPrimary 
+        : _textPrimaryLight;
+  }
+
+  /// Get secondary text color based on theme
+  static Color textSecondaryColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? textSecondary 
+        : _textSecondaryLight;
+  }
+
+  /// Get muted text color based on theme
+  static Color textMutedColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark 
+        ? textMuted 
+        : _textMutedLight;
+  }
+
+  /// Check if current theme is dark
+  static bool isDark(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  /// Get theme-aware card decoration
+  static BoxDecoration cardDecorationThemed(BuildContext context) {
+    return BoxDecoration(
+      color: cardBackground(context),
+      borderRadius: BorderRadius.circular(radiusLG),
+      border: Border.all(color: borderColor(context), width: 1),
+    );
+  }
+
+  /// Get theme-aware elevated card decoration
+  static BoxDecoration elevatedCardDecorationThemed(BuildContext context) {
+    return BoxDecoration(
+      color: elevatedBackground(context),
+      borderRadius: BorderRadius.circular(radiusLG),
+      boxShadow: cardShadow,
+    );
+  }
 
   // ============ SPACING ============
   
@@ -65,6 +150,7 @@ class AppTheme {
 
   // ============ TYPOGRAPHY ============
   // Sized for glanceability, outdoor use, and post-match fatigue
+  // NOTE: These use dark mode colors by default. Use themed versions for proper light/dark support.
   
   /// Screen titles - bold, commanding (increased ~15%)
   static TextStyle get headingLarge => GoogleFonts.inter(
@@ -151,6 +237,107 @@ class AppTheme {
     letterSpacing: -0.5,
   );
 
+  // ============ THEME-AWARE TEXT STYLES ============
+  
+  static TextStyle headingLargeThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: textPrimaryColor(context),
+    letterSpacing: -0.5,
+    height: 1.25,
+  );
+
+  static TextStyle headingMediumThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 21,
+    fontWeight: FontWeight.w600,
+    color: textPrimaryColor(context),
+    letterSpacing: -0.3,
+    height: 1.35,
+  );
+
+  static TextStyle headingSmallThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 17,
+    fontWeight: FontWeight.w600,
+    color: textPrimaryColor(context),
+    letterSpacing: -0.2,
+    height: 1.3,
+  );
+
+  static TextStyle bodyLargeThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 18,
+    fontWeight: FontWeight.w400,
+    color: textSecondaryColor(context),
+    height: 1.6,
+  );
+
+  static TextStyle bodyMediumThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: textSecondaryColor(context),
+    height: 1.55,
+  );
+
+  static TextStyle bodySmallThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 15,
+    fontWeight: FontWeight.w400,
+    color: textMutedColor(context),
+    height: 1.5,
+  );
+
+  static TextStyle labelThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: textMutedColor(context),
+    letterSpacing: 0.3,
+    height: 1.4,
+  );
+
+  static TextStyle statLargeThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    color: textPrimaryColor(context),
+    letterSpacing: -1,
+    height: 1.1,
+  );
+
+  static TextStyle statMediumThemed(BuildContext context) => GoogleFonts.inter(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: textPrimaryColor(context),
+    height: 1.2,
+  );
+
+  /// Get theme-aware input decoration
+  static InputDecoration inputDecorationThemed(BuildContext context, {
+    String? label,
+    String? hint,
+    IconData? prefixIcon,
+  }) => InputDecoration(
+    labelText: label,
+    hintText: hint,
+    labelStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context)),
+    hintStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context).withOpacity(0.5)),
+    prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: textMutedColor(context)) : null,
+    filled: true,
+    fillColor: cardBackground(context),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radiusMD),
+      borderSide: BorderSide(color: borderColor(context)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radiusMD),
+      borderSide: BorderSide(color: borderColor(context)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(radiusMD),
+      borderSide: const BorderSide(color: primary, width: 1.5),
+    ),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: spaceMD,
+      vertical: spaceMD,
+    ),
+  );
+
   // ============ SHADOWS ============
   
   static List<BoxShadow> get cardShadow => [
@@ -216,7 +403,7 @@ class AppTheme {
   );
 }
 
-/// Reusable card widget following design system
+/// Reusable card widget following design system - NOW THEME-AWARE
 class TGCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -234,14 +421,14 @@ class TGCard extends StatelessWidget {
     return Container(
       padding: padding ?? AppTheme.cardPadding,
       decoration: elevated 
-          ? AppTheme.elevatedCardDecoration 
-          : AppTheme.cardDecoration,
+          ? AppTheme.elevatedCardDecorationThemed(context) 
+          : AppTheme.cardDecorationThemed(context),
       child: child,
     );
   }
 }
 
-/// Card with header
+/// Card with header - THEME-AWARE
 class TGCardWithHeader extends StatelessWidget {
   final String title;
   final IconData? icon;
@@ -272,7 +459,7 @@ class TGCardWithHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: AppTheme.spaceSM),
               ],
-              Text(title, style: AppTheme.headingSmall),
+              Text(title, style: AppTheme.headingSmallThemed(context)),
             ],
           ),
           const SizedBox(height: AppTheme.spaceMD),
@@ -283,7 +470,7 @@ class TGCardWithHeader extends StatelessWidget {
   }
 }
 
-/// Bullet point item for lists
+/// Bullet point item for lists - THEME-AWARE
 class TGBulletPoint extends StatelessWidget {
   final String text;
   final Color? bulletColor;
@@ -312,7 +499,7 @@ class TGBulletPoint extends StatelessWidget {
           ),
           const SizedBox(width: AppTheme.spaceMD),
           Expanded(
-            child: Text(text, style: AppTheme.bodyMedium),
+            child: Text(text, style: AppTheme.bodyMediumThemed(context)),
           ),
         ],
       ),
@@ -349,7 +536,7 @@ class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: AppTheme.cardDecoration,
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Column(
         children: [
           GestureDetector(
@@ -359,13 +546,13 @@ class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(widget.title, style: AppTheme.headingSmall),
+                  Text(widget.title, style: AppTheme.headingSmallThemed(context)),
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: AppTheme.textMuted,
+                      color: AppTheme.textMutedColor(context),
                     ),
                   ),
                 ],

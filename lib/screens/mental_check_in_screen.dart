@@ -103,7 +103,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     }
     
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
@@ -113,18 +113,18 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           slivers: [
           // Subtle header
           SliverAppBar(
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: AppTheme.scaffoldBackground(context),
             elevation: 0,
             pinned: true,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+              icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Pre-Match Prep',
-              style: AppTheme.headingSmall.copyWith(
-                color: AppTheme.textSecondary,
+              style: AppTheme.headingSmallThemed(context).copyWith(
+                color: AppTheme.textSecondaryColor(context),
               ),
             ),
           ),
@@ -595,21 +595,21 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     )['label'];
     
     return Scaffold(
-      backgroundColor: AppTheme.surfaceDark,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            backgroundColor: AppTheme.surfaceDark,
+            backgroundColor: AppTheme.scaffoldBackground(context),
             elevation: 0,
             pinned: true,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppTheme.textSecondary),
+              icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Game Plan',
-              style: AppTheme.headingSmall.copyWith(color: AppTheme.textSecondary),
+              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
             ),
           ),
           

@@ -47,12 +47,19 @@ class ThemeService extends ChangeNotifier {
 
   // Light Theme
   static ThemeData get lightTheme {
+    // Define light mode text colors explicitly
+    final lightTextTheme = GoogleFonts.poppinsTextTheme().apply(
+      bodyColor: Colors.grey[800],
+      displayColor: Colors.grey[800],
+    );
+    
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.green,
         brightness: Brightness.light,
+        onSurface: Colors.grey[800]!, // Text color on surfaces
       ),
       scaffoldBackgroundColor: Colors.grey[50],
       appBarTheme: AppBarTheme(
@@ -71,7 +78,7 @@ class ThemeService extends ChangeNotifier {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(),
+      textTheme: lightTextTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.grey[100],
@@ -113,12 +120,19 @@ class ThemeService extends ChangeNotifier {
 
   // Dark Theme
   static ThemeData get darkTheme {
+    // Define dark mode text colors explicitly
+    final darkTextTheme = GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).apply(
+      bodyColor: Colors.white,
+      displayColor: Colors.white,
+    );
+    
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.green,
         brightness: Brightness.dark,
+        onSurface: Colors.white, // Text color on surfaces
       ),
       scaffoldBackgroundColor: const Color(0xFF121212),
       appBarTheme: AppBarTheme(
@@ -137,7 +151,7 @@ class ThemeService extends ChangeNotifier {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+      textTheme: darkTextTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF2C2C2C),
