@@ -230,9 +230,9 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         children: [
@@ -251,14 +251,14 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
           const SizedBox(height: AppTheme.spaceMD),
           Text(
             'Let\'s review your match',
-            style: AppTheme.headingMedium,
+            style: AppTheme.headingMediumThemed(context),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             'Every match is a learning opportunity. Let\'s break down what happened and find actionable takeaways.',
             textAlign: TextAlign.center,
-            style: AppTheme.bodyMedium,
+            style: AppTheme.bodyMediumThemed(context),
           ),
         ],
       ),
@@ -280,10 +280,10 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? AppTheme.primary.withOpacity(0.1)
-              : AppTheme.surfaceCard,
+              : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: isSelected ? AppTheme.primary : AppTheme.surfaceBorder,
+            color: isSelected ? AppTheme.primary : AppTheme.borderColor(context),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -294,13 +294,13 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               decoration: BoxDecoration(
                 color: isSelected 
                     ? AppTheme.primary.withOpacity(0.2)
-                    : AppTheme.surfaceElevated,
+                    : AppTheme.elevatedBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: Icon(
                 icon,
                 size: 20,
-                color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                color: isSelected ? AppTheme.primary : AppTheme.textSecondaryColor(context),
               ),
             ),
             const SizedBox(width: AppTheme.spaceMD),
@@ -310,16 +310,16 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                 children: [
                   Text(
                     title,
-                    style: AppTheme.headingSmall.copyWith(
+                    style: AppTheme.headingSmallThemed(context).copyWith(
                       color: isSelected 
-                          ? AppTheme.textPrimary
-                          : AppTheme.textSecondary,
+                          ? AppTheme.textPrimaryColor(context)
+                          : AppTheme.textSecondaryColor(context),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     description,
-                    style: AppTheme.bodySmall,
+                    style: AppTheme.bodySmallThemed(context),
                   ),
                 ],
               ),
@@ -352,10 +352,10 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         decoration: BoxDecoration(
           color: _showCustomInput 
               ? AppTheme.primary.withOpacity(0.1)
-              : AppTheme.surfaceCard,
+              : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: _showCustomInput ? AppTheme.primary : AppTheme.surfaceBorder,
+            color: _showCustomInput ? AppTheme.primary : AppTheme.borderColor(context),
             width: _showCustomInput ? 1.5 : 1,
           ),
         ),
@@ -366,23 +366,23 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               decoration: BoxDecoration(
                 color: _showCustomInput 
                     ? AppTheme.primary.withOpacity(0.2)
-                    : AppTheme.surfaceElevated,
+                    : AppTheme.elevatedBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: Icon(
                 Icons.edit_note_rounded,
                 size: 20,
-                color: _showCustomInput ? AppTheme.primary : AppTheme.textSecondary,
+                color: _showCustomInput ? AppTheme.primary : AppTheme.textSecondaryColor(context),
               ),
             ),
             const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Text(
                 'Describe something else',
-                style: AppTheme.headingSmall.copyWith(
+                style: AppTheme.headingSmallThemed(context).copyWith(
                   color: _showCustomInput 
-                      ? AppTheme.textPrimary
-                      : AppTheme.textSecondary,
+                      ? AppTheme.textPrimaryColor(context)
+                      : AppTheme.textSecondaryColor(context),
                 ),
               ),
             ),
@@ -401,18 +401,18 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   Widget _buildCustomInput() {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: TextField(
         controller: _customController,
-        style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+        style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
         maxLines: 3,
         decoration: InputDecoration(
           hintText: 'Describe what happened in your match...',
-          hintStyle: AppTheme.bodySmall.copyWith(
-            color: AppTheme.textMuted.withOpacity(0.5),
+          hintStyle: AppTheme.bodySmallThemed(context).copyWith(
+            color: AppTheme.textMutedColor(context).withOpacity(0.5),
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -450,8 +450,8 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
           Expanded(
             child: Text(
               humanMessage,
-              style: AppTheme.bodySmall.copyWith(
-                color: AppTheme.textSecondary,
+              style: AppTheme.bodySmallThemed(context).copyWith(
+                color: AppTheme.textSecondaryColor(context),
               ),
             ),
           ),
@@ -462,7 +462,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
             },
             child: Text(
               'Dismiss',
-              style: AppTheme.label.copyWith(color: AppTheme.primary),
+              style: AppTheme.labelThemed(context).copyWith(color: AppTheme.primary),
             ),
           ),
         ],
@@ -503,11 +503,11 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: hasSelection ? AppTheme.primary : AppTheme.surfaceElevated,
+          color: hasSelection ? AppTheme.primary : AppTheme.elevatedBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: hasSelection 
               ? null 
-              : Border.all(color: AppTheme.surfaceBorder),
+              : Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Center(
           child: isLoading
@@ -518,23 +518,23 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       'Reviewing match...',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                      style: AppTheme.headingSmallThemed(context).copyWith(
+                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                       ),
                     ),
                   ],
                 )
               : Text(
                   'Review match debrief',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: hasSelection ? Colors.white : AppTheme.textMuted,
+                  style: AppTheme.headingSmallThemed(context).copyWith(
+                    color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                   ),
                 ),
         ),
@@ -585,7 +585,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                     const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       'Debrief complete',
-                      style: AppTheme.headingSmall.copyWith(
+                      style: AppTheme.headingSmallThemed(context).copyWith(
                         color: AppTheme.win,
                       ),
                     ),
@@ -600,9 +600,9 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                 key: _responseCardKey,
                 padding: AppTheme.cardPaddingLarge,
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceCard,
+                  color: AppTheme.cardBackground(context),
                   borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                  border: Border.all(color: AppTheme.surfaceBorder),
+                  border: Border.all(color: AppTheme.borderColor(context)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,20 +624,20 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                         const SizedBox(width: AppTheme.spaceSM),
                         Text(
                           'Coach Feedback',
-                          style: AppTheme.headingMedium,
+                          style: AppTheme.headingMediumThemed(context),
                         ),
                       ],
                     ),
                     
                     const SizedBox(height: AppTheme.spaceMD),
-                    Divider(color: AppTheme.surfaceBorder, height: 1),
+                    Divider(color: AppTheme.borderColor(context), height: 1),
                     const SizedBox(height: AppTheme.spaceMD),
                     
                     Text(
                       apiService.lastResponse!,
-                      style: AppTheme.bodyLarge.copyWith(
+                      style: AppTheme.bodyLargeThemed(context).copyWith(
                         height: 1.7,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.textSecondaryColor(context),
                       ),
                     ),
                   ],
@@ -664,9 +664,9 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceCard,
+                          color: AppTheme.cardBackground(context),
                           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                          border: Border.all(color: AppTheme.surfaceBorder),
+                          border: Border.all(color: AppTheme.borderColor(context)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -674,13 +674,13 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                             Icon(
                               Icons.refresh_rounded,
                               size: 18,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.textSecondaryColor(context),
                             ),
                             const SizedBox(width: AppTheme.spaceSM),
                             Text(
                               'New debrief',
-                              style: AppTheme.headingSmall.copyWith(
-                                color: AppTheme.textSecondary,
+                              style: AppTheme.headingSmallThemed(context).copyWith(
+                                color: AppTheme.textSecondaryColor(context),
                               ),
                             ),
                           ],
@@ -704,7 +704,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                         child: Center(
                           child: Text(
                             'Done',
-                            style: AppTheme.headingSmall.copyWith(
+                            style: AppTheme.headingSmallThemed(context).copyWith(
                               color: Colors.white,
                             ),
                           ),

@@ -232,11 +232,11 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
           Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 20),
           const SizedBox(width: AppTheme.spaceSM),
           Expanded(
-            child: Text(_errorMessage!, style: AppTheme.bodySmall),
+            child: Text(_errorMessage!, style: AppTheme.bodySmallThemed(context)),
           ),
           TextButton(
             onPressed: () => setState(() => _errorMessage = null),
-            child: Text('Dismiss', style: AppTheme.label.copyWith(color: AppTheme.primary)),
+            child: Text('Dismiss', style: AppTheme.labelThemed(context).copyWith(color: AppTheme.primary)),
           ),
         ],
       ),
@@ -246,18 +246,19 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
   Widget _buildMatchDetailsSection() {
     return Container(
       padding: AppTheme.cardPaddingLarge,
-      decoration: AppTheme.cardDecoration,
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Match details', style: AppTheme.headingMedium),
+          Text('Match details', style: AppTheme.headingMediumThemed(context)),
           const SizedBox(height: AppTheme.spaceLG),
           
           // Opponent
           TextFormField(
             controller: _opponentController,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
-            decoration: AppTheme.inputDecoration(
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
               label: 'Opponent',
               hint: 'Who did you play?',
             ),
@@ -299,7 +300,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('–', style: AppTheme.headingMedium),
+                      child: Text('–', style: AppTheme.headingMediumThemed(context)),
                     ),
                     Expanded(
                       child: _buildDropdown(
@@ -352,9 +353,9 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
   }) {
     return DropdownButtonFormField<T>(
       value: value,
-      dropdownColor: AppTheme.surfaceElevated,
-      style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
-      decoration: AppTheme.inputDecoration(label: label),
+      dropdownColor: AppTheme.elevatedBackground(context),
+      style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+      decoration: AppTheme.inputDecorationThemed(context, label: label),
       items: items.map((item) => DropdownMenuItem<T>(
         value: item,
         child: Text(item.toString()),
@@ -366,27 +367,28 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
   Widget _buildKeyMomentSection() {
     return Container(
       padding: AppTheme.cardPadding,
-      decoration: AppTheme.cardDecoration,
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text('Key moment', style: AppTheme.headingSmall),
+              Text('Key moment', style: AppTheme.headingSmallThemed(context)),
               const SizedBox(width: AppTheme.spaceSM),
-              Text('optional', style: AppTheme.label),
+              Text('optional', style: AppTheme.labelThemed(context)),
             ],
           ),
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             'One thing that stood out from this match',
-            style: AppTheme.bodySmall,
+            style: AppTheme.bodySmallThemed(context),
           ),
           const SizedBox(height: AppTheme.spaceMD),
           TextField(
             controller: _keyMomentController,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
-            decoration: AppTheme.inputDecoration(
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
               hint: 'e.g., Stayed calm in the tiebreak',
             ),
           ),
@@ -397,7 +399,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
 
   Widget _buildRatingsSection() {
     return Container(
-      decoration: AppTheme.cardDecoration,
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Column(
         children: [
           // Toggle header
@@ -413,9 +415,9 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                 children: [
                   Row(
                     children: [
-                      Text('Rate performance', style: AppTheme.headingSmall),
+                      Text('Rate performance', style: AppTheme.headingSmallThemed(context)),
                       const SizedBox(width: AppTheme.spaceSM),
-                      Text('optional', style: AppTheme.label),
+                      Text('optional', style: AppTheme.labelThemed(context)),
                     ],
                   ),
                   AnimatedRotation(
@@ -423,7 +425,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: AppTheme.textMuted,
+                      color: AppTheme.textMutedColor(context),
                     ),
                   ),
                 ],
@@ -448,7 +450,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                     children: [
                       Expanded(
                         flex: 2,
-                        child: Text(skill, style: AppTheme.bodyMedium),
+                        child: Text(skill, style: AppTheme.bodyMediumThemed(context)),
                       ),
                       Expanded(
                         flex: 3,
@@ -458,7 +460,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                             activeTrackColor: AppTheme.primary,
-                            inactiveTrackColor: AppTheme.surfaceBorder,
+                            inactiveTrackColor: AppTheme.borderColor(context),
                             thumbColor: AppTheme.primary,
                             overlayColor: AppTheme.primary.withOpacity(0.2),
                           ),
@@ -478,7 +480,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                         width: 28,
                         child: Text(
                           '${_ratings[skill]}',
-                          style: AppTheme.label.copyWith(color: AppTheme.textSecondary),
+                          style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
                           textAlign: TextAlign.right,
                         ),
                       ),
@@ -503,25 +505,25 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
       children: [
         Row(
           children: [
-            Text('Notes', style: AppTheme.label),
+            Text('Notes', style: AppTheme.labelThemed(context)),
             const SizedBox(width: AppTheme.spaceSM),
-            Text('optional', style: AppTheme.label.copyWith(color: AppTheme.textMuted.withOpacity(0.6))),
+            Text('optional', style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textMutedColor(context).withOpacity(0.6))),
           ],
         ),
         const SizedBox(height: AppTheme.spaceSM),
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceCard,
+            color: AppTheme.cardBackground(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(color: AppTheme.surfaceBorder),
+            border: Border.all(color: AppTheme.borderColor(context)),
           ),
           child: TextField(
             controller: _notesController,
             maxLines: 2,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
             decoration: InputDecoration(
               hintText: 'Anything else to remember...',
-              hintStyle: AppTheme.bodySmall.copyWith(color: AppTheme.textMuted.withOpacity(0.5)),
+              hintStyle: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.textMutedColor(context).withOpacity(0.5)),
               border: InputBorder.none,
               contentPadding: AppTheme.cardPadding,
             ),

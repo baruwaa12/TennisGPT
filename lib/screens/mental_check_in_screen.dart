@@ -177,9 +177,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     return Container(
       padding: AppTheme.cardPadding,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -202,11 +202,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               children: [
                 Text(
                   'Lock in your game plan',
-                  style: AppTheme.headingSmall,
+                  style: AppTheme.headingSmallThemed(context),
                 ),
                 Text(
                   'Clear focus. Calm mind. Ready to compete.',
-                  style: AppTheme.bodySmall,
+                  style: AppTheme.bodySmallThemed(context),
                 ),
               ],
             ),
@@ -223,12 +223,12 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       children: [
         Row(
           children: [
-            Text('Opponent', style: AppTheme.label),
+            Text('Opponent', style: AppTheme.labelThemed(context)),
             const SizedBox(width: AppTheme.spaceXS),
             Text(
               '(optional)',
-              style: AppTheme.label.copyWith(
-                color: AppTheme.textMuted.withOpacity(0.6),
+              style: AppTheme.labelThemed(context).copyWith(
+                color: AppTheme.textMutedColor(context).withOpacity(0.6),
               ),
             ),
           ],
@@ -236,17 +236,17 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
         const SizedBox(height: AppTheme.spaceSM),
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceCard,
+            color: AppTheme.cardBackground(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            border: Border.all(color: AppTheme.surfaceBorder),
+            border: Border.all(color: AppTheme.borderColor(context)),
           ),
           child: TextField(
             controller: _opponentController,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
             decoration: InputDecoration(
               hintText: 'Who are you playing?',
-              hintStyle: AppTheme.bodySmall.copyWith(
-                color: AppTheme.textMuted.withOpacity(0.5),
+              hintStyle: AppTheme.bodySmallThemed(context).copyWith(
+                color: AppTheme.textMutedColor(context).withOpacity(0.5),
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -266,11 +266,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Pick your primary focus', style: AppTheme.headingMedium),
+        Text('Pick your primary focus', style: AppTheme.headingMediumThemed(context)),
         const SizedBox(height: AppTheme.spaceXS),
         Text(
           'What\'s your main approach today?',
-          style: AppTheme.bodySmall,
+          style: AppTheme.bodySmallThemed(context),
         ),
         const SizedBox(height: AppTheme.spaceMD),
         
@@ -321,14 +321,14 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       ? AppTheme.primary.withOpacity(0.15)
                       : isSecondary
                           ? AppTheme.neutral.withOpacity(0.1)
-                          : AppTheme.surfaceCard,
+                          : AppTheme.cardBackground(context),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                   border: Border.all(
                     color: isPrimary 
                         ? AppTheme.primary
                         : isSecondary
                             ? AppTheme.neutral
-                            : AppTheme.surfaceBorder,
+                            : AppTheme.borderColor(context),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -341,17 +341,17 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           ? AppTheme.primary
                           : isSecondary
                               ? AppTheme.neutral
-                              : AppTheme.textMuted,
+                              : AppTheme.textMutedColor(context),
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Expanded(
                       child: Text(
                         tactic['label'] as String,
-                        style: AppTheme.bodySmall.copyWith(
+                        style: AppTheme.bodySmallThemed(context).copyWith(
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected 
-                              ? AppTheme.textPrimary
-                              : AppTheme.textSecondary,
+                              ? AppTheme.textPrimaryColor(context)
+                              : AppTheme.textSecondaryColor(context),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -369,7 +369,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                         ),
                         child: Text(
                           '1',
-                          style: AppTheme.label.copyWith(
+                          style: AppTheme.labelThemed(context).copyWith(
                             color: Colors.white,
                             fontSize: 10,
                           ),
@@ -387,7 +387,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                         ),
                         child: Text(
                           '2',
-                          style: AppTheme.label.copyWith(
+                          style: AppTheme.labelThemed(context).copyWith(
                             color: Colors.white,
                             fontSize: 10,
                           ),
@@ -407,8 +407,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             _secondaryTactic != null
                 ? 'Primary + backup selected'
                 : 'Tap another for optional backup',
-            style: AppTheme.label.copyWith(
-              color: AppTheme.textMuted,
+            style: AppTheme.labelThemed(context).copyWith(
+              color: AppTheme.textMutedColor(context),
             ),
           ),
         ],
@@ -421,9 +421,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     return Container(
       padding: AppTheme.cardPadding,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceCard,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.surfaceBorder),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,7 +431,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Match readiness', style: AppTheme.headingSmall),
+              Text('Match readiness', style: AppTheme.headingSmallThemed(context)),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppTheme.spaceSM,
@@ -443,7 +443,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                 ),
                 child: Text(
                   _getReadinessLabel(_readinessLevel),
-                  style: AppTheme.label.copyWith(
+                  style: AppTheme.labelThemed(context).copyWith(
                     color: _getReadinessColor(_readinessLevel),
                   ),
                 ),
@@ -458,7 +458,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             children: [
               Text(
                 '$_readinessLevel',
-                style: AppTheme.statMedium.copyWith(
+                style: AppTheme.statMediumThemed(context).copyWith(
                   color: _getReadinessColor(_readinessLevel),
                 ),
               ),
@@ -470,7 +470,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                     overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
                     activeTrackColor: _getReadinessColor(_readinessLevel),
-                    inactiveTrackColor: AppTheme.surfaceBorder,
+                    inactiveTrackColor: AppTheme.borderColor(context),
                     thumbColor: _getReadinessColor(_readinessLevel),
                     overlayColor: _getReadinessColor(_readinessLevel).withOpacity(0.2),
                   ),
@@ -486,7 +486,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   ),
                 ),
               ),
-              Text('/10', style: AppTheme.bodySmall),
+              Text('/10', style: AppTheme.bodySmallThemed(context)),
             ],
           ),
           
@@ -496,8 +496,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Still warming up', style: AppTheme.label.copyWith(fontSize: 11)),
-                Text('Ready to go', style: AppTheme.label.copyWith(fontSize: 11)),
+                Text('Still warming up', style: AppTheme.labelThemed(context).copyWith(fontSize: 11)),
+                Text('Ready to go', style: AppTheme.labelThemed(context).copyWith(fontSize: 11)),
               ],
             ),
           ),
@@ -528,12 +528,12 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           Expanded(
             child: Text(
               _errorMessage!,
-              style: AppTheme.bodySmall.copyWith(color: AppTheme.textSecondary),
+              style: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
             ),
           ),
           TextButton(
             onPressed: () => setState(() => _errorMessage = null),
-            child: Text('Dismiss', style: AppTheme.label.copyWith(color: AppTheme.primary)),
+            child: Text('Dismiss', style: AppTheme.labelThemed(context).copyWith(color: AppTheme.primary)),
           ),
         ],
       ),
@@ -550,9 +550,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: hasSelection ? AppTheme.primary : AppTheme.surfaceElevated,
+          color: hasSelection ? AppTheme.primary : AppTheme.elevatedBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: hasSelection ? null : Border.all(color: AppTheme.surfaceBorder),
+          border: hasSelection ? null : Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Center(
           child: _isLoading
@@ -563,23 +563,23 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
                     Text(
                       'Preparing briefing...',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: hasSelection ? Colors.white : AppTheme.textMuted,
+                      style: AppTheme.headingSmallThemed(context).copyWith(
+                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                       ),
                     ),
                   ],
                 )
               : Text(
                   'Confirm game plan',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: hasSelection ? Colors.white : AppTheme.textMuted,
+                  style: AppTheme.headingSmallThemed(context).copyWith(
+                    color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
                   ),
                 ),
         ),
@@ -637,11 +637,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                               _opponentController.text.isNotEmpty
                                   ? 'vs ${_opponentController.text}'
                                   : 'Ready to compete',
-                              style: AppTheme.headingSmall.copyWith(color: AppTheme.win),
+                              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.win),
                             ),
                             Text(
                               'Focus: $primaryLabel',
-                              style: AppTheme.bodySmall,
+                              style: AppTheme.bodySmallThemed(context),
                             ),
                           ],
                         ),
@@ -656,9 +656,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                 Container(
                   padding: AppTheme.cardPaddingLarge,
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard,
+                    color: AppTheme.cardBackground(context),
                     borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                    border: Border.all(color: AppTheme.surfaceBorder),
+                    border: Border.all(color: AppTheme.borderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,19 +678,19 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                             ),
                           ),
                           const SizedBox(width: AppTheme.spaceSM),
-                          Text('Match Briefing', style: AppTheme.headingMedium),
+                          Text('Match Briefing', style: AppTheme.headingMediumThemed(context)),
                         ],
                       ),
                       
                       const SizedBox(height: AppTheme.spaceMD),
-                      Divider(color: AppTheme.surfaceBorder, height: 1),
+                      Divider(color: AppTheme.borderColor(context), height: 1),
                       const SizedBox(height: AppTheme.spaceMD),
                       
                       Text(
                         _briefingResponse!,
-                        style: AppTheme.bodyLarge.copyWith(
+                        style: AppTheme.bodyLargeThemed(context).copyWith(
                           height: 1.7,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryColor(context),
                         ),
                       ),
                     ],
@@ -718,15 +718,15 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: AppTheme.surfaceCard,
+                            color: AppTheme.cardBackground(context),
                             borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                            border: Border.all(color: AppTheme.surfaceBorder),
+                            border: Border.all(color: AppTheme.borderColor(context)),
                           ),
                           child: Center(
                             child: Text(
                               'New prep',
-                              style: AppTheme.headingSmall.copyWith(
-                                color: AppTheme.textSecondary,
+                              style: AppTheme.headingSmallThemed(context).copyWith(
+                                color: AppTheme.textSecondaryColor(context),
                               ),
                             ),
                           ),
@@ -749,7 +749,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           child: Center(
                             child: Text(
                               'Ready to play',
-                              style: AppTheme.headingSmall.copyWith(
+                              style: AppTheme.headingSmallThemed(context).copyWith(
                                 color: Colors.white,
                               ),
                             ),

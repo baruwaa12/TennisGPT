@@ -189,7 +189,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving match', style: AppTheme.bodyMedium),
+            content: Text('Error saving match', style: AppTheme.bodyMediumThemed(context).copyWith(color: Colors.white)),
             backgroundColor: AppTheme.loss,
           ),
         );
@@ -261,18 +261,18 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
             child: Container(
               padding: const EdgeInsets.all(AppTheme.spaceSM),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceCard,
+                color: AppTheme.cardBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.close,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryColor(context),
                 size: 20,
               ),
             ),
           ),
           const SizedBox(width: AppTheme.spaceMD),
-          Text('Log Match', style: AppTheme.headingMedium),
+          Text('Log Match', style: AppTheme.headingMediumThemed(context)),
         ],
       ),
     );
@@ -282,7 +282,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Result', style: AppTheme.headingSmall),
+        Text('Result', style: AppTheme.headingSmallThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
         Row(
           children: [
@@ -339,18 +339,18 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceLG),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : AppTheme.surfaceCard,
+          color: isSelected ? color.withOpacity(0.15) : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: isSelected ? color : AppTheme.surfaceBorder,
+            color: isSelected ? color : AppTheme.borderColor(context),
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Center(
           child: Text(
             label,
-            style: AppTheme.headingMedium.copyWith(
-              color: isSelected ? color : AppTheme.textSecondary,
+            style: AppTheme.headingMediumThemed(context).copyWith(
+              color: isSelected ? color : AppTheme.textSecondaryColor(context),
             ),
           ),
         ),
@@ -362,11 +362,11 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Score', style: AppTheme.headingSmall),
+        Text('Score', style: AppTheme.headingSmallThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
         Container(
           padding: AppTheme.cardPadding,
-          decoration: AppTheme.cardDecoration,
+          decoration: AppTheme.cardDecorationThemed(context),
           child: Row(
             children: [
               Expanded(
@@ -381,7 +381,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                 padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
                 child: Text(
                   '–',
-                  style: AppTheme.statMedium.copyWith(color: AppTheme.textMuted),
+                  style: AppTheme.statMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
                 ),
               ),
               Expanded(
@@ -407,7 +407,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
   }) {
     return Column(
       children: [
-        Text(label, style: AppTheme.label),
+        Text(label, style: AppTheme.labelThemed(context)),
         const SizedBox(height: AppTheme.spaceSM),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -427,17 +427,17 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
               decoration: BoxDecoration(
                 color: isHighlighted 
                     ? AppTheme.primary.withOpacity(0.15) 
-                    : AppTheme.surfaceElevated,
+                    : AppTheme.elevatedBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 border: Border.all(
-                  color: isHighlighted ? AppTheme.primary : AppTheme.surfaceBorder,
+                  color: isHighlighted ? AppTheme.primary : AppTheme.borderColor(context),
                 ),
               ),
               child: Center(
                 child: Text(
                   '$value',
-                  style: AppTheme.statMedium.copyWith(
-                    color: isHighlighted ? AppTheme.primary : AppTheme.textPrimary,
+                  style: AppTheme.statMediumThemed(context).copyWith(
+                    color: isHighlighted ? AppTheme.primary : AppTheme.textPrimaryColor(context),
                   ),
                 ),
               ),
@@ -467,13 +467,13 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: AppTheme.surfaceElevated,
+          color: AppTheme.elevatedBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: enabled ? AppTheme.textSecondary : AppTheme.textMuted,
+          color: enabled ? AppTheme.textSecondaryColor(context) : AppTheme.textMutedColor(context),
         ),
       ),
     );
@@ -483,19 +483,19 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Optional', style: AppTheme.label),
+        Text('Optional', style: AppTheme.labelThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
         
         // Opponent name
         Container(
-          decoration: AppTheme.cardDecoration,
+          decoration: AppTheme.cardDecorationThemed(context),
           child: TextField(
             controller: _opponentController,
             focusNode: _opponentFocus,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
             decoration: InputDecoration(
               hintText: 'Opponent name',
-              hintStyle: AppTheme.bodyMedium,
+              hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
               border: InputBorder.none,
               contentPadding: AppTheme.cardPadding,
             ),
@@ -508,15 +508,15 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         
         // Quick note
         Container(
-          decoration: AppTheme.cardDecoration,
+          decoration: AppTheme.cardDecorationThemed(context),
           child: TextField(
             controller: _noteController,
             focusNode: _noteFocus,
-            style: AppTheme.bodyMedium.copyWith(color: AppTheme.textPrimary),
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
             maxLines: 2,
             decoration: InputDecoration(
               hintText: 'Quick note (e.g., "serve was off today")',
-              hintStyle: AppTheme.bodyMedium,
+              hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
               border: InputBorder.none,
               contentPadding: AppTheme.cardPadding,
             ),
@@ -533,9 +533,9 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceDark,
+        color: AppTheme.scaffoldBackground(context),
         border: Border(
-          top: BorderSide(color: AppTheme.surfaceBorder),
+          top: BorderSide(color: AppTheme.borderColor(context)),
         ),
       ),
       child: SafeArea(
@@ -546,7 +546,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
             decoration: BoxDecoration(
-              color: isValid ? AppTheme.primary : AppTheme.surfaceCard,
+              color: isValid ? AppTheme.primary : AppTheme.cardBackground(context),
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             ),
             child: Center(
@@ -561,8 +561,8 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                     )
                   : Text(
                       'Save Match',
-                      style: AppTheme.headingSmall.copyWith(
-                        color: isValid ? Colors.white : AppTheme.textMuted,
+                      style: AppTheme.headingSmallThemed(context).copyWith(
+                        color: isValid ? Colors.white : AppTheme.textMutedColor(context),
                       ),
                     ),
             ),
@@ -629,14 +629,14 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                 
                 Text(
                   'Match Saved',
-                  style: AppTheme.headingLarge,
+                  style: AppTheme.headingLargeThemed(context),
                 ),
                 
                 const SizedBox(height: AppTheme.spaceSM),
                 
                 Text(
                   '${isWin ? "Win" : "Loss"} · $_setsWon-$_setsLost vs ${_opponentController.text.isEmpty ? "Opponent" : _opponentController.text}',
-                  style: AppTheme.bodyLarge,
+                  style: AppTheme.bodyLargeThemed(context),
                 ),
                 
                 const SizedBox(height: AppTheme.spaceXL),
@@ -656,7 +656,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                                 color: AppTheme.warning,
                               ),
                               const SizedBox(width: AppTheme.spaceSM),
-                              Text('Quick Insight', style: AppTheme.headingSmall),
+                              Text('Quick Insight', style: AppTheme.headingSmallThemed(context)),
                             ],
                           ),
                           const SizedBox(height: AppTheme.spaceMD),
@@ -664,8 +664,8 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                             child: SingleChildScrollView(
                               child: Text(
                                 _aiInsight!,
-                                style: AppTheme.bodyMedium.copyWith(
-                                  color: AppTheme.textPrimary,
+                                style: AppTheme.bodyMediumThemed(context).copyWith(
+                                  color: AppTheme.textPrimaryColor(context),
                                   height: 1.6,
                                 ),
                               ),
@@ -684,7 +684,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                     // Share
                     Expanded(
                       child: Container(
-                        decoration: AppTheme.cardDecoration,
+                        decoration: AppTheme.cardDecorationThemed(context),
                         child: ShareButton(
                           shareText: ShareTextGenerator.matchResult(
                             result: _result!,
@@ -696,7 +696,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                             insight: null,
                           ),
                           subject: 'My tennis match',
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.textSecondaryColor(context),
                         ),
                       ),
                     ),
@@ -731,15 +731,15 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceCard,
+                        color: AppTheme.cardBackground(context),
                         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        border: Border.all(color: AppTheme.surfaceBorder),
+                        border: Border.all(color: AppTheme.borderColor(context)),
                       ),
                       child: Center(
                         child: Text(
                           'Add Reflection',
-                          style: AppTheme.headingSmall.copyWith(
-                            color: AppTheme.textSecondary,
+                          style: AppTheme.headingSmallThemed(context).copyWith(
+                            color: AppTheme.textSecondaryColor(context),
                           ),
                         ),
                       ),
@@ -764,7 +764,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                     child: Center(
                       child: Text(
                         'Done',
-                        style: AppTheme.headingSmall.copyWith(color: Colors.white),
+                        style: AppTheme.headingSmallThemed(context).copyWith(color: Colors.white),
                       ),
                     ),
                   ),

@@ -83,7 +83,7 @@ class AnalysisResultScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Screen title
-          Text('Match Analysis', style: AppTheme.headingMedium),
+          Text('Match Analysis', style: AppTheme.headingMediumThemed(context)),
           
           // Close button
           GestureDetector(
@@ -94,12 +94,12 @@ class AnalysisResultScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(AppTheme.spaceSM),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceCard,
+                color: AppTheme.cardBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.close,
-                color: AppTheme.textSecondary,
+                color: AppTheme.textSecondaryColor(context),
                 size: 20,
               ),
             ),
@@ -118,7 +118,7 @@ class AnalysisResultScreen extends StatelessWidget {
         // Date label
         Text(
           _formatDate(data.date),
-          style: AppTheme.label,
+          style: AppTheme.labelThemed(context),
         ),
         
         const SizedBox(height: AppTheme.spaceSM),
@@ -131,7 +131,7 @@ class AnalysisResultScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 'vs ${data.opponent}',
-                style: AppTheme.headingLarge,
+                style: AppTheme.headingLargeThemed(context),
               ),
             ),
             
@@ -156,14 +156,14 @@ class AnalysisResultScreen extends StatelessWidget {
                 children: [
                   Text(
                     isWin ? 'W' : 'L',
-                    style: AppTheme.headingSmall.copyWith(
+                    style: AppTheme.headingSmallThemed(context).copyWith(
                       color: isWin ? AppTheme.win : AppTheme.loss,
                     ),
                   ),
                   const SizedBox(width: AppTheme.spaceSM),
                   Text(
                     '${data.setsWon}-${data.setsLost}',
-                    style: AppTheme.statMedium.copyWith(
+                    style: AppTheme.statMediumThemed(context).copyWith(
                       color: isWin ? AppTheme.win : AppTheme.loss,
                     ),
                   ),
@@ -183,7 +183,7 @@ class AnalysisResultScreen extends StatelessWidget {
       iconColor: AppTheme.warning,
       child: Text(
         data.summary,
-        style: AppTheme.bodyLarge,
+        style: AppTheme.bodyLargeThemed(context),
       ),
     );
   }
@@ -217,7 +217,7 @@ class AnalysisResultScreen extends StatelessWidget {
                 color: AppTheme.primary,
               ),
               const SizedBox(width: AppTheme.spaceSM),
-              Text('Next Match Focus', style: AppTheme.headingSmall),
+              Text('Next Match Focus', style: AppTheme.headingSmallThemed(context)),
             ],
           ),
           
@@ -235,7 +235,7 @@ class AnalysisResultScreen extends StatelessWidget {
           // Divider
           Container(
             height: 1,
-            color: AppTheme.surfaceBorder,
+            color: AppTheme.borderColor(context),
           ),
           
           const SizedBox(height: AppTheme.spaceMD),
@@ -278,13 +278,13 @@ class AnalysisResultScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: AppTheme.label.copyWith(
+                style: AppTheme.labelThemed(context).copyWith(
                   color: AppTheme.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: AppTheme.spaceXS),
-              Text(content, style: AppTheme.bodyMedium),
+              Text(content, style: AppTheme.bodyMediumThemed(context)),
             ],
           ),
         ),
@@ -311,7 +311,7 @@ class AnalysisResultScreen extends StatelessWidget {
             child: Center(
               child: Text(
                 'Done',
-                style: AppTheme.headingSmall.copyWith(
+                style: AppTheme.headingSmallThemed(context).copyWith(
                   color: Colors.white,
                 ),
               ),
