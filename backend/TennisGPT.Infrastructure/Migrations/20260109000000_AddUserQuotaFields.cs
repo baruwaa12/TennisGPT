@@ -16,7 +16,7 @@ namespace TennisGPT.Infrastructure.Migrations
                 table: "Users",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: 0); // Free = 0
+                defaultValue: 0);
 
             migrationBuilder.AddColumn<bool>(
                 name: "OnboardingCompleted",
