@@ -33,6 +33,9 @@ class AuthService extends ChangeNotifier {
   
   // Callback to sync onboarding status to PlayerProfileService
   Function(bool)? onOnboardingStatusReceived;
+  
+  // Callback to clear all local data on sign out
+  Function()? onSignOut;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -197,6 +200,9 @@ class AuthService extends ChangeNotifier {
 
       // Clear local tokens
       await _tokenService.clearTokens();
+      
+      // Clear all local data via callback
+      onSignOut?.call();
 
       _isAuthenticated = false;
       _userDisplayName = null;
@@ -208,7 +214,7 @@ class AuthService extends ChangeNotifier {
       _error = null;
 
       if (kDebugMode) {
-        print('AuthService: Signed out');
+        print('AuthService: Signed out and cleared local data');
       }
     } catch (e) {
       _error = 'Error signing out: $e';

@@ -53,6 +53,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => StreakService()..initialize(),
         ),
+        // Wire up sign out callback to clear all local data
+        ProxyProvider3<AuthService, PlayerProfileService, UsageService, void>(
+          update: (context, authService, profileService, usageService, _) {
+            authService.onSignOut = () async {
+              await profileService.resetProfile();
+              await usageService.resetAllUsage();
+            };
+            return null;
+          },
+        ),
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
