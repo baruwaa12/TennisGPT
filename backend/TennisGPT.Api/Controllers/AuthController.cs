@@ -78,6 +78,18 @@ public class AuthController : ControllerBase
         return Ok(user);
     }
 
+    [Authorize]
+    [HttpPost("onboarding-complete")]
+    public async Task<ActionResult> MarkOnboardingComplete()
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        await _authService.MarkOnboardingCompleteAsync(userId.Value);
+        return Ok(new { success = true });
+    }
+
     private Guid? GetUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

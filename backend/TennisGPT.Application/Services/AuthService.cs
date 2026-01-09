@@ -57,7 +57,8 @@ public class AuthService : IAuthService
                 GoogleId = googleUser.GoogleId,
                 Email = googleUser.Email,
                 DisplayName = googleUser.DisplayName,
-                PhotoUrl = googleUser.PhotoUrl
+                PhotoUrl = googleUser.PhotoUrl,
+                LastLoginAt = DateTime.UtcNow
             });
         }
         else
@@ -129,6 +130,16 @@ public class AuthService : IAuthService
     {
         var user = await _userRepository.GetByIdAsync(userId);
         return user != null ? MapToDto(user) : null;
+    }
+
+    public async Task MarkOnboardingCompleteAsync(Guid userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user != null)
+        {
+            user.OnboardingCompleted = true;
+            await _userRepository.UpdateAsync(user);
+        }
     }
 
     private string GenerateJwtToken(User user)

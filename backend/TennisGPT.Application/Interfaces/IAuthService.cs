@@ -8,4 +8,5 @@ public interface IAuthService
     Task<AuthResponse> RefreshTokenAsync(string refreshToken);
     Task RevokeRefreshTokenAsync(Guid userId);
     Task<UserDto?> GetCurrentUserAsync(Guid userId);
+    Task MarkOnboardingCompleteAsync(Guid userId);
 }

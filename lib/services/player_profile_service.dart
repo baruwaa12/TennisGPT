@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'token_service.dart';
 
 /// PlayerProfileService stores and retrieves player profile data
 /// collected during onboarding.
 class PlayerProfileService extends ChangeNotifier {
+  final String _apiBaseUrl = 'https://tennisgpt-production.up.railway.app';
+  final TokenService _tokenService = TokenService();
   // Storage keys
   static const String _hasCompletedOnboardingKey = 'has_completed_onboarding';
   static const String _playerLevelKey = 'player_level';
@@ -82,15 +86,50 @@ class PlayerProfileService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Mark onboarding as complete
+  /// Mark onboarding as complete (locally and on backend)
   Future<void> completeOnboarding() async {
     _hasCompletedOnboarding = true;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hasCompletedOnboardingKey, true);
     notifyListeners();
     
+    // Sync to backend
+    try {
+      final token = await _tokenService.getAccessToken();
+      if (token != null) {
+        await http.post(
+          Uri.parse('$_apiBaseUrl/api/auth/onboarding-complete'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+        if (kDebugMode) {
+          print('PlayerProfileService: Onboarding synced to backend');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('PlayerProfileService: Failed to sync onboarding to backend - $e');
+      }
+    }
+    
     if (kDebugMode) {
       print('PlayerProfileService: Onboarding completed');
+    }
+  }
+  
+  /// Sync onboarding status from backend (called after login)
+  Future<void> syncFromBackend(bool backendOnboardingCompleted) async {
+    if (backendOnboardingCompleted && !_hasCompletedOnboarding) {
+      _hasCompletedOnboarding = true;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_hasCompletedOnboardingKey, true);
+      notifyListeners();
+      
+      if (kDebugMode) {
+        print('PlayerProfileService: Synced onboarding from backend (completed)');
+      }
     }
   }
 

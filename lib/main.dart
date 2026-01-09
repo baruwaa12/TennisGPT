@@ -70,8 +70,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _hasSyncedOnboarding = false;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +86,7 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, authService, profileService, child) {
         // Not authenticated - show login
         if (!authService.isAuthenticated) {
+          _hasSyncedOnboarding = false; // Reset sync flag on logout
           return const LoginScreen();
         }
         
@@ -89,8 +97,17 @@ class AuthWrapper extends StatelessWidget {
           );
         }
         
+        // Sync onboarding status from backend (once per login)
+        if (!_hasSyncedOnboarding && authService.onboardingCompleted) {
+          _hasSyncedOnboarding = true;
+          // Use addPostFrameCallback to avoid calling setState during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            profileService.syncFromBackend(authService.onboardingCompleted);
+          });
+        }
+        
         // Authenticated but hasn't completed onboarding - show onboarding
-        if (!profileService.hasCompletedOnboarding) {
+        if (!profileService.hasCompletedOnboarding && !authService.onboardingCompleted) {
           return const OnboardingScreen();
         }
         

@@ -30,6 +30,9 @@ class AuthService extends ChangeNotifier {
   String _userPlan = 'free';
   bool _onboardingCompleted = false;
   int _tacticalRemaining = 4;
+  
+  // Callback to sync onboarding status to PlayerProfileService
+  Function(bool)? onOnboardingStatusReceived;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -134,9 +137,12 @@ class AuthService extends ChangeNotifier {
         _tacticalRemaining = user['tacticalRemaining'] ?? 4;
         _isAuthenticated = true;
         _error = null;
+        
+        // Notify about onboarding status from backend
+        onOnboardingStatusReceived?.call(_onboardingCompleted);
 
         if (kDebugMode) {
-          print('AuthService: Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining)');
+          print('AuthService: Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining, onboarding: $_onboardingCompleted)');
         }
       } else {
         // Handle error response
