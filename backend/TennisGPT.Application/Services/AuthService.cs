@@ -174,7 +174,11 @@ public class AuthService : IAuthService
             Id = user.Id,
             Email = user.Email,
             DisplayName = user.DisplayName,
-            PhotoUrl = user.PhotoUrl
+            PhotoUrl = user.PhotoUrl,
+            Plan = user.Plan.ToString().ToLower(),
+            OnboardingCompleted = user.OnboardingCompleted,
+            TacticalUsedThisPeriod = user.TacticalUsedPeriod,
+            TacticalRemaining = user.GetRemainingTacticalAnalyses()
         };
     }
 }

@@ -30,6 +30,7 @@ builder.Services.AddHttpClient<IOpenAIClient, OpenAIClient>();
 // Application services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOpenAIService, OpenAIService>();
+builder.Services.AddScoped<IQuotaService, QuotaService>();
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"]

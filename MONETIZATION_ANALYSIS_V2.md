@@ -60,7 +60,7 @@
 
 #### 1. 🎯 Tactical Analysis Engine
 - Describe your match → Get 3 strategic recommendations
-- Opponent profiling and counter-strategies
+- Opponent scouting and counter-strategies
 - Pattern recognition across your match history
 - **This is your #1 value driver**
 

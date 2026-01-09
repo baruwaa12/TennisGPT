@@ -172,7 +172,7 @@ This document tracks all improvements made during the 2-week sprint to transform
 │   ⭐ PREMIUM                        │
 │   ✓ Unlimited match logging         │
 │   ✓ Unlimited tactical analysis     │
-│   ✓ Opponent profiling              │
+│   ✓ Opponent scouting               │
 │   ✓ Advanced analytics              │
 │   ✓ AI weekly insights              │
 │   ✓ Export your data                │

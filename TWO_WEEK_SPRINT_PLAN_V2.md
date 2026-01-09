@@ -232,7 +232,7 @@ var prompt = $"""
 └─────────────────────────────────┘
 ```
 
-#### Afternoon: Opponent Profiling
+#### Afternoon: Opponent Scouting
 - [ ] Add "Opponent Notes" feature
 - [ ] Store notes about specific opponents
 - [ ] Include in tactical analysis context
@@ -269,7 +269,7 @@ var prompt = $"""
 │  PREMIUM includes:              │
 │  ✓ Unlimited match logging      │
 │  ✓ Unlimited tactical analysis  │
-│  ✓ Opponent profiling           │
+│  ✓ Opponent scouting            │
 │  ✓ Advanced analytics           │
 │  ✓ AI weekly insights           │
 │  ✓ Export your data             │
@@ -827,7 +827,7 @@ Stop guessing. Start winning.
 Features:
 • Quick match logging with voice input
 • AI tactical recommendations based on YOUR data
-• Opponent profiling and counter-strategies
+• Opponent scouting and counter-strategies
 • Performance analytics with visual charts
 • Pattern recognition across your matches
 • Pre-match tactical preparation

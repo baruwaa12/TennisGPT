@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,19 +13,95 @@ namespace TennisGPT.Api.Controllers;
 public class CoachingController : ControllerBase
 {
     private readonly IOpenAIService _openAIService;
+    private readonly IQuotaService _quotaService;
     private readonly ILogger<CoachingController> _logger;
 
-    public CoachingController(IOpenAIService openAIService, ILogger<CoachingController> logger)
+    public CoachingController(
+        IOpenAIService openAIService, 
+        IQuotaService quotaService,
+        ILogger<CoachingController> logger)
     {
         _openAIService = openAIService;
+        _quotaService = quotaService;
         _logger = logger;
     }
+    
+    private Guid? GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim))
+            return null;
+
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
+    
+    private string GetClientIp()
+    {
+        return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    }
+    
+    private async Task<ActionResult?> CheckQuotaAndRateLimitAsync(string endpoint)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new ErrorResponse 
+            { 
+                Error = "Authentication required",
+                RequestId = GenerateRequestId()
+            });
+        }
+        
+        // Rate limit check
+        var rateLimitResult = await _quotaService.CheckRateLimitAsync(userId.Value, GetClientIp());
+        if (rateLimitResult.IsLimited)
+        {
+            Response.Headers.Append("Retry-After", rateLimitResult.RetryAfterSeconds.ToString());
+            return StatusCode(429, new ErrorResponse
+            {
+                Error = "Too many requests. Please wait before trying again.",
+                RequestId = rateLimitResult.RequestId,
+                RetryAfterSeconds = rateLimitResult.RetryAfterSeconds
+            });
+        }
+        
+        // Only check quota for AI-consuming endpoints
+        if (endpoint is "tactical-analysis" or "mental-check-in" or "emotional-reset" or "quick-tip" or "technique" or "match-strategy" or "drills" or "training-plan")
+        {
+            var quotaResult = await _quotaService.CheckAndConsumeQuotaAsync(userId.Value, endpoint);
+            if (!quotaResult.CanProceed)
+            {
+                return StatusCode(quotaResult.StatusCode, new ErrorResponse
+                {
+                    Error = quotaResult.ErrorMessage ?? "Access denied",
+                    RequestId = quotaResult.RequestId,
+                    UpgradeRequired = quotaResult.StatusCode == 402
+                });
+            }
+            
+            // Add remaining quota to response headers
+            Response.Headers.Append("X-Quota-Remaining", quotaResult.RemainingQuota.ToString());
+            Response.Headers.Append("X-User-Plan", quotaResult.UserPlan.ToString().ToLower());
+        }
+        
+        return null; // All checks passed
+    }
+    
+    private static string GenerateRequestId() => Guid.NewGuid().ToString("N")[..8];
 
     [HttpPost("mental-check-in")]
     public async Task<ActionResult<CoachingResponse>> MentalCheckIn([FromBody] MentalCheckInRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[MentalCheckIn] User={UserId}, Mood={Mood}", userId, request.Mood);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] MentalCheckIn User={UserId}, Mood={Mood}", requestId, userId, request.Mood);
+        
+        // Check quota and rate limit
+        var blockResult = await CheckQuotaAndRateLimitAsync("mental-check-in");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -33,20 +110,35 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[MentalCheckIn] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate your briefing right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] MentalCheckIn failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate your briefing right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("emotional-reset")]
     public async Task<ActionResult<CoachingResponse>> EmotionalReset([FromBody] EmotionalResetRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[EmotionalReset] User={UserId}, Situation length={Length}", userId, request.Situation?.Length ?? 0);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] EmotionalReset User={UserId}, Situation length={Length}", 
+            requestId, userId, request.Situation?.Length ?? 0);
+        
+        // Check quota and rate limit
+        var blockResult = await CheckQuotaAndRateLimitAsync("emotional-reset");
+        if (blockResult != null) return blockResult;
         
         if (string.IsNullOrWhiteSpace(request.Situation))
         {
-            return BadRequest(new { error = "Please describe your situation" });
+            return BadRequest(new ErrorResponse 
+            { 
+                Error = "Please describe your situation",
+                RequestId = requestId
+            });
         }
         
         try
@@ -56,21 +148,35 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[EmotionalReset] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate your debrief right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] EmotionalReset failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate your debrief right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("tactical-analysis")]
     public async Task<ActionResult<CoachingResponse>> TacticalAnalysis([FromBody] TacticalAnalysisRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[TacticalAnalysis] User={UserId}, Description length={Length}, HasMatches={HasMatches}", 
-            userId, request.MatchDescription?.Length ?? 0, request.RecentMatches != null);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] TacticalAnalysis User={UserId}, Description length={Length}", 
+            requestId, userId, request.MatchDescription?.Length ?? 0);
+        
+        // Check quota and rate limit
+        var blockResult = await CheckQuotaAndRateLimitAsync("tactical-analysis");
+        if (blockResult != null) return blockResult;
         
         if (string.IsNullOrWhiteSpace(request.MatchDescription))
         {
-            return BadRequest(new { error = "Please describe your match or question" });
+            return BadRequest(new ErrorResponse 
+            { 
+                Error = "Please describe your match or question",
+                RequestId = requestId
+            });
         }
         
         try
@@ -80,21 +186,34 @@ public class CoachingController : ControllerBase
                 : null;
 
             var response = await _openAIService.TacticalAnalysisAsync(request.MatchDescription, matchesJson);
-            _logger.LogInformation("[TacticalAnalysis] Success for user {UserId}, Response length={Length}", userId, response?.Length ?? 0);
+            
+            _logger.LogInformation("[{RequestId}] TacticalAnalysis success, Response length={Length}", 
+                requestId, response?.Length ?? 0);
+            
             return Ok(new CoachingResponse { Response = response });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[TacticalAnalysis] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate tactical insight right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] TacticalAnalysis failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate tactical insight right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("drills")]
     public async Task<ActionResult<CoachingResponse>> GenerateDrills([FromBody] DrillsRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[GenerateDrills] User={UserId}, Matches={Count}", userId, request.Matches?.Count ?? 0);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] GenerateDrills User={UserId}, Matches={Count}", 
+            requestId, userId, request.Matches?.Count ?? 0);
+        
+        var blockResult = await CheckQuotaAndRateLimitAsync("drills");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -104,16 +223,25 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[GenerateDrills] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate drills right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] GenerateDrills failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate drills right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("quick-tip")]
     public async Task<ActionResult<CoachingResponse>> QuickTip([FromBody] QuickTipRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[QuickTip] User={UserId}", userId);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] QuickTip User={UserId}", requestId, userId);
+        
+        var blockResult = await CheckQuotaAndRateLimitAsync("quick-tip");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -122,16 +250,25 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[QuickTip] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate a tip right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] QuickTip failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate a tip right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("technique")]
     public async Task<ActionResult<CoachingResponse>> AnalyzeTechnique([FromBody] TechniqueAnalysisRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[AnalyzeTechnique] User={UserId}", userId);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] AnalyzeTechnique User={UserId}", requestId, userId);
+        
+        var blockResult = await CheckQuotaAndRateLimitAsync("technique");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -140,16 +277,25 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[AnalyzeTechnique] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to analyze technique right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] AnalyzeTechnique failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to analyze technique right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("match-strategy")]
     public async Task<ActionResult<CoachingResponse>> MatchStrategy([FromBody] MatchStrategyRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[MatchStrategy] User={UserId}", userId);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] MatchStrategy User={UserId}", requestId, userId);
+        
+        var blockResult = await CheckQuotaAndRateLimitAsync("match-strategy");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -158,16 +304,25 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[MatchStrategy] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate strategy right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] MatchStrategy failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate strategy right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
 
     [HttpPost("training-plan")]
     public async Task<ActionResult<CoachingResponse>> TrainingPlan([FromBody] TrainingPlanRequest request)
     {
-        var userId = User.FindFirst("sub")?.Value ?? "unknown";
-        _logger.LogInformation("[TrainingPlan] User={UserId}", userId);
+        var requestId = GenerateRequestId();
+        var userId = GetUserId();
+        
+        _logger.LogInformation("[{RequestId}] TrainingPlan User={UserId}", requestId, userId);
+        
+        var blockResult = await CheckQuotaAndRateLimitAsync("training-plan");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -176,8 +331,21 @@ public class CoachingController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[TrainingPlan] Failed for user {UserId}", userId);
-            return Ok(new CoachingResponse { Response = "Unable to generate training plan right now. Please try again." });
+            _logger.LogError(ex, "[{RequestId}] TrainingPlan failed", requestId);
+            return StatusCode(500, new ErrorResponse
+            {
+                Error = "Unable to generate training plan right now. Please try again.",
+                RequestId = requestId
+            });
         }
     }
+}
+
+// Error response DTO for consistent error handling
+public class ErrorResponse
+{
+    public string Error { get; set; } = "";
+    public string? RequestId { get; set; }
+    public bool UpgradeRequired { get; set; } = false;
+    public int? RetryAfterSeconds { get; set; }
 }

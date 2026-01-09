@@ -26,6 +26,14 @@ public class TennisGPTDbContext : DbContext
 
             entity.Property(e => e.GoogleId).IsRequired();
             entity.Property(e => e.Email).IsRequired();
+            
+            // Plan stored as int
+            entity.Property(e => e.Plan)
+                .HasConversion<int>()
+                .HasDefaultValue(UserPlan.Free);
+            
+            entity.Property(e => e.OnboardingCompleted).HasDefaultValue(false);
+            entity.Property(e => e.TacticalUsedPeriod).HasDefaultValue(0);
         });
 
         // Match configuration

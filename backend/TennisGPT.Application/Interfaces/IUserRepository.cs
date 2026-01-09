@@ -11,4 +11,8 @@ public interface IUserRepository
     Task<User> CreateAsync(User user);
     Task<User> UpdateAsync(User user);
     Task DeleteAsync(Guid id);
+    
+    // Admin: Paginated user listing
+    Task<(List<User> Users, int TotalCount)> GetAllPaginatedAsync(int limit = 20, Guid? cursor = null);
+    Task<int> GetTotalUserCountAsync();
 }

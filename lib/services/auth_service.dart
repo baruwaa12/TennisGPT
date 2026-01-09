@@ -27,6 +27,9 @@ class AuthService extends ChangeNotifier {
   String? _userDisplayName;
   String? _userPhotoURL;
   String? _userEmail;
+  String _userPlan = 'free';
+  bool _onboardingCompleted = false;
+  int _tacticalRemaining = 4;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -34,6 +37,10 @@ class AuthService extends ChangeNotifier {
   String? get userDisplayName => _userDisplayName;
   String? get userPhotoURL => _userPhotoURL;
   String? get userEmail => _userEmail;
+  String get userPlan => _userPlan;
+  bool get isPremium => _userPlan == 'premium';
+  bool get onboardingCompleted => _onboardingCompleted;
+  int get tacticalRemaining => _tacticalRemaining;
 
   Future<void> initialize() async {
     if (kDebugMode) {
@@ -122,11 +129,14 @@ class AuthService extends ChangeNotifier {
         _userDisplayName = user['displayName'];
         _userPhotoURL = user['photoUrl'];
         _userEmail = user['email'];
+        _userPlan = user['plan'] ?? 'free';
+        _onboardingCompleted = user['onboardingCompleted'] ?? false;
+        _tacticalRemaining = user['tacticalRemaining'] ?? 4;
         _isAuthenticated = true;
         _error = null;
 
         if (kDebugMode) {
-          print('AuthService: Authenticated as $_userEmail');
+          print('AuthService: Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining)');
         }
       } else {
         // Handle error response
@@ -186,6 +196,9 @@ class AuthService extends ChangeNotifier {
       _userDisplayName = null;
       _userPhotoURL = null;
       _userEmail = null;
+      _userPlan = 'free';
+      _onboardingCompleted = false;
+      _tacticalRemaining = 4;
       _error = null;
 
       if (kDebugMode) {
@@ -221,10 +234,13 @@ class AuthService extends ChangeNotifier {
         _userDisplayName = user['displayName'];
         _userPhotoURL = user['photoUrl'];
         _userEmail = user['email'];
+        _userPlan = user['plan'] ?? 'free';
+        _onboardingCompleted = user['onboardingCompleted'] ?? false;
+        _tacticalRemaining = user['tacticalRemaining'] ?? 4;
         _isAuthenticated = true;
 
         if (kDebugMode) {
-          print('AuthService: Restored session for $_userEmail');
+          print('AuthService: Restored session for $_userEmail (plan: $_userPlan)');
           }
         } catch (e) {
           if (kDebugMode) {
@@ -270,10 +286,13 @@ class AuthService extends ChangeNotifier {
         _userDisplayName = user['displayName'];
         _userPhotoURL = user['photoUrl'];
         _userEmail = user['email'];
+        _userPlan = user['plan'] ?? 'free';
+        _onboardingCompleted = user['onboardingCompleted'] ?? false;
+        _tacticalRemaining = user['tacticalRemaining'] ?? 4;
         _isAuthenticated = true;
 
         if (kDebugMode) {
-          print('AuthService: Token refreshed for $_userEmail');
+          print('AuthService: Token refreshed for $_userEmail (plan: $_userPlan)');
         }
         return true;
         } catch (e) {

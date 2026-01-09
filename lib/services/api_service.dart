@@ -15,6 +15,7 @@ enum ApiErrorCode {
   serverError,
   rateLimited,
   invalidResponse,
+  quotaExceeded,  // 402 - Quota exceeded, upgrade required
   unknown,
 }
 
@@ -100,11 +101,16 @@ class ApiService extends ChangeNotifier {
         return 'Too many requests. Please wait a moment and try again.';
       case ApiErrorCode.invalidResponse:
         return 'We received an unexpected response. Please try again.';
+      case ApiErrorCode.quotaExceeded:
+        return 'You\'ve used all your free analyses. Upgrade to Premium for unlimited access!';
       case ApiErrorCode.unknown:
       case ApiErrorCode.none:
         return 'Something went wrong. Please try again.';
     }
   }
+  
+  /// Check if the last error requires an upgrade (quota exceeded)
+  bool get requiresUpgrade => _lastErrorCode == ApiErrorCode.quotaExceeded;
 
   /// Set error with structured logging
   void _setError(ApiErrorCode code, {String? debugMessage, String? requestId}) {
@@ -213,6 +219,10 @@ class ApiService extends ChangeNotifier {
         break;
       case 401:
         _setError(ApiErrorCode.unauthorized, requestId: requestId);
+        break;
+      case 402:
+        // Payment required / quota exceeded
+        _setError(ApiErrorCode.quotaExceeded, requestId: requestId);
         break;
       case 429:
         _setError(ApiErrorCode.rateLimited, requestId: requestId);
