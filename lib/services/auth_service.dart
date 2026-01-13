@@ -35,8 +35,8 @@ class AuthService extends ChangeNotifier {
   // Callback to sync onboarding status to PlayerProfileService
   Function(bool)? onOnboardingStatusReceived;
   
-  // Callback to clear all local data on sign out
-  Function()? onSignOut;
+  // Callback to clear all local data on sign out (MUST be awaited)
+  Future<void> Function()? onSignOut;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -71,13 +71,27 @@ class AuthService extends ChangeNotifier {
         print('Starting Google Sign-In...');
       }
 
-      // Sign in with Google
+      // Sign in with Google FIRST (before clearing data)
+      // This way if user cancels, we don't lose their existing data
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         _error = 'Google sign-in was cancelled';
         _isLoading = false;
         notifyListeners();
         return;
+      }
+      
+      // User confirmed sign-in - NOW clear previous user's data
+      // CRITICAL: This handles:
+      // 1. User switches Google accounts without explicit sign out
+      // 2. App was killed and restarted with leftover data
+      // 3. Any other case where old data might persist
+      if (kDebugMode) {
+        print('AuthService: Clearing ALL previous user data before completing sign-in...');
+      }
+      await _clearAllUserData();
+      if (onSignOut != null) {
+        await onSignOut!();
       }
 
       // Get authentication tokens
@@ -206,7 +220,10 @@ class AuthService extends ChangeNotifier {
       await _clearAllUserData();
       
       // Clear all local data via callback (for services that cache in memory)
-      onSignOut?.call();
+      // MUST await this to ensure services are fully reset before continuing
+      if (onSignOut != null) {
+        await onSignOut!();
+      }
 
       _isAuthenticated = false;
       _userDisplayName = null;
