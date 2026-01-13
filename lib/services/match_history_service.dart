@@ -1,9 +1,46 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/match_performance.dart';
 
-class MatchHistoryService {
+/// MatchHistoryService stores and retrieves match performance data.
+/// Now a ChangeNotifier to support proper reset on user switch.
+class MatchHistoryService extends ChangeNotifier {
   static const String _storageKey = 'match_history';
+  
+  // In-memory cache for faster access
+  List<MatchPerformance>? _cachedMatches;
+  bool _isLoaded = false;
+  
+  // Getters
+  bool get isLoaded => _isLoaded;
+  
+  /// Initialize and load match data into cache
+  Future<void> initialize() async {
+    if (_isLoaded) return;
+    
+    _cachedMatches = await _loadMatchesFromStorage();
+    _isLoaded = true;
+    
+    if (kDebugMode) {
+      print('MatchHistoryService: Loaded ${_cachedMatches?.length ?? 0} matches');
+    }
+  }
+  
+  /// Load matches from SharedPreferences
+  Future<List<MatchPerformance>> _loadMatchesFromStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? matchesJson = prefs.getString(_storageKey);
+    
+    if (matchesJson == null || matchesJson.isEmpty) return [];
+    
+    try {
+      final List<dynamic> matchesList = json.decode(matchesJson);
+      return matchesList.map((json) => MatchPerformance.fromJson(json)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
   
   // Get all match performances
   Future<List<MatchPerformance>> getAllMatches() async {
@@ -65,11 +102,23 @@ class MatchHistoryService {
     await prefs.setString(_storageKey, json.encode(matchesJson));
   }
   
-  // Clear all matches (for dev reset)
-  Future<void> clearAllMatches() async {
+  /// Reset all matches (for user switch - clears in-memory AND forces re-initialization)
+  Future<void> resetAllMatches() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey);
+    
+    _cachedMatches = null;
+    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
+    
+    notifyListeners();
+    
+    if (kDebugMode) {
+      print('MatchHistoryService: Reset complete - ready for new user');
+    }
   }
+  
+  /// Alias for backward compatibility
+  Future<void> clearAllMatches() async => resetAllMatches();
   
   // Get matches by surface type
   Future<List<MatchPerformance>> getMatchesBySurface(String surface) async {

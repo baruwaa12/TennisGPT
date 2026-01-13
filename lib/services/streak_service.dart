@@ -155,7 +155,7 @@ class StreakService extends ChangeNotifier {
     }
   }
 
-  /// Reset streak (for testing)
+  /// Reset streak (for user switch - clears in-memory AND forces re-initialization)
   Future<void> resetStreak() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currentStreakKey);
@@ -165,8 +165,13 @@ class StreakService extends ChangeNotifier {
     _currentStreak = 0;
     _longestStreak = 0;
     _lastActivityDate = null;
+    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
     
     notifyListeners();
+    
+    if (kDebugMode) {
+      print('StreakService: Reset complete - ready for new user');
+    }
   }
 }
 

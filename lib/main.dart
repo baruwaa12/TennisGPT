@@ -13,6 +13,7 @@ import 'services/usage_service.dart';
 import 'services/player_profile_service.dart';
 import 'services/theme_service.dart';
 import 'services/streak_service.dart';
+import 'services/match_history_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,14 +54,30 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => StreakService()..initialize(),
         ),
-        // Wire up sign out callback to clear all local data
-        ProxyProvider3<AuthService, PlayerProfileService, UsageService, void>(
-          update: (context, authService, profileService, usageService, _) {
+        ChangeNotifierProvider(
+          create: (context) => MatchHistoryService()..initialize(),
+        ),
+        // Wire up sign out callback to clear ALL local data for ALL services
+        ProxyProvider6<AuthService, PlayerProfileService, UsageService, StreakService, MatchHistoryService, PurchaseService, void>(
+          update: (context, authService, profileService, usageService, streakService, matchHistoryService, purchaseService, _) {
             authService.onSignOut = () async {
+              if (kDebugMode) {
+                print('main.dart: Clearing ALL user data from ALL services...');
+              }
+              
+              // Reset ALL services that store user-specific data
               await profileService.resetProfile();
               await usageService.resetAllUsage();
+              await streakService.resetStreak();
+              await matchHistoryService.resetAllMatches();
+              
+              // Log out from RevenueCat (important for subscription state)
+              await purchaseService.logOut();
+              
+              if (kDebugMode) {
+                print('main.dart: All user data cleared - ready for new user');
+              }
             };
-            return null;
           },
         ),
       ],
@@ -89,6 +106,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _hasSyncedOnboarding = false;
+  bool _hasReinitializedServices = false;
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +115,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // Not authenticated - show login
         if (!authService.isAuthenticated) {
           _hasSyncedOnboarding = false; // Reset sync flag on logout
+          _hasReinitializedServices = false; // Reset reinitialization flag
           return const LoginScreen();
+        }
+        
+        // Reinitialize all services after new login (once per login session)
+        if (!_hasReinitializedServices) {
+          _hasReinitializedServices = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _reinitializeAllServices(context);
+          });
         }
         
         // Profile not loaded yet - show loading
@@ -125,5 +152,22 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return const HomeScreen();
       },
     );
+  }
+  
+  /// Reinitialize all services that may have been reset during sign out
+  void _reinitializeAllServices(BuildContext context) {
+    if (kDebugMode) {
+      print('AuthWrapper: Reinitializing all services for new user...');
+    }
+    
+    // Reinitialize each service (they will only load fresh data if _isLoaded was reset)
+    context.read<PlayerProfileService>().initialize();
+    context.read<UsageService>().initialize();
+    context.read<StreakService>().initialize();
+    context.read<MatchHistoryService>().initialize();
+    
+    if (kDebugMode) {
+      print('AuthWrapper: All services reinitialized');
+    }
   }
 }

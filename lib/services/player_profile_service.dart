@@ -195,7 +195,7 @@ RESPONSE COMPLEXITY: COMPETITIVE/TOURNAMENT LEVEL
 $complexityInstructions''';
   }
 
-  /// Reset profile (for testing)
+  /// Reset profile (for user switch - clears in-memory AND forces re-initialization)
   Future<void> resetProfile() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_hasCompletedOnboardingKey);
@@ -207,7 +207,12 @@ $complexityInstructions''';
     _playerLevel = '';
     _primaryGoal = '';
     _playerName = '';
+    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
     
     notifyListeners();
+    
+    if (kDebugMode) {
+      print('PlayerProfileService: Reset complete - ready for new user');
+    }
   }
 }

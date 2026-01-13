@@ -129,7 +129,7 @@ class UsageService extends ChangeNotifier {
     return '$_aiAnalysesUsed / $freeAIAnalysesLimit free analyses used';
   }
 
-  /// Reset all usage (for dev testing)
+  /// Reset all usage (for user switch - clears in-memory AND forces re-initialization)
   Future<void> resetAllUsage() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_matchCountKey);
@@ -137,11 +137,12 @@ class UsageService extends ChangeNotifier {
     
     _matchCount = 0;
     _aiAnalysesUsed = 0;
+    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
     
     notifyListeners();
     
     if (kDebugMode) {
-      print('UsageService: All usage reset');
+      print('UsageService: Reset complete - ready for new user');
     }
   }
 }

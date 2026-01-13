@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'token_service.dart';
 
 class AuthService extends ChangeNotifier {
@@ -201,7 +202,10 @@ class AuthService extends ChangeNotifier {
       // Clear local tokens
       await _tokenService.clearTokens();
       
-      // Clear all local data via callback
+      // Clear ALL local data (except theme)
+      await _clearAllUserData();
+      
+      // Clear all local data via callback (for services that cache in memory)
       onSignOut?.call();
 
       _isAuthenticated = false;
@@ -214,7 +218,7 @@ class AuthService extends ChangeNotifier {
       _error = null;
 
       if (kDebugMode) {
-        print('AuthService: Signed out and cleared local data');
+        print('AuthService: Signed out and cleared ALL local data');
       }
     } catch (e) {
       _error = 'Error signing out: $e';
@@ -327,5 +331,26 @@ class AuthService extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+  
+  /// Clear all user-specific data from SharedPreferences
+  /// Preserves theme settings only
+  Future<void> _clearAllUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Save theme preference before clearing
+    final themeMode = prefs.getString('theme_mode');
+    
+    // Clear everything
+    await prefs.clear();
+    
+    // Restore theme preference
+    if (themeMode != null) {
+      await prefs.setString('theme_mode', themeMode);
+    }
+    
+    if (kDebugMode) {
+      print('AuthService: Cleared all SharedPreferences (preserved theme)');
+    }
   }
 }
