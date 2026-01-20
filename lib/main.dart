@@ -112,6 +112,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     return Consumer2<AuthService, PlayerProfileService>(
       builder: (context, authService, profileService, child) {
+        if (kDebugMode) {
+          print('AuthWrapper: Building - authenticated=${authService.isAuthenticated}, profileLoaded=${profileService.isLoaded}, onboarding=${profileService.hasCompletedOnboarding || authService.onboardingCompleted}');
+        }
+        
         // Not authenticated - show login
         if (!authService.isAuthenticated) {
           _hasSyncedOnboarding = false; // Reset sync flag on logout
@@ -122,8 +126,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // Reinitialize all services after new login (once per login session)
         if (!_hasReinitializedServices) {
           _hasReinitializedServices = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _reinitializeAllServices(context);
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            await _reinitializeAllServices(context);
           });
         }
         
@@ -155,19 +159,25 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
   
   /// Reinitialize all services that may have been reset during sign out
-  void _reinitializeAllServices(BuildContext context) {
+  Future<void> _reinitializeAllServices(BuildContext context) async {
     if (kDebugMode) {
       print('AuthWrapper: Reinitializing all services for new user...');
     }
     
     // Reinitialize each service (they will only load fresh data if _isLoaded was reset)
-    context.read<PlayerProfileService>().initialize();
-    context.read<UsageService>().initialize();
-    context.read<StreakService>().initialize();
-    context.read<MatchHistoryService>().initialize();
+    // These are async so we await them to ensure they complete
+    await context.read<PlayerProfileService>().initialize();
+    await context.read<UsageService>().initialize();
+    await context.read<StreakService>().initialize();
+    await context.read<MatchHistoryService>().initialize();
     
     if (kDebugMode) {
-      print('AuthWrapper: All services reinitialized');
+      print('AuthWrapper: All services reinitialized - triggering rebuild');
+    }
+    
+    // Force a rebuild now that services are loaded
+    if (mounted) {
+      setState(() {});
     }
   }
 }

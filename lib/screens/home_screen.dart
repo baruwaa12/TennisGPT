@@ -143,7 +143,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Minimal header - name and settings only
+  /// Get time-based greeting
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good morning';
+    } else if (hour < 17) {
+      return 'Good afternoon';
+    } else {
+      return 'Good evening';
+    }
+  }
+
+  /// Header with timed greeting
   Widget _buildHeader(BuildContext context, AuthService authService, String firstName) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -155,10 +167,21 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Simple name, no greeting
-          Text(
-            firstName,
-            style: AppTheme.headingMediumThemed(context),
+          // Timed greeting with name
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _getGreeting(),
+                style: AppTheme.bodySmallThemed(context).copyWith(
+                  color: AppTheme.textMutedColor(context),
+                ),
+              ),
+              Text(
+                firstName,
+                style: AppTheme.headingMediumThemed(context),
+              ),
+            ],
           ),
           
           // Settings icon

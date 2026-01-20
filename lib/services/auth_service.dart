@@ -66,9 +66,12 @@ class AuthService extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    // Remember the previous user's email to detect account switches
+    final String? previousUserEmail = _userEmail;
+
     try {
       if (kDebugMode) {
-        print('Starting Google Sign-In...');
+        print('Starting Google Sign-In... (previous user: $previousUserEmail)');
       }
 
       // Sign in with Google FIRST (before clearing data)
@@ -81,17 +84,23 @@ class AuthService extends ChangeNotifier {
         return;
       }
       
-      // User confirmed sign-in - NOW clear previous user's data
-      // CRITICAL: This handles:
-      // 1. User switches Google accounts without explicit sign out
-      // 2. App was killed and restarted with leftover data
-      // 3. Any other case where old data might persist
-      if (kDebugMode) {
-        print('AuthService: Clearing ALL previous user data before completing sign-in...');
-      }
-      await _clearAllUserData();
-      if (onSignOut != null) {
-        await onSignOut!();
+      // Check if this is a DIFFERENT user than before
+      final String newUserEmail = googleUser.email;
+      final bool isDifferentUser = previousUserEmail != null && previousUserEmail != newUserEmail;
+      
+      if (isDifferentUser) {
+        // ONLY clear data when switching to a different account
+        if (kDebugMode) {
+          print('AuthService: Switching from $previousUserEmail to $newUserEmail - clearing old data');
+        }
+        await _clearAllUserData();
+        if (onSignOut != null) {
+          await onSignOut!();
+        }
+      } else {
+        if (kDebugMode) {
+          print('AuthService: Same user ($newUserEmail) - preserving local data');
+        }
       }
 
       // Get authentication tokens
