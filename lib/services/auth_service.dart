@@ -170,6 +170,7 @@ class AuthService extends ChangeNotifier {
 
         if (kDebugMode) {
           print('AuthService: Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining, onboarding: $_onboardingCompleted)');
+          print('AuthService: Triggering notifyListeners for navigation...');
         }
       } else {
         // Handle error response

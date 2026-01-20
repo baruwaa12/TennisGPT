@@ -106,78 +106,83 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _hasSyncedOnboarding = false;
-  bool _hasReinitializedServices = false;
+  String? _lastAuthenticatedEmail;
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer2<AuthService, PlayerProfileService>(
-      builder: (context, authService, profileService, child) {
-        if (kDebugMode) {
-          print('AuthWrapper: Building - authenticated=${authService.isAuthenticated}, profileLoaded=${profileService.isLoaded}, onboarding=${profileService.hasCompletedOnboarding || authService.onboardingCompleted}');
-        }
-        
-        // Not authenticated - show login
-        if (!authService.isAuthenticated) {
-          _hasSyncedOnboarding = false; // Reset sync flag on logout
-          _hasReinitializedServices = false; // Reset reinitialization flag
-          return const LoginScreen();
-        }
-        
-        // Reinitialize all services after new login (once per login session)
-        if (!_hasReinitializedServices) {
-          _hasReinitializedServices = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            await _reinitializeAllServices(context);
-          });
-        }
-        
-        // Profile not loaded yet - show loading
-        if (!profileService.isLoaded) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        
-        // Sync onboarding status from backend (once per login)
-        if (!_hasSyncedOnboarding && authService.onboardingCompleted) {
-          _hasSyncedOnboarding = true;
-          // Use addPostFrameCallback to avoid calling setState during build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            profileService.syncFromBackend(authService.onboardingCompleted);
-          });
-        }
-        
-        // Authenticated but hasn't completed onboarding - show onboarding
-        if (!profileService.hasCompletedOnboarding && !authService.onboardingCompleted) {
-          return const OnboardingScreen();
-        }
-        
-        // Authenticated and onboarding complete - show home
-        return const HomeScreen();
-      },
-    );
+  void initState() {
+    super.initState();
+    // Listen to auth changes directly for more reliable updates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authService = context.read<AuthService>();
+      authService.addListener(_onAuthChanged);
+    });
   }
-  
-  /// Reinitialize all services that may have been reset during sign out
-  Future<void> _reinitializeAllServices(BuildContext context) async {
-    if (kDebugMode) {
-      print('AuthWrapper: Reinitializing all services for new user...');
+
+  @override
+  void dispose() {
+    // Remove listener when widget is disposed
+    try {
+      final authService = context.read<AuthService>();
+      authService.removeListener(_onAuthChanged);
+    } catch (_) {
+      // Context might not be available during dispose
     }
-    
-    // Reinitialize each service (they will only load fresh data if _isLoaded was reset)
-    // These are async so we await them to ensure they complete
-    await context.read<PlayerProfileService>().initialize();
-    await context.read<UsageService>().initialize();
-    await context.read<StreakService>().initialize();
-    await context.read<MatchHistoryService>().initialize();
-    
-    if (kDebugMode) {
-      print('AuthWrapper: All services reinitialized - triggering rebuild');
-    }
-    
-    // Force a rebuild now that services are loaded
+    super.dispose();
+  }
+
+  void _onAuthChanged() {
+    // Force rebuild when auth state changes
     if (mounted) {
       setState(() {});
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final profileService = context.watch<PlayerProfileService>();
+    
+    if (kDebugMode) {
+      print('AuthWrapper: Building - authenticated=${authService.isAuthenticated}, email=${authService.userEmail}, profileLoaded=${profileService.isLoaded}, onboarding=${profileService.hasCompletedOnboarding || authService.onboardingCompleted}');
+    }
+    
+    // Not authenticated - show login
+    if (!authService.isAuthenticated) {
+      _hasSyncedOnboarding = false;
+      _lastAuthenticatedEmail = null;
+      return const LoginScreen();
+    }
+    
+    // Check if this is a new login session (different email or first login)
+    final currentEmail = authService.userEmail;
+    if (_lastAuthenticatedEmail != currentEmail) {
+      _lastAuthenticatedEmail = currentEmail;
+      _hasSyncedOnboarding = false;
+      
+      // Sync onboarding from backend for this user
+      if (authService.onboardingCompleted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          profileService.syncFromBackend(authService.onboardingCompleted);
+        });
+        _hasSyncedOnboarding = true;
+      }
+    }
+    
+    // Profile not loaded yet - show loading (but this should rarely happen now)
+    if (!profileService.isLoaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
+    // Authenticated but hasn't completed onboarding - show onboarding
+    // Check BOTH local and backend status
+    final hasCompletedOnboarding = profileService.hasCompletedOnboarding || authService.onboardingCompleted;
+    if (!hasCompletedOnboarding) {
+      return const OnboardingScreen();
+    }
+    
+    // Authenticated and onboarding complete - show home
+    return const HomeScreen();
   }
 }
