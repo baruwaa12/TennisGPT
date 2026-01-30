@@ -175,8 +175,8 @@ class AuthService extends ChangeNotifier {
         onOnboardingStatusReceived?.call(_onboardingCompleted);
 
         if (kDebugMode) {
-          print('AuthService: Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining, onboarding: $_onboardingCompleted)');
-          print('AuthService: Triggering notifyListeners for navigation...');
+          print('AuthService: ✅ Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining, onboarding: $_onboardingCompleted)');
+          print('AuthService: ✅ isAuthenticated=$_isAuthenticated, isLoading=$_isLoading');
         }
       } else {
         // Handle error response
@@ -201,7 +201,14 @@ class AuthService extends ChangeNotifier {
       }
     } finally {
       _isLoading = false;
+      if (kDebugMode) {
+        print('AuthService: 🔔 FINAL STATE - isAuthenticated=$_isAuthenticated, isLoading=$_isLoading, email=$_userEmail');
+        print('AuthService: 🔔 Calling notifyListeners() NOW');
+      }
       notifyListeners();
+      if (kDebugMode) {
+        print('AuthService: 🔔 notifyListeners() completed');
+      }
     }
   }
 
