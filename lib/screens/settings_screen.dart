@@ -196,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: GestureDetector(
                 onTap: _handleVersionTap,
                 child: Text(
-                  'Composure v1.0.0 (Build 34)',
+                  'Composure v1.0.0 (Build 35)',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey[500],

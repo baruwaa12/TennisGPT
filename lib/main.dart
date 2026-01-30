@@ -105,74 +105,7 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool _hasSyncedOnboarding = false;
-  String? _lastAuthenticatedEmail;
-  bool _isReInitializing = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Listen to auth changes directly for more reliable updates
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authService = context.read<AuthService>();
-      authService.addListener(_onAuthChanged);
-    });
-  }
-
-  @override
-  void dispose() {
-    // Remove listener when widget is disposed
-    try {
-      final authService = context.read<AuthService>();
-      authService.removeListener(_onAuthChanged);
-    } catch (_) {
-      // Context might not be available during dispose
-    }
-    super.dispose();
-  }
-
-  void _onAuthChanged() {
-    // Force rebuild when auth state changes
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  /// Re-initialize all services after login
-  Future<void> _reInitializeServicesForUser() async {
-    if (_isReInitializing) return;
-    _isReInitializing = true;
-    
-    if (kDebugMode) {
-      print('AuthWrapper: Re-initializing services for new login...');
-    }
-    
-    try {
-      final profileService = context.read<PlayerProfileService>();
-      final usageService = context.read<UsageService>();
-      final streakService = context.read<StreakService>();
-      final matchHistoryService = context.read<MatchHistoryService>();
-      
-      // Re-initialize all services (they check _isLoaded internally)
-      await profileService.initialize();
-      await usageService.initialize();
-      await streakService.initialize();
-      await matchHistoryService.initialize();
-      
-      if (kDebugMode) {
-        print('AuthWrapper: Services re-initialized successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('AuthWrapper: Error re-initializing services - $e');
-      }
-    } finally {
-      _isReInitializing = false;
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
+  String? _lastInitializedForEmail;
 
   @override
   Widget build(BuildContext context) {
@@ -180,49 +113,100 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final profileService = context.watch<PlayerProfileService>();
     
     if (kDebugMode) {
-      print('AuthWrapper: Building - authenticated=${authService.isAuthenticated}, email=${authService.userEmail}, profileLoaded=${profileService.isLoaded}, onboarding=${profileService.hasCompletedOnboarding || authService.onboardingCompleted}');
+      print('AuthWrapper: authenticated=${authService.isAuthenticated}, email=${authService.userEmail}, profileLoaded=${profileService.isLoaded}');
     }
     
     // Not authenticated - show login
     if (!authService.isAuthenticated) {
-      _hasSyncedOnboarding = false;
-      _lastAuthenticatedEmail = null;
+      _lastInitializedForEmail = null;
       return const LoginScreen();
     }
     
-    // Check if this is a new login session (different email or first login)
+    // Authenticated - check if we need to initialize services for this user
     final currentEmail = authService.userEmail;
-    if (_lastAuthenticatedEmail != currentEmail) {
-      _lastAuthenticatedEmail = currentEmail;
-      _hasSyncedOnboarding = false;
-      
-      // Re-initialize services for the new user (they may have been reset during logout)
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await _reInitializeServicesForUser();
-        
-        // Sync onboarding from backend for this user
-        if (authService.onboardingCompleted && mounted) {
-          profileService.syncFromBackend(authService.onboardingCompleted);
-          _hasSyncedOnboarding = true;
-        }
-      });
-    }
     
-    // Profile not loaded yet - show loading
-    if (!profileService.isLoaded) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+    // If profile isn't loaded OR we're logged in as a different user, initialize services
+    if (!profileService.isLoaded || _lastInitializedForEmail != currentEmail) {
+      // Trigger initialization asynchronously but don't block
+      _initializeServicesForUser(currentEmail);
+      
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading your data...'),
+            ],
+          ),
+        ),
       );
     }
     
-    // Authenticated but hasn't completed onboarding - show onboarding
-    // Check BOTH local and backend status
+    // Profile is loaded - check onboarding
     final hasCompletedOnboarding = profileService.hasCompletedOnboarding || authService.onboardingCompleted;
+    
+    if (kDebugMode) {
+      print('AuthWrapper: Onboarding check - local=${profileService.hasCompletedOnboarding}, backend=${authService.onboardingCompleted}');
+    }
+    
     if (!hasCompletedOnboarding) {
       return const OnboardingScreen();
     }
     
     // Authenticated and onboarding complete - show home
     return const HomeScreen();
+  }
+
+  /// Initialize all services for the current user
+  Future<void> _initializeServicesForUser(String? email) async {
+    if (kDebugMode) {
+      print('AuthWrapper: Initializing services for user: $email');
+    }
+    
+    try {
+      final profileService = context.read<PlayerProfileService>();
+      final usageService = context.read<UsageService>();
+      final streakService = context.read<StreakService>();
+      final matchHistoryService = context.read<MatchHistoryService>();
+      final authService = context.read<AuthService>();
+      
+      // Force re-initialization by resetting loaded state first
+      // This ensures we load data for the new user
+      if (_lastInitializedForEmail != email) {
+        await profileService.resetProfile();
+        await usageService.resetAllUsage();
+        await streakService.resetStreak();
+        await matchHistoryService.resetAllMatches();
+      }
+      
+      // Now initialize (this will load data from storage with user-specific keys)
+      await profileService.initialize();
+      await usageService.initialize();
+      await streakService.initialize();
+      await matchHistoryService.initialize();
+      
+      // Sync onboarding from backend
+      if (authService.onboardingCompleted) {
+        await profileService.syncFromBackend(authService.onboardingCompleted);
+      }
+      
+      _lastInitializedForEmail = email;
+      
+      if (kDebugMode) {
+        print('AuthWrapper: Services initialized for $email');
+      }
+      
+      // Trigger rebuild
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AuthWrapper: Error initializing services - $e');
+      }
+    }
   }
 }
