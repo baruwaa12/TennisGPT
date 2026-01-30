@@ -1048,6 +1048,57 @@ After updating services to use user-specific keys, the "Reset Usage Counters" an
 
 ---
 
+## Day 15 - Critical Bug Fixes & Voice Input Accuracy
+
+### Critical Bug Fix: User Data Persistence
+
+**Problem**: When a user logged out, `_clearAllUserData()` was calling `prefs.clear()` which wiped ALL SharedPreferences data, including data for OTHER users. This completely defeated the user-specific storage implementation.
+
+**Solution**: 
+- Removed the destructive `_clearAllUserData()` method from `auth_service.dart`
+- On logout, we now only clear the current user from `UserStorageService` without deleting any stored data
+- Each user's data remains stored under their unique prefixed keys
+- When they log back in, their data is automatically loaded
+
+### Voice Input Accuracy Improvements
+
+**Problems identified**:
+1. No locale was set - using wrong language settings
+2. Using partial results for text field updates - caused jumbled/incomplete text
+3. `ListenMode.dictation` prioritizes speed over accuracy
+
+**Solutions implemented in `voice_input_service.dart`**:
+
+| Setting | Before | After |
+|---------|--------|-------|
+| **Locale** | None (system default) | Auto-detected device locale with English fallback |
+| **Partial Results** | Always updated text field | Only for preview, FINAL results for text |
+| **Listen Mode** | `dictation` (fast, less accurate) | `confirmation` (slower, more accurate) |
+| **Pause Duration** | 3 seconds | 4 seconds (natural speech patterns) |
+| **Listen Duration** | 30 seconds | 60 seconds (for detailed descriptions) |
+| **Error Messages** | Technical errors | User-friendly messages with retry option |
+
+**New features in `voice_input_button.dart`**:
+- Shows "Listening... speak now" hint during voice input
+- Visual indicator bar showing listening status with tips
+- Snackbar error notifications with retry button
+- Long-press shows voice recognition info and tips
+- Saves existing text before voice input and appends results
+
+### Files Modified
+- `lib/services/auth_service.dart` - Removed destructive `_clearAllUserData()` method
+- `lib/services/voice_input_service.dart` - Complete rewrite with accuracy improvements
+- `lib/widgets/voice_input_button.dart` - Enhanced UX with better feedback
+
+### Tips for Users (Voice Input)
+- Speak clearly at a normal pace
+- Reduce background noise
+- Wait for the mic indicator to stop pulsing before speaking
+- Use short, complete sentences
+- Tap the mic button again when finished speaking
+
+---
+
 ## Pending Items
 
 ### RevenueCat Setup Required

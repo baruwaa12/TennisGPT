@@ -5,6 +5,11 @@ import '../theme/app_theme.dart';
 
 /// A microphone button that enables voice input for text fields.
 /// 
+/// Uses improved speech recognition with:
+/// - Proper locale detection for accuracy
+/// - Only commits FINAL results (not partial/interim)
+/// - User-friendly error messages
+/// 
 /// Usage:
 /// ```dart
 /// Row(
@@ -17,7 +22,7 @@ import '../theme/app_theme.dart';
 /// )
 /// ```
 class VoiceInputButton extends StatefulWidget {
-  /// Called when voice recognition produces results
+  /// Called when voice recognition produces FINAL results
   final Function(String) onResult;
   
   /// Optional: Called when listening state changes
@@ -31,9 +36,6 @@ class VoiceInputButton extends StatefulWidget {
   
   /// Icon color when listening
   final Color? activeColor;
-  
-  /// Whether to append to existing text or replace
-  final bool appendMode;
 
   const VoiceInputButton({
     super.key,
@@ -42,7 +44,6 @@ class VoiceInputButton extends StatefulWidget {
     this.size = 40,
     this.iconColor,
     this.activeColor,
-    this.appendMode = false,
   });
 
   @override
@@ -53,7 +54,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     with SingleTickerProviderStateMixin {
   final VoiceInputService _voiceService = VoiceInputService();
   late AnimationController _pulseController;
-  String _existingText = '';
+  bool _hasError = false;
   
   @override
   void initState() {
@@ -77,9 +78,42 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
   
   void _onVoiceStateChanged() {
     if (mounted) {
+      // Check for errors
+      if (_voiceService.error.isNotEmpty && !_hasError) {
+        _hasError = true;
+        _showError(_voiceService.error);
+        _voiceService.clearError();
+      } else if (_voiceService.error.isEmpty) {
+        _hasError = false;
+      }
+      
       setState(() {});
       widget.onListeningChanged?.call(_voiceService.isListening);
     }
+  }
+  
+  void _showError(String message) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.mic_off, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'Retry',
+          textColor: Colors.white,
+          onPressed: _toggleListening,
+        ),
+      ),
+    );
   }
   
   Future<void> _toggleListening() async {
@@ -88,14 +122,11 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     if (_voiceService.isListening) {
       await _voiceService.stopListening();
     } else {
-      // Store existing text for append mode
-      _existingText = '';
-      
       await _voiceService.startListening(
         onResult: (recognizedText) {
-          if (widget.appendMode && _existingText.isNotEmpty) {
-            widget.onResult('$_existingText $recognizedText');
-          } else {
+          // This is called only with FINAL, accurate results
+          if (recognizedText.isNotEmpty) {
+            HapticFeedback.lightImpact();
             widget.onResult(recognizedText);
           }
         },
@@ -111,6 +142,13 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     
     return GestureDetector(
       onTap: _toggleListening,
+      onLongPress: () {
+        // Long press to show available locales (for debugging)
+        if (_voiceService.availableLocales.isNotEmpty) {
+          HapticFeedback.heavyImpact();
+          _showLocaleInfo();
+        }
+      },
       child: AnimatedBuilder(
         animation: _pulseController,
         builder: (context, child) {
@@ -162,9 +200,44 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       ),
     );
   }
+  
+  void _showLocaleInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Voice Recognition'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Current locale: ${_voiceService.selectedLocaleId ?? "Not set"}'),
+            const SizedBox(height: 8),
+            Text('Available: ${_voiceService.availableLocales.length} locales'),
+            const SizedBox(height: 16),
+            const Text(
+              'Tips for better accuracy:\n'
+              '• Speak clearly and at normal pace\n'
+              '• Reduce background noise\n'
+              '• Wait for the mic to stop pulsing\n'
+              '• Use short, complete sentences',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// A text field with integrated voice input button.
+/// 
+/// Only commits FINAL speech recognition results to the text field.
 /// 
 /// Usage:
 /// ```dart
@@ -199,6 +272,7 @@ class VoiceTextField extends StatefulWidget {
 
 class _VoiceTextFieldState extends State<VoiceTextField> {
   bool _isListening = false;
+  String _textBeforeVoice = '';
   
   @override
   Widget build(BuildContext context) {
@@ -211,53 +285,103 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
           width: _isListening ? 2 : 1,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: TextField(
-              controller: widget.controller,
-              enabled: widget.enabled,
-              maxLines: widget.maxLines,
-              style: widget.style ?? AppTheme.bodyMediumThemed(context),
-              onChanged: widget.onChanged,
-              decoration: widget.decoration ?? InputDecoration(
-                hintText: widget.hintText ?? 'Type or speak...',
-                hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-                  color: AppTheme.textMutedColor(context).withOpacity(0.5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  enabled: widget.enabled && !_isListening,
+                  maxLines: widget.maxLines,
+                  style: widget.style ?? AppTheme.bodyMediumThemed(context),
+                  onChanged: widget.onChanged,
+                  decoration: widget.decoration ?? InputDecoration(
+                    hintText: _isListening 
+                        ? 'Listening... speak now'
+                        : (widget.hintText ?? 'Type or tap mic to speak...'),
+                    hintStyle: AppTheme.bodySmallThemed(context).copyWith(
+                      color: _isListening 
+                          ? AppTheme.primary
+                          : AppTheme.textMutedColor(context).withOpacity(0.5),
+                      fontStyle: _isListening ? FontStyle.italic : FontStyle.normal,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
+                  ),
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
               ),
-            ),
+              
+              // Voice input button
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: AppTheme.spaceSM,
+                  right: AppTheme.spaceSM,
+                ),
+                child: VoiceInputButton(
+                  size: 36,
+                  onResult: (text) {
+                    // Called only with FINAL results
+                    // Append to existing text if there was any before we started
+                    if (_textBeforeVoice.isNotEmpty) {
+                      widget.controller.text = '$_textBeforeVoice $text';
+                    } else {
+                      widget.controller.text = text;
+                    }
+                    widget.onChanged?.call(widget.controller.text);
+                  },
+                  onListeningChanged: (listening) {
+                    if (listening) {
+                      // Save current text before listening
+                      _textBeforeVoice = widget.controller.text;
+                    }
+                    setState(() => _isListening = listening);
+                  },
+                ),
+              ),
+            ],
           ),
           
-          // Voice input button
-          Padding(
-            padding: const EdgeInsets.only(
-              top: AppTheme.spaceSM,
-              right: AppTheme.spaceSM,
+          // Listening indicator
+          if (_isListening)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spaceMD,
+                vertical: AppTheme.spaceXS,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(AppTheme.radiusMD - 1),
+                  bottomRight: Radius.circular(AppTheme.radiusMD - 1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Speak clearly • Tap mic when done',
+                    style: AppTheme.bodySmallThemed(context).copyWith(
+                      color: AppTheme.primary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: VoiceInputButton(
-              size: 36,
-              onResult: (text) {
-                // Append to existing text if there's content
-                final existingText = widget.controller.text;
-                if (existingText.isNotEmpty) {
-                  widget.controller.text = '$existingText $text';
-                } else {
-                  widget.controller.text = text;
-                }
-                widget.onChanged?.call(widget.controller.text);
-              },
-              onListeningChanged: (listening) {
-                setState(() => _isListening = listening);
-              },
-            ),
-          ),
         ],
       ),
     );
   }
 }
-
