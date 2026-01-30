@@ -2,17 +2,25 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'token_service.dart';
+import 'user_storage_service.dart';
 
 /// PlayerProfileService stores and retrieves player profile data
-/// collected during onboarding.
+/// Now uses user-specific storage keys for multi-account support.
 class PlayerProfileService extends ChangeNotifier {
   final String _apiBaseUrl = 'https://tennisgpt-production.up.railway.app';
   final TokenService _tokenService = TokenService();
-  // Storage keys
-  static const String _hasCompletedOnboardingKey = 'has_completed_onboarding';
-  static const String _playerLevelKey = 'player_level';
-  static const String _primaryGoalKey = 'primary_goal';
-  static const String _playerNameKey = 'player_name';
+  
+  // Base storage keys (will be prefixed with user ID)
+  static const String _baseOnboardingKey = 'has_completed_onboarding';
+  static const String _baseLevelKey = 'player_level';
+  static const String _baseGoalKey = 'primary_goal';
+  static const String _baseNameKey = 'player_name';
+  
+  // User-specific keys
+  String get _hasCompletedOnboardingKey => UserStorageService.getUserKey(_baseOnboardingKey);
+  String get _playerLevelKey => UserStorageService.getUserKey(_baseLevelKey);
+  String get _primaryGoalKey => UserStorageService.getUserKey(_baseGoalKey);
+  String get _playerNameKey => UserStorageService.getUserKey(_baseNameKey);
 
   bool _hasCompletedOnboarding = false;
   String _playerLevel = '';
@@ -195,24 +203,19 @@ RESPONSE COMPLEXITY: COMPETITIVE/TOURNAMENT LEVEL
 $complexityInstructions''';
   }
 
-  /// Reset profile (for user switch - clears in-memory AND forces re-initialization)
+  /// Reset in-memory state (for user switch - preserves stored data)
+  /// With user-specific keys, switching users automatically uses different data
   Future<void> resetProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_hasCompletedOnboardingKey);
-    await prefs.remove(_playerLevelKey);
-    await prefs.remove(_primaryGoalKey);
-    await prefs.remove(_playerNameKey);
-    
     _hasCompletedOnboarding = false;
     _playerLevel = '';
     _primaryGoal = '';
     _playerName = '';
-    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
+    _isLoaded = false; // Allow re-initialization for new user
     
     notifyListeners();
     
     if (kDebugMode) {
-      print('PlayerProfileService: Reset complete - ready for new user');
+      print('PlayerProfileService: Reset in-memory state - ready for new user');
     }
   }
 }

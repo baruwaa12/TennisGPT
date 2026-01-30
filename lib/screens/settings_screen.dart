@@ -136,7 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.feedback_outlined,
               iconColor: Colors.teal,
               title: 'Send Feedback',
-              subtitle: 'Help us improve TennisGPT',
+              subtitle: 'Help us improve Composure',
               onTap: () => _showComingSoon('Feedback'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
@@ -145,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.star_outline,
               iconColor: Colors.amber,
               title: 'Rate the App',
-              subtitle: 'Love TennisGPT? Let us know!',
+              subtitle: 'Love Composure? Let us know!',
               onTap: () => _showComingSoon('Rate App'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
@@ -196,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: GestureDetector(
                 onTap: _handleVersionTap,
                 child: Text(
-                  'TennisGPT v1.0.0 (Build 24)',
+                  'Composure v1.0.0 (Build 34)',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey[500],
@@ -371,12 +371,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed == true) {
-      await usageService.resetAllUsage();
+      // Use deleteUsageData to actually delete the stored data (not just reset in-memory)
+      await usageService.deleteUsageData();
       HapticFeedback.mediumImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Usage counters reset', style: GoogleFonts.poppins()),
+            content: Text('Usage counters reset - restart screens to see changes', style: GoogleFonts.poppins()),
             backgroundColor: Colors.green,
           ),
         );
@@ -407,18 +408,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed == true) {
-      // Reset usage
-      await usageService.resetAllUsage();
+      // Delete usage data (not just reset in-memory)
+      await usageService.deleteUsageData();
       
-      // Reset match history
-      final matchService = MatchHistoryService();
-      await matchService.clearAllMatches();
+      // Delete match history using the provider instance
+      final matchService = Provider.of<MatchHistoryService>(context, listen: false);
+      await matchService.deleteAllMatches();
+      
+      // Reset streak
+      final streakService = Provider.of<StreakService>(context, listen: false);
+      await streakService.resetStreak();
       
       HapticFeedback.heavyImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('All test data reset', style: GoogleFonts.poppins()),
+            content: Text('All test data reset - navigate to other screens to see changes', style: GoogleFonts.poppins()),
             backgroundColor: Colors.green,
           ),
         );

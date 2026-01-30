@@ -908,13 +908,153 @@ Future<void> initialize() async {
 
 ---
 
+## Day 14 - App Rename, Voice Input & Multi-Account Support
+
+### App Renamed to "Composure" 🎯
+
+The app has been officially renamed from "TennisGPT" to **Composure** - reflecting the mental composure and focus that tennis players need.
+
+#### Files Updated for Rename
+| File | Changes |
+|------|---------|
+| `pubspec.yaml` | name: composure, new description |
+| `lib/main.dart` | MaterialApp title |
+| `lib/screens/login_screen.dart` | App title and subtitle |
+| `lib/screens/settings_screen.dart` | Version text, help text |
+| `android/app/src/main/AndroidManifest.xml` | android:label |
+| `ios/Runner/Info.plist` | CFBundleDisplayName, CFBundleName |
+| `web/index.html` | title, apple-mobile-web-app-title |
+| `web/manifest.json` | name, short_name |
+
+### Voice Input Support 🎤
+
+Added speech-to-text capability for hands-free input in the app.
+
+#### New Dependencies
+```yaml
+speech_to_text: ^7.0.0
+```
+
+#### New Files Created
+- `lib/services/voice_input_service.dart` - Core speech-to-text service
+- `lib/widgets/voice_input_button.dart` - Reusable voice input button + VoiceTextField widget
+
+#### Permissions Added
+| Platform | Permission |
+|----------|------------|
+| Android | `RECORD_AUDIO` in AndroidManifest.xml |
+| iOS | `NSSpeechRecognitionUsageDescription`, `NSMicrophoneUsageDescription` in Info.plist |
+
+#### Screens with Voice Input
+| Screen | Field |
+|--------|-------|
+| Tactical Coach | Optional context input |
+| Pre-Match Prep | Opponent name input |
+
+#### Voice Input Features
+- Animated microphone button with pulse effect when listening
+- Automatic timeout after 30 seconds or 3 seconds of silence
+- Appends to existing text when available
+- Visual feedback showing "Voice enabled" hint
+
+### Multi-Account Support 👥
+
+Fixed user data persistence when switching between accounts. Each user now has their own data stored separately.
+
+#### New Files Created
+- `lib/services/user_storage_service.dart` - User-specific storage key management
+
+#### Problem Solved
+- **Before**: All users shared the same storage keys, so switching accounts would clear the previous user's data
+- **After**: Each user's data is stored with a unique key prefix based on their email, preserving data when switching accounts
+
+#### Implementation
+```dart
+// Storage keys are now prefixed with sanitized user email
+static String getUserKey(String baseKey) {
+  if (_currentUserEmail == null) return baseKey;
+  final sanitizedEmail = _currentUserEmail!
+      .replaceAll('@', '_at_')
+      .replaceAll('.', '_dot_');
+  return 'user_${sanitizedEmail}_$baseKey';
+}
+```
+
+#### Services Updated for Multi-Account
+| Service | Changes |
+|---------|---------|
+| `auth_service.dart` | Sets current user email after login |
+| `match_history_service.dart` | User-specific match storage |
+| `usage_service.dart` | User-specific usage tracking |
+| `player_profile_service.dart` | User-specific profile storage |
+| `streak_service.dart` | User-specific streak tracking |
+
+### Login Navigation Fix 🔐
+
+Fixed an issue where the app wouldn't navigate to the home screen after login until restarting.
+
+#### Problem
+After signing out and back in, services had `_isLoaded = false` but weren't being re-initialized, causing the app to show a loading spinner indefinitely.
+
+#### Solution
+Updated `AuthWrapper` in `main.dart` to detect new login sessions and re-initialize all services:
+
+```dart
+Future<void> _reInitializeServicesForUser() async {
+  await profileService.initialize();
+  await usageService.initialize();
+  await streakService.initialize();
+  await matchHistoryService.initialize();
+}
+```
+
+### Developer Tools Reset Fix 🛠️
+
+Fixed the AI analysis reset functionality in developer tools.
+
+#### Problem
+After updating services to use user-specific keys, the "Reset Usage Counters" and "Reset All Data" functions only reset in-memory state but didn't delete the stored data.
+
+#### Solution
+- Added `deleteUsageData()` method to `UsageService` for hard reset
+- Added `deleteAllMatches()` method to `MatchHistoryService` for hard reset
+- Updated settings screen to use delete methods for dev tools
+
+### Files Modified Summary
+
+| File | Changes |
+|------|---------|
+| `pubspec.yaml` | Added speech_to_text, renamed to composure |
+| `lib/main.dart` | Re-initialize services on login, renamed title |
+| `lib/screens/login_screen.dart` | Renamed to Composure |
+| `lib/screens/settings_screen.dart` | Dev tools fixes, rename |
+| `lib/screens/tactical_coach_screen.dart` | Voice input integration |
+| `lib/screens/mental_check_in_screen.dart` | Voice input integration |
+| `lib/services/auth_service.dart` | User storage integration |
+| `lib/services/match_history_service.dart` | User-specific keys, delete method |
+| `lib/services/usage_service.dart` | User-specific keys, delete method |
+| `lib/services/player_profile_service.dart` | User-specific keys |
+| `lib/services/streak_service.dart` | User-specific keys |
+| `android/app/src/main/AndroidManifest.xml` | Voice permission, rename |
+| `ios/Runner/Info.plist` | Voice permissions, rename |
+| `web/index.html` | Rename |
+| `web/manifest.json` | Rename |
+
+### New Files Created
+
+1. `lib/services/voice_input_service.dart` - Speech-to-text service
+2. `lib/services/user_storage_service.dart` - User-specific storage keys
+3. `lib/widgets/voice_input_button.dart` - Voice input UI components
+
+---
+
 ## Pending Items
 
 ### RevenueCat Setup Required
 The app uses placeholder RevenueCat API keys. Before release:
 1. Create RevenueCat account at https://app.revenuecat.com
 2. Configure iOS and Android apps
-3. Create products: `tennisgpt_monthly` and `tennisgpt_annual`
+3. Create products: `composure_monthly` and `composure_annual`
 4. Replace placeholder keys in `lib/services/purchase_service.dart`:
    ```dart
    static const String _revenueCatApiKeyApple = 'YOUR_ACTUAL_KEY';
@@ -926,3 +1066,10 @@ Ensure Railway backend is running and accessible:
 - URL: `https://tennisgpt-production.up.railway.app`
 - Test endpoint: `/api/health` (if available)
 - Verify environment variables are set correctly
+
+### App Store Submissions
+With the rename to Composure, update:
+- App Store Connect listing
+- Google Play Console listing
+- Any marketing materials
+- Social media handles

@@ -12,6 +12,7 @@ import '../utils/tennis_validator.dart';
 import '../widgets/shareable_card.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
+import '../widgets/voice_input_button.dart';
 import 'paywall_screen.dart';
 
 /// Tactical Coach Screen
@@ -695,41 +696,46 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   /// Optional Context Input
   /// De-emphasized, positioned AFTER focus areas
+  /// Now includes voice input button
   Widget _buildOptionalContextInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Add context',
-          style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
+        Row(
+          children: [
+            Text(
+              'Add context',
+              style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.mic,
+              size: 14,
+              color: AppTheme.textMutedColor(context).withOpacity(0.5),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Voice enabled',
+              style: AppTheme.labelThemed(context).copyWith(
+                fontSize: 11,
+                color: AppTheme.textMutedColor(context).withOpacity(0.5),
+              ),
+            ),
+          ],
         ),
         Text(
-          'Optional',
+          'Optional - type or speak',
           style: AppTheme.labelThemed(context).copyWith(
             fontSize: 11,
             color: AppTheme.textMutedColor(context).withOpacity(0.6),
           ),
         ),
         const SizedBox(height: AppTheme.spaceSM),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.cardBackground(context),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(color: AppTheme.borderColor(context)),
-          ),
-          child: TextField(
-            controller: _contextController,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            maxLines: 2,
-            decoration: InputDecoration(
-              hintText: 'e.g., Facing a left-handed opponent...',
-              hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-                color: AppTheme.textMutedColor(context).withOpacity(0.5),
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
-            ),
-          ),
+        VoiceTextField(
+          controller: _contextController,
+          hintText: 'e.g., Facing a left-handed opponent...',
+          maxLines: 2,
+          style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
         ),
       ],
     );

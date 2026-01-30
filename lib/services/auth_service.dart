@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'token_service.dart';
+import 'user_storage_service.dart';
 
 class AuthService extends ChangeNotifier {
   final String _apiBaseUrl = 'https://tennisgpt-production.up.railway.app';
@@ -54,6 +55,9 @@ class AuthService extends ChangeNotifier {
       print('AuthService: Initializing...');
     }
 
+    // Load stored current user for user-specific storage
+    await UserStorageService.loadCurrentUser();
+
     // Check for existing tokens
     final hasTokens = await _tokenService.hasTokens();
     if (hasTokens) {
@@ -84,22 +88,22 @@ class AuthService extends ChangeNotifier {
         return;
       }
       
-      // Check if this is a DIFFERENT user than before
+      // With user-specific storage, we don't need to clear data when switching accounts
+      // Each user's data is stored with their email as a key prefix
       final String newUserEmail = googleUser.email;
       final bool isDifferentUser = previousUserEmail != null && previousUserEmail != newUserEmail;
       
       if (isDifferentUser) {
-        // ONLY clear data when switching to a different account
         if (kDebugMode) {
-          print('AuthService: Switching from $previousUserEmail to $newUserEmail - clearing old data');
+          print('AuthService: Switching from $previousUserEmail to $newUserEmail - user data preserved separately');
         }
-        await _clearAllUserData();
+        // Reset in-memory state so services reload data for new user
         if (onSignOut != null) {
           await onSignOut!();
         }
       } else {
         if (kDebugMode) {
-          print('AuthService: Same user ($newUserEmail) - preserving local data');
+          print('AuthService: Same user ($newUserEmail) - continuing session');
         }
       }
 
@@ -164,6 +168,9 @@ class AuthService extends ChangeNotifier {
         _tacticalRemaining = user['tacticalRemaining'] ?? 4;
         _isAuthenticated = true;
         _error = null;
+        
+        // Set current user for user-specific storage (each user gets their own data)
+        await UserStorageService.setCurrentUser(_userEmail);
         
         // Notify about onboarding status from backend
         onOnboardingStatusReceived?.call(_onboardingCompleted);
@@ -281,6 +288,9 @@ class AuthService extends ChangeNotifier {
         _onboardingCompleted = user['onboardingCompleted'] ?? false;
         _tacticalRemaining = user['tacticalRemaining'] ?? 4;
         _isAuthenticated = true;
+        
+        // Set current user for user-specific storage
+        await UserStorageService.setCurrentUser(_userEmail);
 
         if (kDebugMode) {
           print('AuthService: Restored session for $_userEmail (plan: $_userPlan)');

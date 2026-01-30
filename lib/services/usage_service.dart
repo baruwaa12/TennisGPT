@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'user_storage_service.dart';
 
 /// UsageService tracks free tier usage limits.
+/// Now uses user-specific storage keys for multi-account support.
 /// 
 /// Free tier limits (LIFETIME, not monthly):
 /// - 5 total matches logged
@@ -11,9 +13,9 @@ class UsageService extends ChangeNotifier {
   static const int freeMatchesLimit = 5;
   static const int freeAIAnalysesLimit = 4; // 4 lifetime total across all AI features
   
-  // Storage keys
-  static const String _matchCountKey = 'usage_match_count';
-  static const String _aiAnalysesKey = 'usage_ai_analyses_lifetime'; // Lifetime counter
+  // Base storage keys (will be prefixed with user ID)
+  static const String _baseMatchCountKey = 'usage_match_count';
+  static const String _baseAiAnalysesKey = 'usage_ai_analyses_lifetime'; // Lifetime counter
   
   // Legacy keys (for migration)
   static const String _legacyTacticalKey = 'usage_tactical_analyses';
@@ -23,6 +25,10 @@ class UsageService extends ChangeNotifier {
   int _matchCount = 0;
   int _aiAnalysesUsed = 0;
   bool _isLoaded = false;
+  
+  // User-specific keys
+  String get _matchCountKey => UserStorageService.getUserKey(_baseMatchCountKey);
+  String get _aiAnalysesKey => UserStorageService.getUserKey(_baseAiAnalysesKey);
 
   // Getters
   int get matchCount => _matchCount;
@@ -129,20 +135,33 @@ class UsageService extends ChangeNotifier {
     return '$_aiAnalysesUsed / $freeAIAnalysesLimit free analyses used';
   }
 
-  /// Reset all usage (for user switch - clears in-memory AND forces re-initialization)
+  /// Reset in-memory state (for user switch - preserves stored data)
+  /// With user-specific keys, switching users automatically uses different data
   Future<void> resetAllUsage() async {
+    _matchCount = 0;
+    _aiAnalysesUsed = 0;
+    _isLoaded = false; // Allow re-initialization for new user
+    
+    notifyListeners();
+    
+    if (kDebugMode) {
+      print('UsageService: Reset in-memory state - ready for new user');
+    }
+  }
+  
+  /// Actually delete usage data (for dev tools reset)
+  Future<void> deleteUsageData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_matchCountKey);
     await prefs.remove(_aiAnalysesKey);
     
     _matchCount = 0;
     _aiAnalysesUsed = 0;
-    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
     
     notifyListeners();
     
     if (kDebugMode) {
-      print('UsageService: Reset complete - ready for new user');
+      print('UsageService: Deleted usage data for current user');
     }
   }
 }

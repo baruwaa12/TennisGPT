@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/match_performance.dart';
+import 'user_storage_service.dart';
 
 /// MatchHistoryService stores and retrieves match performance data.
-/// Now a ChangeNotifier to support proper reset on user switch.
+/// Now uses user-specific storage keys for multi-account support.
 class MatchHistoryService extends ChangeNotifier {
-  static const String _storageKey = 'match_history';
+  static const String _baseStorageKey = 'match_history';
   
   // In-memory cache for faster access
   List<MatchPerformance>? _cachedMatches;
@@ -14,6 +15,9 @@ class MatchHistoryService extends ChangeNotifier {
   
   // Getters
   bool get isLoaded => _isLoaded;
+  
+  /// Get user-specific storage key
+  String get _storageKey => UserStorageService.getUserKey(_baseStorageKey);
   
   /// Initialize and load match data into cache
   Future<void> initialize() async {
@@ -23,11 +27,11 @@ class MatchHistoryService extends ChangeNotifier {
     _isLoaded = true;
     
     if (kDebugMode) {
-      print('MatchHistoryService: Loaded ${_cachedMatches?.length ?? 0} matches');
+      print('MatchHistoryService: Loaded ${_cachedMatches?.length ?? 0} matches for user');
     }
   }
   
-  /// Load matches from SharedPreferences
+  /// Load matches from SharedPreferences (user-specific)
   Future<List<MatchPerformance>> _loadMatchesFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final String? matchesJson = prefs.getString(_storageKey);
@@ -42,7 +46,7 @@ class MatchHistoryService extends ChangeNotifier {
     }
   }
   
-  // Get all match performances
+  // Get all match performances (user-specific)
   Future<List<MatchPerformance>> getAllMatches() async {
     final prefs = await SharedPreferences.getInstance();
     final String? matchesJson = prefs.getString(_storageKey);
@@ -60,7 +64,7 @@ class MatchHistoryService extends ChangeNotifier {
     }
   }
   
-  // Save a new match performance
+  // Save a new match performance (user-specific)
   Future<void> saveMatch(MatchPerformance match) async {
     final prefs = await SharedPreferences.getInstance();
     final List<MatchPerformance> matches = await getAllMatches();
@@ -71,6 +75,7 @@ class MatchHistoryService extends ChangeNotifier {
         matches.map((match) => match.toJson()).toList();
     
     await prefs.setString(_storageKey, json.encode(matchesJson));
+    _cachedMatches = matches;
   }
   
   // Update an existing match performance
@@ -86,6 +91,7 @@ class MatchHistoryService extends ChangeNotifier {
           matches.map((match) => match.toJson()).toList();
       
       await prefs.setString(_storageKey, json.encode(matchesJson));
+      _cachedMatches = matches;
     }
   }
   
@@ -100,25 +106,38 @@ class MatchHistoryService extends ChangeNotifier {
         matches.map((match) => match.toJson()).toList();
     
     await prefs.setString(_storageKey, json.encode(matchesJson));
+    _cachedMatches = matches;
   }
   
-  /// Reset all matches (for user switch - clears in-memory AND forces re-initialization)
+  /// Reset in-memory state (for user switch - preserves stored data)
+  /// With user-specific keys, we don't need to delete data, just reload for new user
   Future<void> resetAllMatches() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
-    
     _cachedMatches = null;
-    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
+    _isLoaded = false; // Allow re-initialization for new user
     
     notifyListeners();
     
     if (kDebugMode) {
-      print('MatchHistoryService: Reset complete - ready for new user');
+      print('MatchHistoryService: Reset in-memory state - ready for new user');
+    }
+  }
+  
+  /// Actually delete match data (for dev tools reset)
+  Future<void> deleteAllMatches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey);
+    
+    _cachedMatches = [];
+    
+    notifyListeners();
+    
+    if (kDebugMode) {
+      print('MatchHistoryService: Deleted all match data for current user');
     }
   }
   
   /// Alias for backward compatibility
-  Future<void> clearAllMatches() async => resetAllMatches();
+  Future<void> clearAllMatches() async => deleteAllMatches();
   
   // Get matches by surface type
   Future<List<MatchPerformance>> getMatchesBySurface(String surface) async {

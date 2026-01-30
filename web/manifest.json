@@ -1,11 +1,11 @@
 {
-    "name": "TennisGPT",
-    "short_name": "TennisGPT",
+    "name": "Composure",
+    "short_name": "Composure",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#4CAF50",
     "theme_color": "#4CAF50",
-    "description": "AI-powered tennis coaching app",
+    "description": "Your AI tennis strategist - tactical coaching for focused players",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

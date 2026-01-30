@@ -119,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     /// App Title
                     Text(
-                      'TennisGPT',
+                      'Composure',
                       style: GoogleFonts.poppins(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     /// Subtitle
                     Text(
-                      'Your AI Tennis Coach',
+                      'Your AI Tennis Strategist',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         color: subtitleColor,

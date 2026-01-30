@@ -1,12 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'user_storage_service.dart';
 
 /// StreakService tracks consecutive days of app activity
-/// (match logged or tactical analysis used)
+/// Now uses user-specific storage keys for multi-account support.
 class StreakService extends ChangeNotifier {
-  static const String _lastActivityKey = 'streak_last_activity';
-  static const String _currentStreakKey = 'streak_current';
-  static const String _longestStreakKey = 'streak_longest';
+  // Base storage keys (will be prefixed with user ID)
+  static const String _baseLastActivityKey = 'streak_last_activity';
+  static const String _baseCurrentStreakKey = 'streak_current';
+  static const String _baseLongestStreakKey = 'streak_longest';
+  
+  // User-specific keys
+  String get _lastActivityKey => UserStorageService.getUserKey(_baseLastActivityKey);
+  String get _currentStreakKey => UserStorageService.getUserKey(_baseCurrentStreakKey);
+  String get _longestStreakKey => UserStorageService.getUserKey(_baseLongestStreakKey);
 
   int _currentStreak = 0;
   int _longestStreak = 0;
@@ -155,22 +162,18 @@ class StreakService extends ChangeNotifier {
     }
   }
 
-  /// Reset streak (for user switch - clears in-memory AND forces re-initialization)
+  /// Reset in-memory state (for user switch - preserves stored data)
+  /// With user-specific keys, switching users automatically uses different data
   Future<void> resetStreak() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_currentStreakKey);
-    await prefs.remove(_longestStreakKey);
-    await prefs.remove(_lastActivityKey);
-    
     _currentStreak = 0;
     _longestStreak = 0;
     _lastActivityDate = null;
-    _isLoaded = false; // CRITICAL: Allow re-initialization for new user
+    _isLoaded = false; // Allow re-initialization for new user
     
     notifyListeners();
     
     if (kDebugMode) {
-      print('StreakService: Reset complete - ready for new user');
+      print('StreakService: Reset in-memory state - ready for new user');
     }
   }
 }

@@ -9,6 +9,7 @@ import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
 import '../utils/tennis_validator.dart';
+import '../widgets/voice_input_button.dart';
 import 'paywall_screen.dart';
 
 /// Pre-Match Prep Screen
@@ -216,7 +217,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     );
   }
 
-  /// Compact opponent input
+  /// Compact opponent input with voice support
   Widget _buildOpponentInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,6 +232,12 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                 color: AppTheme.textMutedColor(context).withOpacity(0.6),
               ),
             ),
+            const Spacer(),
+            Icon(
+              Icons.mic,
+              size: 12,
+              color: AppTheme.textMutedColor(context).withOpacity(0.5),
+            ),
           ],
         ),
         const SizedBox(height: AppTheme.spaceSM),
@@ -240,21 +247,36 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             border: Border.all(color: AppTheme.borderColor(context)),
           ),
-          child: TextField(
-            controller: _opponentController,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            decoration: InputDecoration(
-              hintText: 'Who are you playing?',
-              hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-                color: AppTheme.textMutedColor(context).withOpacity(0.5),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _opponentController,
+                  style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+                  decoration: InputDecoration(
+                    hintText: 'Who are you playing?',
+                    hintStyle: AppTheme.bodySmallThemed(context).copyWith(
+                      color: AppTheme.textMutedColor(context).withOpacity(0.5),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spaceMD,
+                      vertical: AppTheme.spaceSM,
+                    ),
+                    isDense: true,
+                  ),
+                ),
               ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spaceMD,
-                vertical: AppTheme.spaceSM,
+              Padding(
+                padding: const EdgeInsets.only(right: AppTheme.spaceSM),
+                child: VoiceInputButton(
+                  size: 32,
+                  onResult: (text) {
+                    _opponentController.text = text;
+                  },
+                ),
               ),
-              isDense: true,
-            ),
+            ],
           ),
         ),
       ],

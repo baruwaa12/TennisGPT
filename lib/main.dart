@@ -84,7 +84,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
           return MaterialApp(
-            title: 'TennisGPT',
+            title: 'Composure',
             debugShowCheckedModeBanner: false,
             theme: ThemeService.lightTheme,
             darkTheme: ThemeService.darkTheme,
@@ -107,6 +107,7 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _hasSyncedOnboarding = false;
   String? _lastAuthenticatedEmail;
+  bool _isReInitializing = false;
 
   @override
   void initState() {
@@ -137,6 +138,42 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
+  /// Re-initialize all services after login
+  Future<void> _reInitializeServicesForUser() async {
+    if (_isReInitializing) return;
+    _isReInitializing = true;
+    
+    if (kDebugMode) {
+      print('AuthWrapper: Re-initializing services for new login...');
+    }
+    
+    try {
+      final profileService = context.read<PlayerProfileService>();
+      final usageService = context.read<UsageService>();
+      final streakService = context.read<StreakService>();
+      final matchHistoryService = context.read<MatchHistoryService>();
+      
+      // Re-initialize all services (they check _isLoaded internally)
+      await profileService.initialize();
+      await usageService.initialize();
+      await streakService.initialize();
+      await matchHistoryService.initialize();
+      
+      if (kDebugMode) {
+        print('AuthWrapper: Services re-initialized successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AuthWrapper: Error re-initializing services - $e');
+      }
+    } finally {
+      _isReInitializing = false;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
@@ -159,16 +196,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
       _lastAuthenticatedEmail = currentEmail;
       _hasSyncedOnboarding = false;
       
-      // Sync onboarding from backend for this user
-      if (authService.onboardingCompleted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Re-initialize services for the new user (they may have been reset during logout)
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _reInitializeServicesForUser();
+        
+        // Sync onboarding from backend for this user
+        if (authService.onboardingCompleted && mounted) {
           profileService.syncFromBackend(authService.onboardingCompleted);
-        });
-        _hasSyncedOnboarding = true;
-      }
+          _hasSyncedOnboarding = true;
+        }
+      });
     }
     
-    // Profile not loaded yet - show loading (but this should rarely happen now)
+    // Profile not loaded yet - show loading
     if (!profileService.isLoaded) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
