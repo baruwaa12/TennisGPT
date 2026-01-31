@@ -29,53 +29,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
   bool _isInitializingServices = false;
   String? _lastInitializedEmail;
   
-  @override
-  void initState() {
-    super.initState();
-    // Start listening to auth changes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authService = context.read<AuthService>();
-      authService.addListener(_onAuthStateChanged);
-      
-      // Initial check
-      _onAuthStateChanged();
-    });
-  }
-  
-  @override
-  void dispose() {
-    try {
-      context.read<AuthService>().removeListener(_onAuthStateChanged);
-    } catch (_) {}
-    super.dispose();
-  }
-  
-  void _onAuthStateChanged() {
-    if (!mounted) return;
-    
-    final authService = context.read<AuthService>();
-    
-    if (kDebugMode) {
-      print('AuthWrapper._onAuthStateChanged: isAuthenticated=${authService.isAuthenticated}, email=${authService.userEmail}');
-    }
-    
-    // If user just logged in and we haven't initialized services for this user yet
-    if (authService.isAuthenticated && 
-        authService.userEmail != null &&
-        authService.userEmail != _lastInitializedEmail &&
-        !_isInitializingServices) {
-      _initializeServicesForUser(authService.userEmail!);
-    }
-    
-    // If user logged out, reset tracking
-    if (!authService.isAuthenticated) {
-      _lastInitializedEmail = null;
-    }
-    
-    // Trigger rebuild
-    setState(() {});
-  }
-  
   Future<void> _initializeServicesForUser(String userEmail) async {
     if (_isInitializingServices) return;
     
@@ -140,7 +93,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     // Show loading during initial auth check
-    if (authService.isLoading) {
+    if (authService.isLoading && !authService.isAuthenticated) {
       return const Scaffold(
         body: Center(
           child: Column(
@@ -157,7 +110,32 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
     // Not authenticated -> show login
     if (!authService.isAuthenticated) {
+      if (_lastInitializedEmail != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _lastInitializedEmail = null;
+            });
+          }
+        });
+      }
       return const LoginScreen();
+    }
+
+    // Authenticated but missing email (shouldn't happen) -> keep loading
+    if (authService.userEmail == null) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Preparing your account...'),
+            ],
+          ),
+        ),
+      );
     }
 
     // Authenticated but services are being initialized for this user
@@ -176,9 +154,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Authenticated but haven't initialized services yet (shouldn't happen, but safety check)
+    // Authenticated but haven't initialized services yet -> trigger initialization
     if (_lastInitializedEmail != authService.userEmail) {
-      // Trigger initialization
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (authService.userEmail != null) {
           _initializeServicesForUser(authService.userEmail!);
