@@ -89,7 +89,8 @@ class _MatchReflectionScreenState extends State<MatchReflectionScreen> {
 $playerContext
 
 Match Result: ${widget.match.result} vs ${widget.match.opponent}
-Score: ${widget.match.setsWon}-${widget.match.setsLost}
+Match Format: ${widget.match.matchFormat}
+Score: ${widget.match.scoreLine.isNotEmpty ? widget.match.scoreLine : '${widget.match.setsWon}-${widget.match.setsLost}'}
 
 What went well: ${strengths.join(', ')}
 What needs work: ${weaknesses.join(', ')}
@@ -196,7 +197,9 @@ Based on this post-match reflection, provide specific tactical advice for improv
                           ),
                         ),
                         Text(
-                          '${widget.match.setsWon}-${widget.match.setsLost}',
+                          widget.match.scoreLine.isNotEmpty
+                              ? widget.match.scoreLine
+                              : '${widget.match.setsWon}-${widget.match.setsLost}',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: isDark ? Colors.grey[400] : Colors.grey[600],

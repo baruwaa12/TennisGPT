@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../services/api_service.dart';
+import '../utils/match_format_utils.dart';
 
 /// Add Match Screen (Detailed)
 /// 
@@ -18,7 +19,16 @@ import '../services/api_service.dart';
 /// 
 /// Goal: Complete in under 60 seconds
 class AddMatchScreen extends StatefulWidget {
-  const AddMatchScreen({super.key});
+  final String? initialMatchFormat;
+  final String? initialScoreLine;
+  final String? initialOpponentLevelSeed;
+
+  const AddMatchScreen({
+    super.key,
+    this.initialMatchFormat,
+    this.initialScoreLine,
+    this.initialOpponentLevelSeed,
+  });
 
   @override
   State<AddMatchScreen> createState() => _AddMatchScreenState();
@@ -29,12 +39,15 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   
   final TextEditingController _opponentController = TextEditingController();
+  final TextEditingController _opponentLevelSeedController = TextEditingController();
+  final TextEditingController _scoreController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _keyMomentController = TextEditingController();
+  final TextEditingController _summaryController = TextEditingController();
+  final TextEditingController _mentalNotesController = TextEditingController();
+  final TextEditingController _tacticalNotesController = TextEditingController();
   
-  String _result = 'Win';
-  int _setsWon = 2;
-  int _setsLost = 0;
+  String _matchFormat = MatchFormat.bestOf3;
   String _surface = 'Hard';
   String _weather = 'Sunny';
   
@@ -55,15 +68,39 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   final List<String> _weatherConditions = ['Sunny', 'Cloudy', 'Rainy', 'Windy', 'Hot', 'Cold'];
 
   @override
+  void initState() {
+    super.initState();
+    _matchFormat = widget.initialMatchFormat ?? MatchFormat.bestOf3;
+    if (widget.initialScoreLine != null && widget.initialScoreLine!.isNotEmpty) {
+      _scoreController.text = widget.initialScoreLine!;
+    }
+    if (widget.initialOpponentLevelSeed != null && widget.initialOpponentLevelSeed!.isNotEmpty) {
+      _opponentLevelSeedController.text = widget.initialOpponentLevelSeed!;
+    }
+  }
+
+  @override
   void dispose() {
     _opponentController.dispose();
+    _opponentLevelSeedController.dispose();
+    _scoreController.dispose();
     _notesController.dispose();
     _keyMomentController.dispose();
+    _summaryController.dispose();
+    _mentalNotesController.dispose();
+    _tacticalNotesController.dispose();
     super.dispose();
   }
 
   Future<void> _saveMatch() async {
     if (!_formKey.currentState!.validate()) return;
+    final scoreError = MatchScoreValidator.validate(_matchFormat, _scoreController.text);
+    if (scoreError != null) {
+      setState(() {
+        _errorMessage = scoreError;
+      });
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -80,15 +117,24 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
           ? [_keyMomentController.text.trim()] 
           : <String>[];
       
+      final parsedScore = MatchScoreValidator.parse(_matchFormat, _scoreController.text);
+      final result = parsedScore.setsWon > parsedScore.setsLost ? 'Win' : 'Loss';
+
       // Build match description for analysis
       final String matchDescription = '''
 Opponent: ${_opponentController.text}
-Result: $_result (${_setsWon}-${_setsLost})
+Match Format: $_matchFormat
+Score: ${parsedScore.displayScore}
+Result: $result
+${_opponentLevelSeedController.text.isNotEmpty ? 'Opponent level/seed: ${_opponentLevelSeedController.text}' : ''}
 Surface: $_surface
 Weather: $_weather
 ${_showRatings ? 'Ratings: ${_ratings.entries.map((e) => '${e.key}(${e.value}/10)').join(', ')}' : ''}
 ${keyMoments.isNotEmpty ? 'Key moment: ${keyMoments.first}' : ''}
 ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
+${_summaryController.text.isNotEmpty ? 'Match summary: ${_summaryController.text}' : ''}
+${_mentalNotesController.text.isNotEmpty ? 'Mental notes: ${_mentalNotesController.text}' : ''}
+${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesController.text}' : ''}
       '''.trim();
 
       // Get AI analysis
@@ -102,12 +148,19 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
         id: matchId,
         date: DateTime.now(),
         opponent: _opponentController.text,
-        result: _result,
-        setsWon: _setsWon,
-        setsLost: _setsLost,
+        result: result,
+        setsWon: parsedScore.setsWon,
+        setsLost: parsedScore.setsLost,
+        matchFormat: _matchFormat,
+        scoreLine: parsedScore.displayScore,
+        setScores: parsedScore.setScores,
+        opponentLevelSeed: _opponentLevelSeedController.text.trim(),
         surface: _surface,
         weather: _weather,
         notes: _notesController.text,
+        matchSummary: _summaryController.text,
+        mentalNotes: _mentalNotesController.text,
+        tacticalNotes: _tacticalNotesController.text,
         strengths: _showRatings ? Map.from(_ratings) : {},
         weaknesses: {},
         keyMoments: keyMoments,
@@ -122,12 +175,19 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
         id: matchId,
         date: DateTime.now(),
         opponent: _opponentController.text,
-        result: _result,
-        setsWon: _setsWon,
-        setsLost: _setsLost,
+        result: result,
+        setsWon: parsedScore.setsWon,
+        setsLost: parsedScore.setsLost,
+        matchFormat: _matchFormat,
+        scoreLine: parsedScore.displayScore,
+        setScores: parsedScore.setScores,
+        opponentLevelSeed: _opponentLevelSeedController.text.trim(),
         surface: _surface,
         weather: _weather,
         notes: _notesController.text,
+        matchSummary: _summaryController.text,
+        mentalNotes: _mentalNotesController.text,
+        tacticalNotes: _tacticalNotesController.text,
         strengths: _showRatings ? Map.from(_ratings) : {},
         weaknesses: {},
         keyMoments: keyMoments,
@@ -171,7 +231,7 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                 onPressed: () => Navigator.pop(context),
               ),
               title: Text(
-                'Log Match',
+                'Detailed Match Log',
                 style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
               ),
             ),
@@ -203,6 +263,11 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
                   
                   // Notes (optional, de-emphasized)
                   _buildNotesSection(),
+                  
+                  const SizedBox(height: AppTheme.spaceXL),
+                  
+                  // Detailed notes (optional)
+                  _buildDetailedNotesSection(),
                   
                   const SizedBox(height: AppTheme.spaceXL),
                   
@@ -272,48 +337,43 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
           
           const SizedBox(height: AppTheme.spaceMD),
           
-          // Result + Score
-          Row(
-            children: [
-              // Result
-              Expanded(
-                child: _buildDropdown(
-                  label: 'Result',
-                  value: _result,
-                  items: ['Win', 'Loss'],
-                  onChanged: (value) => setState(() => _result = value!),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceMD),
-              
-              // Score
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildDropdown(
-                        label: 'Sets won',
-                        value: _setsWon,
-                        items: [0, 1, 2, 3],
-                        onChanged: (value) => setState(() => _setsWon = value!),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('–', style: AppTheme.headingMediumThemed(context)),
-                    ),
-                    Expanded(
-                      child: _buildDropdown(
-                        label: 'Sets lost',
-                        value: _setsLost,
-                        items: [0, 1, 2, 3],
-                        onChanged: (value) => setState(() => _setsLost = value!),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // Match format
+          _buildDropdown(
+            label: 'Match format',
+            value: _matchFormat,
+            items: MatchFormat.values,
+            onChanged: (value) => setState(() => _matchFormat = value!),
+          ),
+          
+          const SizedBox(height: AppTheme.spaceMD),
+          
+          // Score line (set scores)
+          TextFormField(
+            controller: _scoreController,
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
+              label: 'Score',
+              hint: _scoreHintForFormat(),
+            ),
+            validator: (value) {
+              final error = MatchScoreValidator.validate(_matchFormat, value ?? '');
+              if (error != null) return error;
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: AppTheme.spaceMD),
+          
+          // Opponent level/seed (optional)
+          TextFormField(
+            controller: _opponentLevelSeedController,
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
+              label: 'Opponent level / seed',
+              hint: 'Optional',
+            ),
           ),
           
           const SizedBox(height: AppTheme.spaceMD),
@@ -362,6 +422,18 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
       )).toList(),
       onChanged: onChanged,
     );
+  }
+
+  String _scoreHintForFormat() {
+    switch (_matchFormat) {
+      case MatchFormat.fast4:
+        return 'e.g. 4-1 4-3 or 4-3(5)';
+      case MatchFormat.shortSets:
+        return 'e.g. 4-2 4-1 or 6-4 7-6(5)';
+      case MatchFormat.bestOf3:
+      default:
+        return 'e.g. 6-4 7-6(5)';
+    }
   }
 
   Widget _buildKeyMomentSection() {
@@ -530,6 +602,58 @@ ${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDetailedNotesSection() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: AppTheme.cardDecorationThemed(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Detailed notes', style: AppTheme.headingSmallThemed(context)),
+              const SizedBox(width: AppTheme.spaceSM),
+              Text('optional', style: AppTheme.labelThemed(context)),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          TextField(
+            controller: _summaryController,
+            maxLines: 2,
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
+              label: 'Match summary',
+              hint: 'Short recap of the match',
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          TextField(
+            controller: _mentalNotesController,
+            maxLines: 2,
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
+              label: 'Mental notes',
+              hint: 'Mindset, focus, nerves, confidence',
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          TextField(
+            controller: _tacticalNotesController,
+            maxLines: 2,
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
+              label: 'Tactical notes',
+              hint: 'Patterns, tactics, adjustments',
+            ),
+          ),
+        ],
+      ),
     );
   }
 

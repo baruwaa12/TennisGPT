@@ -244,13 +244,17 @@ class ShareTextGenerator {
     required String opponent,
     required int setsWon,
     required int setsLost,
+    String? scoreLine,
     String? insight,
   }) {
     final emoji = result.toLowerCase() == 'win' ? '🏆' : '💪';
     final insightText = insight != null ? '\n\nAI Insight: "$insight"' : '';
+    final scoreText = (scoreLine != null && scoreLine.isNotEmpty)
+        ? scoreLine
+        : '$setsWon-$setsLost';
     return '''$emoji Match ${result.toUpperCase()}!
 
-vs $opponent: $setsWon-$setsLost$insightText$_websiteText''';
+vs $opponent: $scoreText$insightText$_websiteText''';
   }
 
   static String streak(int days) {

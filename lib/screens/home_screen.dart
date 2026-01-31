@@ -22,7 +22,7 @@ import 'settings_screen.dart';
 /// 
 /// Hierarchy:
 /// 1. Performance stats (visual anchor)
-/// 2. Primary action (Log Match)
+/// 2. Primary action (Quick Match Log)
 /// 3. Recent activity (context)
 /// 4. Quick tools (secondary)
 
@@ -366,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: AppTheme.spaceSM),
             Text(
-              'Log Match',
+              'Quick Match Log',
               style: AppTheme.headingSmall.copyWith(color: Colors.white),
             ),
           ],
@@ -470,7 +470,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(width: AppTheme.spaceSM),
                       Text(
-                        '${match.setsWon}-${match.setsLost}',
+                        match.scoreLine.isNotEmpty
+                            ? match.scoreLine
+                            : '${match.setsWon}-${match.setsLost}',
                         style: AppTheme.bodySmallThemed(context),
                       ),
                     ],

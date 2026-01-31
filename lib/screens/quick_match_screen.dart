@@ -10,9 +10,11 @@ import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../services/pattern_service.dart';
+import '../utils/match_format_utils.dart';
 import '../widgets/shareable_card.dart';
 import 'paywall_screen.dart';
 import 'match_reflection_screen.dart';
+import 'add_match_screen.dart';
 
 /// Quick Match Log - Stage 1
 /// 
@@ -23,9 +25,9 @@ import 'match_reflection_screen.dart';
 /// - Clear hierarchy: One decision at a time
 /// 
 /// Flow:
-/// 1. Select result (Win/Loss)
+/// 1. Select match format
 /// 2. Enter score
-/// 3. Optional: Opponent name, quick note
+/// 3. Optional: Opponent level / seed
 /// 4. Save → Success → Optional reflection
 
 class QuickMatchScreen extends StatefulWidget {
@@ -38,14 +40,12 @@ class QuickMatchScreen extends StatefulWidget {
 class _QuickMatchScreenState extends State<QuickMatchScreen>
     with SingleTickerProviderStateMixin {
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
-  final TextEditingController _opponentController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
-  final FocusNode _opponentFocus = FocusNode();
-  final FocusNode _noteFocus = FocusNode();
+  final TextEditingController _scoreController = TextEditingController();
+  final TextEditingController _opponentLevelSeedController = TextEditingController();
+  final FocusNode _scoreFocus = FocusNode();
+  final FocusNode _opponentLevelSeedFocus = FocusNode();
   
-  String? _result;
-  int _setsWon = 2;
-  int _setsLost = 0;
+  String _matchFormat = MatchFormat.fast4;
   bool _isSaving = false;
   bool _showSuccess = false;
   String? _aiInsight;
@@ -69,20 +69,21 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
   @override
   void dispose() {
-    _opponentController.dispose();
-    _noteController.dispose();
-    _opponentFocus.dispose();
-    _noteFocus.dispose();
+    _scoreController.dispose();
+    _opponentLevelSeedController.dispose();
+    _scoreFocus.dispose();
+    _opponentLevelSeedFocus.dispose();
     _successController.dispose();
     super.dispose();
   }
 
   Future<void> _saveMatch() async {
-    if (_result == null) {
+    final scoreError = MatchScoreValidator.validate(_matchFormat, _scoreController.text);
+    if (scoreError != null) {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Select Win or Loss', style: AppTheme.bodyMediumThemed(context)),
+          content: Text(scoreError, style: AppTheme.bodyMediumThemed(context)),
           backgroundColor: AppTheme.elevatedBackground(context),
           behavior: SnackBarBehavior.floating,
         ),
@@ -110,15 +111,20 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
     try {
       final matchId = DateTime.now().millisecondsSinceEpoch.toString();
-      final opponent = _opponentController.text.trim().isEmpty 
-          ? 'Opponent' 
-          : _opponentController.text.trim();
+      final opponent = 'Opponent';
+      final parsedScore = MatchScoreValidator.parse(_matchFormat, _scoreController.text);
+      final result = parsedScore.setsWon > parsedScore.setsLost ? 'Win' : 'Loss';
+      if (parsedScore.setsWon == parsedScore.setsLost) {
+        throw Exception('Score must have a winner');
+      }
       
       // Create match description for AI
       final matchDescription = '''
-Match Result: $_result ($_setsWon-$_setsLost)
+Match Format: $_matchFormat
+Score: ${parsedScore.displayScore}
+Result: $result
 Opponent: $opponent
-${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
+${_opponentLevelSeedController.text.isNotEmpty ? 'Opponent level/seed: ${_opponentLevelSeedController.text}' : ''}
       '''.trim();
 
       // Get AI analysis (background, non-blocking feel)
@@ -131,12 +137,21 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         id: matchId,
         date: DateTime.now(),
         opponent: opponent,
-        result: _result!,
-        setsWon: _setsWon,
-        setsLost: _setsLost,
+        result: result,
+        setsWon: parsedScore.setsWon,
+        setsLost: parsedScore.setsLost,
+        matchFormat: _matchFormat,
+        scoreLine: parsedScore.displayScore,
+        setScores: parsedScore.setScores,
+        opponentLevelSeed: _opponentLevelSeedController.text.trim(),
         surface: 'Hard',
         weather: '',
-        notes: _noteController.text,
+        notes: '',
+        matchSummary: '',
+        mentalNotes: '',
+        tacticalNotes: '',
+        strengthNotes: '',
+        weaknessNotes: '',
         strengths: {},
         weaknesses: {},
         keyMoments: [],
@@ -176,7 +191,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         }
         
         await CelebrationService.checkFirstMatch(context);
-        if (_result == 'Win') {
+        if (result == 'Win') {
           await CelebrationService.checkFirstWin(context);
         }
         
@@ -220,8 +235,8 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Result Selection - Primary
-                      _buildResultSection(),
+                      // Match Format - Primary
+                      _buildFormatSection(),
                       
                       const SizedBox(height: AppTheme.spaceLG),
                       
@@ -272,51 +287,57 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
             ),
           ),
           const SizedBox(width: AppTheme.spaceMD),
-          Text('Log Match', style: AppTheme.headingMediumThemed(context)),
+          Text('Quick Match Log', style: AppTheme.headingMediumThemed(context)),
         ],
       ),
     );
   }
 
-  Widget _buildResultSection() {
+  Widget _buildFormatSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Result', style: AppTheme.headingSmallThemed(context)),
+        Text('Match format', style: AppTheme.headingSmallThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
         Row(
           children: [
             Expanded(
-              child: _buildResultOption(
-                label: 'Win',
-                isSelected: _result == 'Win',
-                color: AppTheme.win,
+              child: _buildFormatOption(
+                label: MatchFormat.fast4,
+                isSelected: _matchFormat == MatchFormat.fast4,
+                color: AppTheme.primary,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   setState(() {
-                    _result = 'Win';
-                    if (_setsWon <= _setsLost) {
-                      _setsWon = 2;
-                      _setsLost = 0;
-                    }
+                    _matchFormat = MatchFormat.fast4;
                   });
                 },
               ),
             ),
             const SizedBox(width: AppTheme.spaceMD),
             Expanded(
-              child: _buildResultOption(
-                label: 'Loss',
-                isSelected: _result == 'Loss',
-                color: AppTheme.loss,
+              child: _buildFormatOption(
+                label: MatchFormat.bestOf3,
+                isSelected: _matchFormat == MatchFormat.bestOf3,
+                color: AppTheme.primary,
                 onTap: () {
                   HapticFeedback.lightImpact();
                   setState(() {
-                    _result = 'Loss';
-                    if (_setsLost <= _setsWon) {
-                      _setsWon = 0;
-                      _setsLost = 2;
-                    }
+                    _matchFormat = MatchFormat.bestOf3;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: AppTheme.spaceMD),
+            Expanded(
+              child: _buildFormatOption(
+                label: MatchFormat.shortSets,
+                isSelected: _matchFormat == MatchFormat.shortSets,
+                color: AppTheme.primary,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  setState(() {
+                    _matchFormat = MatchFormat.shortSets;
                   });
                 },
               ),
@@ -327,7 +348,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     );
   }
 
-  Widget _buildResultOption({
+  Widget _buildFormatOption({
     required String label,
     required bool isSelected,
     required Color color,
@@ -367,115 +388,22 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
         Container(
           padding: AppTheme.cardPadding,
           decoration: AppTheme.cardDecorationThemed(context),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildScoreInput(
-                  value: _setsWon,
-                  label: 'You',
-                  isHighlighted: _result == 'Win',
-                  onChanged: (val) => setState(() => _setsWon = val),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
-                child: Text(
-                  '–',
-                  style: AppTheme.statMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
-                ),
-              ),
-              Expanded(
-                child: _buildScoreInput(
-                  value: _setsLost,
-                  label: 'Opp',
-                  isHighlighted: _result == 'Loss',
-                  onChanged: (val) => setState(() => _setsLost = val),
-                ),
-              ),
-            ],
+          child: TextField(
+            controller: _scoreController,
+            focusNode: _scoreFocus,
+            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration: InputDecoration(
+              hintText: _scoreHintForFormat(),
+              hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+            onChanged: (_) => setState(() {}),
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _opponentLevelSeedFocus.requestFocus(),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildScoreInput({
-    required int value,
-    required String label,
-    required bool isHighlighted,
-    required Function(int) onChanged,
-  }) {
-    return Column(
-      children: [
-        Text(label, style: AppTheme.labelThemed(context)),
-        const SizedBox(height: AppTheme.spaceSM),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildScoreButton(
-              icon: Icons.remove,
-              enabled: value > 0,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onChanged(value - 1);
-              },
-            ),
-            Container(
-              width: 48,
-              height: 48,
-              margin: const EdgeInsets.symmetric(horizontal: AppTheme.spaceSM),
-              decoration: BoxDecoration(
-                color: isHighlighted 
-                    ? AppTheme.primary.withOpacity(0.15) 
-                    : AppTheme.elevatedBackground(context),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                border: Border.all(
-                  color: isHighlighted ? AppTheme.primary : AppTheme.borderColor(context),
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$value',
-                  style: AppTheme.statMediumThemed(context).copyWith(
-                    color: isHighlighted ? AppTheme.primary : AppTheme.textPrimaryColor(context),
-                  ),
-                ),
-              ),
-            ),
-            _buildScoreButton(
-              icon: Icons.add,
-              enabled: value < 3,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onChanged(value + 1);
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScoreButton({
-    required IconData icon,
-    required bool enabled,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppTheme.elevatedBackground(context),
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: enabled ? AppTheme.textSecondaryColor(context) : AppTheme.textMutedColor(context),
-        ),
-      ),
     );
   }
 
@@ -485,37 +413,14 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       children: [
         Text('Optional', style: AppTheme.labelThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
-        
-        // Opponent name
         Container(
           decoration: AppTheme.cardDecorationThemed(context),
           child: TextField(
-            controller: _opponentController,
-            focusNode: _opponentFocus,
+            controller: _opponentLevelSeedController,
+            focusNode: _opponentLevelSeedFocus,
             style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
             decoration: InputDecoration(
-              hintText: 'Opponent name',
-              hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
-              border: InputBorder.none,
-              contentPadding: AppTheme.cardPadding,
-            ),
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => _noteFocus.requestFocus(),
-          ),
-        ),
-        
-        const SizedBox(height: AppTheme.spaceSM),
-        
-        // Quick note
-        Container(
-          decoration: AppTheme.cardDecorationThemed(context),
-          child: TextField(
-            controller: _noteController,
-            focusNode: _noteFocus,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            maxLines: 2,
-            decoration: InputDecoration(
-              hintText: 'Quick note (e.g., "serve was off today")',
+              hintText: 'Opponent level / seed (optional)',
               hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
               border: InputBorder.none,
               contentPadding: AppTheme.cardPadding,
@@ -527,8 +432,20 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
     );
   }
 
+  String _scoreHintForFormat() {
+    switch (_matchFormat) {
+      case MatchFormat.fast4:
+        return 'e.g. 4-1 4-3 or 4-3(5)';
+      case MatchFormat.shortSets:
+        return 'e.g. 4-2 4-1 or 6-4 7-6(5)';
+      case MatchFormat.bestOf3:
+      default:
+        return 'e.g. 6-4 7-6(5)';
+    }
+  }
+
   Widget _buildSaveButton() {
-    final isValid = _result != null;
+    final isValid = _scoreController.text.trim().isNotEmpty;
     
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -540,33 +457,71 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
       ),
       child: SafeArea(
         top: false,
-        child: GestureDetector(
-          onTap: _isSaving ? null : _saveMatch,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-            decoration: BoxDecoration(
-              color: isValid ? AppTheme.primary : AppTheme.cardBackground(context),
-              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            ),
-            child: Center(
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'Save Match',
-                      style: AppTheme.headingSmallThemed(context).copyWith(
-                        color: isValid ? Colors.white : AppTheme.textMutedColor(context),
-                      ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: _isSaving ? null : () async {
+                HapticFeedback.lightImpact();
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddMatchScreen(
+                      initialMatchFormat: _matchFormat,
+                      initialScoreLine: _scoreController.text.trim(),
+                      initialOpponentLevelSeed: _opponentLevelSeedController.text.trim(),
                     ),
+                  ),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBackground(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  border: Border.all(color: AppTheme.borderColor(context)),
+                ),
+                child: Center(
+                  child: Text(
+                    'Add Detailed Match Log',
+                    style: AppTheme.headingSmallThemed(context).copyWith(
+                      color: AppTheme.textSecondaryColor(context),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: AppTheme.spaceSM),
+            GestureDetector(
+              onTap: _isSaving ? null : _saveMatch,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+                decoration: BoxDecoration(
+                  color: isValid ? AppTheme.primary : AppTheme.cardBackground(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+                child: Center(
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Save Match',
+                          style: AppTheme.headingSmallThemed(context).copyWith(
+                            color: isValid ? Colors.white : AppTheme.textMutedColor(context),
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -574,7 +529,8 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
 
   /// Success View - Calm confirmation, not celebration
   Widget _buildSuccessView() {
-    final isWin = _result == 'Win';
+    final isWin = _savedMatch?.result == 'Win';
+    final scoreDisplay = _savedMatch?.scoreLine ?? '';
     
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
@@ -635,7 +591,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                 const SizedBox(height: AppTheme.spaceSM),
                 
                 Text(
-                  '${isWin ? "Win" : "Loss"} · $_setsWon-$_setsLost vs ${_opponentController.text.isEmpty ? "Opponent" : _opponentController.text}',
+                  '${isWin == true ? "Win" : "Loss"} · $scoreDisplay',
                   style: AppTheme.bodyLargeThemed(context),
                 ),
                 
@@ -687,12 +643,11 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
                         decoration: AppTheme.cardDecorationThemed(context),
                         child: ShareButton(
                           shareText: ShareTextGenerator.matchResult(
-                            result: _result!,
-                            opponent: _opponentController.text.isEmpty 
-                                ? 'Opponent' 
-                                : _opponentController.text,
-                            setsWon: _setsWon,
-                            setsLost: _setsLost,
+                            result: _savedMatch?.result ?? 'Win',
+                            opponent: _savedMatch?.opponent ?? 'Opponent',
+                            setsWon: _savedMatch?.setsWon ?? 0,
+                            setsLost: _savedMatch?.setsLost ?? 0,
+                            scoreLine: _savedMatch?.scoreLine,
                             insight: null,
                           ),
                           subject: 'My tennis match',

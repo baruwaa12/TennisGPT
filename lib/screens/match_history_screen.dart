@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
-import 'add_match_screen.dart';
+import 'quick_match_screen.dart';
 
 /// Match History Screen
 /// 
@@ -62,7 +62,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddMatchScreen(),
+        builder: (context) => const QuickMatchScreen(),
       ),
     );
 
@@ -128,7 +128,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
               IconButton(
                 icon: const Icon(Icons.add_rounded, color: AppTheme.primary),
                 onPressed: _addNewMatch,
-                tooltip: 'Log match',
+                tooltip: 'Quick Match Log',
               ),
             ],
           ),
@@ -221,7 +221,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: Text(
-                  'Log first match',
+                  'Quick Match Log',
                   style: AppTheme.headingSmallThemed(context).copyWith(color: Colors.white),
                 ),
               ),
@@ -342,6 +342,12 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         ? match.opponent 
         : 'Unknown opponent';
     final dateStr = _formatDate(match.date);
+    final scoreDisplay = match.scoreLine.isNotEmpty
+        ? match.scoreLine
+        : '${match.setsWon}–${match.setsLost}';
+    final formatLabel = match.matchFormat.isNotEmpty
+        ? match.matchFormat
+        : 'Best of 3 sets';
     
     return GestureDetector(
       onTap: () => _showMatchDetails(match),
@@ -380,7 +386,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   const SizedBox(height: AppTheme.spaceXS),
                   // Date + surface (tertiary)
                   Text(
-                    '$dateStr · ${match.surface}',
+                    '$dateStr · ${match.surface} · $formatLabel',
                     style: AppTheme.labelThemed(context),
                   ),
                 ],
@@ -398,7 +404,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: Text(
-                '${match.setsWon}–${match.setsLost}',
+                scoreDisplay,
                 style: AppTheme.scoreDisplay.copyWith(
                   color: isWin ? AppTheme.win : AppTheme.loss,
                 ),
@@ -472,6 +478,12 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     final opponentName = match.opponent.trim().isNotEmpty 
         ? match.opponent 
         : 'Unknown opponent';
+    final scoreDisplay = match.scoreLine.isNotEmpty
+        ? match.scoreLine
+        : '${match.setsWon}–${match.setsLost}';
+    final formatLabel = match.matchFormat.isNotEmpty
+        ? match.matchFormat
+        : 'Best of 3 sets';
     
     return SingleChildScrollView(
       controller: scrollController,
@@ -505,7 +517,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
-                  '${match.setsWon}–${match.setsLost}',
+                  scoreDisplay,
                   style: AppTheme.scoreDisplay.copyWith(
                     color: isWin ? AppTheme.win : AppTheme.loss,
                   ),
@@ -521,7 +533,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                       style: AppTheme.headingMediumThemed(context),
                     ),
                     Text(
-                      '${_formatDate(match.date)} · ${match.surface} · ${match.weather}',
+                      '${_formatDate(match.date)} · ${match.surface} · ${match.weather} · $formatLabel',
                       style: AppTheme.labelThemed(context),
                     ),
                   ],
@@ -589,6 +601,30 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             Text('Notes', style: AppTheme.headingSmallThemed(context)),
             const SizedBox(height: AppTheme.spaceSM),
             Text(match.notes, style: AppTheme.bodyMediumThemed(context)),
+            const SizedBox(height: AppTheme.spaceMD),
+          ],
+          
+          // Match summary
+          if (match.matchSummary.isNotEmpty) ...[
+            Text('Match summary', style: AppTheme.headingSmallThemed(context)),
+            const SizedBox(height: AppTheme.spaceSM),
+            Text(match.matchSummary, style: AppTheme.bodyMediumThemed(context)),
+            const SizedBox(height: AppTheme.spaceMD),
+          ],
+          
+          // Mental notes
+          if (match.mentalNotes.isNotEmpty) ...[
+            Text('Mental notes', style: AppTheme.headingSmallThemed(context)),
+            const SizedBox(height: AppTheme.spaceSM),
+            Text(match.mentalNotes, style: AppTheme.bodyMediumThemed(context)),
+            const SizedBox(height: AppTheme.spaceMD),
+          ],
+          
+          // Tactical notes
+          if (match.tacticalNotes.isNotEmpty) ...[
+            Text('Tactical notes', style: AppTheme.headingSmallThemed(context)),
+            const SizedBox(height: AppTheme.spaceSM),
+            Text(match.tacticalNotes, style: AppTheme.bodyMediumThemed(context)),
             const SizedBox(height: AppTheme.spaceMD),
           ],
           

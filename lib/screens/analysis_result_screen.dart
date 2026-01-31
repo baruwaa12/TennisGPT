@@ -162,7 +162,9 @@ class AnalysisResultScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: AppTheme.spaceSM),
                   Text(
-                    '${data.setsWon}-${data.setsLost}',
+                    data.scoreLine?.isNotEmpty == true
+                        ? data.scoreLine!
+                        : '${data.setsWon}-${data.setsLost}',
                     style: AppTheme.statMediumThemed(context).copyWith(
                       color: isWin ? AppTheme.win : AppTheme.loss,
                     ),
@@ -339,6 +341,7 @@ class AnalysisData {
   final String result; // 'Win' or 'Loss'
   final int setsWon;
   final int setsLost;
+  final String? scoreLine;
   final String summary;
   final List<String> patterns;
   final String tacticalFocus;
@@ -350,6 +353,7 @@ class AnalysisData {
     required this.result,
     required this.setsWon,
     required this.setsLost,
+    this.scoreLine,
     required this.summary,
     required this.patterns,
     required this.tacticalFocus,
@@ -365,6 +369,7 @@ class AnalysisData {
     required int setsWon,
     required int setsLost,
     required String aiResponse,
+    String? scoreLine,
   }) {
     // For now, return sample parsed data
     // In production, this would parse the AI response text
@@ -374,6 +379,7 @@ class AnalysisData {
       result: result,
       setsWon: setsWon,
       setsLost: setsLost,
+      scoreLine: scoreLine,
       summary: _extractSummary(aiResponse),
       patterns: _extractPatterns(aiResponse),
       tacticalFocus: _extractTacticalFocus(aiResponse),
