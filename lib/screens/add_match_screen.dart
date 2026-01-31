@@ -22,12 +22,16 @@ class AddMatchScreen extends StatefulWidget {
   final String? initialMatchFormat;
   final String? initialScoreLine;
   final String? initialOpponentLevelSeed;
+  final String? initialOpponentName;
+  final String? initialNotes;
 
   const AddMatchScreen({
     super.key,
     this.initialMatchFormat,
     this.initialScoreLine,
     this.initialOpponentLevelSeed,
+    this.initialOpponentName,
+    this.initialNotes,
   });
 
   @override
@@ -71,11 +75,17 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   void initState() {
     super.initState();
     _matchFormat = widget.initialMatchFormat ?? MatchFormat.bestOf3;
+    if (widget.initialOpponentName != null && widget.initialOpponentName!.isNotEmpty) {
+      _opponentController.text = widget.initialOpponentName!;
+    }
     if (widget.initialScoreLine != null && widget.initialScoreLine!.isNotEmpty) {
       _scoreController.text = widget.initialScoreLine!;
     }
     if (widget.initialOpponentLevelSeed != null && widget.initialOpponentLevelSeed!.isNotEmpty) {
       _opponentLevelSeedController.text = widget.initialOpponentLevelSeed!;
+    }
+    if (widget.initialNotes != null && widget.initialNotes!.isNotEmpty) {
+      _notesController.text = widget.initialNotes!;
     }
   }
 
