@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../services/auth_service.dart';
+import '../services/player_profile_service.dart';
+import 'home_screen.dart';
+import 'onboarding/onboarding_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,8 +50,23 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.signInWithGoogle();
 
-      // Navigation is handled outside by your AuthWrapper / root widget
-      // when AuthService detects signedIn via onAuthStateChange
+      if (!mounted) return;
+
+      // Fallback navigation if the AuthWrapper doesn't rebuild immediately.
+      if (authService.isAuthenticated) {
+        final profileService = context.read<PlayerProfileService>();
+        await profileService.initialize();
+        final hasCompletedOnboarding =
+            authService.onboardingCompleted || profileService.hasCompletedOnboarding;
+
+        final nextScreen = hasCompletedOnboarding
+            ? const HomeScreen()
+            : const OnboardingScreen();
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => nextScreen),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
