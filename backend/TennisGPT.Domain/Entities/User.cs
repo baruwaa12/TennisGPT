@@ -22,6 +22,12 @@ public class User
     public UserPlan Plan { get; set; } = UserPlan.Free;
     public bool OnboardingCompleted { get; set; } = false;
     
+    /// <summary>
+    /// Lifetime free access - bypasses all paywalls and limits.
+    /// Use for special users (e.g., Nicholas, beta testers, friends).
+    /// </summary>
+    public bool IsComped { get; set; } = false;
+    
     // Quota tracking (monthly rolling window)
     public int TacticalUsedPeriod { get; set; } = 0;
     public DateTime? TacticalPeriodStart { get; set; }
@@ -34,10 +40,13 @@ public class User
     public const int FreeTierMonthlyLimit = 4;
     
     /// <summary>
-    /// Check if user can use tactical analysis (respects plan and quota)
+    /// Check if user can use tactical analysis (respects plan, comped status, and quota)
     /// </summary>
     public bool CanUseTacticalAnalysis()
     {
+        // Comped users always have access
+        if (IsComped) return true;
+        
         if (Plan == UserPlan.Premium) return true;
         
         // Reset period if more than 30 days have passed
@@ -54,6 +63,9 @@ public class User
     /// </summary>
     public int GetRemainingTacticalAnalyses()
     {
+        // Comped users have unlimited
+        if (IsComped) return -1;
+        
         if (Plan == UserPlan.Premium) return -1; // Unlimited
         
         // If period expired, they have full quota

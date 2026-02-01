@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
@@ -10,6 +11,7 @@ import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
 import '../utils/tennis_validator.dart';
 import '../widgets/voice_input_button.dart';
+import '../config/app_config.dart';
 import 'paywall_screen.dart';
 
 /// Pre-Match Prep Screen
@@ -802,11 +804,15 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
         ? _tacticOptions.firstWhere((t) => t['id'] == _secondaryTactic)['label']
         : null;
 
-    // Check usage limits
+    // Check usage limits (respects feature flags)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
     
-    if (!purchaseService.isPremium && !usageService.canUsePrepSession) {
+    // Skip paywall if: payments disabled, user is comped, or user is premium
+    final shouldShowPaywall = AppConfig.shouldShowPaywall(email: authService.userEmail);
+    
+    if (shouldShowPaywall && !purchaseService.isPremium && !usageService.canUsePrepSession) {
       HapticFeedback.mediumImpact();
       final result = await Navigator.push<bool>(
         context,

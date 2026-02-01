@@ -62,7 +62,8 @@ public class AdminController : ControllerBase
                     Plan = u.Plan.ToString().ToLower(),
                     OnboardingCompleted = u.OnboardingCompleted,
                     TacticalUsedPeriod = u.TacticalUsedPeriod,
-                    TacticalPeriodStart = u.TacticalPeriodStart
+                    TacticalPeriodStart = u.TacticalPeriodStart,
+                    IsComped = u.IsComped
                 }).ToList(),
                 TotalCount = totalCount,
                 NextCursor = users.Count > 0 ? users.Last().Id : null,
@@ -103,6 +104,89 @@ public class AdminController : ControllerBase
         {
             _logger.LogError(ex, "Error fetching admin stats");
             return StatusCode(500, new { message = "Failed to fetch stats" });
+        }
+    }
+    
+    /// <summary>
+    /// Set a user as comped (lifetime free access).
+    /// Use for special users like Nicholas.
+    /// </summary>
+    [HttpPost("users/{userId}/comp")]
+    public async Task<ActionResult> CompUser(Guid userId, [FromBody] CompUserRequest request)
+    {
+        if (!IsAuthorized())
+        {
+            return Unauthorized(new { message = "Admin access required" });
+        }
+
+        try
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            user.IsComped = request.IsComped;
+            await _userRepository.UpdateAsync(user);
+            
+            _logger.LogInformation("User {UserId} ({Email}) comped status set to {IsComped}", 
+                userId, user.Email, request.IsComped);
+
+            return Ok(new { 
+                message = request.IsComped 
+                    ? "User now has lifetime free access" 
+                    : "User comped status removed",
+                userId = user.Id,
+                email = user.Email,
+                isComped = user.IsComped
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting comp status for user {UserId}", userId);
+            return StatusCode(500, new { message = "Failed to update user" });
+        }
+    }
+    
+    /// <summary>
+    /// Comp a user by email address.
+    /// </summary>
+    [HttpPost("users/comp-by-email")]
+    public async Task<ActionResult> CompUserByEmail([FromBody] CompUserByEmailRequest request)
+    {
+        if (!IsAuthorized())
+        {
+            return Unauthorized(new { message = "Admin access required" });
+        }
+
+        try
+        {
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return NotFound(new { message = $"User with email '{request.Email}' not found" });
+            }
+
+            user.IsComped = request.IsComped;
+            await _userRepository.UpdateAsync(user);
+            
+            _logger.LogInformation("User {UserId} ({Email}) comped status set to {IsComped}", 
+                user.Id, user.Email, request.IsComped);
+
+            return Ok(new { 
+                message = request.IsComped 
+                    ? "User now has lifetime free access" 
+                    : "User comped status removed",
+                userId = user.Id,
+                email = user.Email,
+                isComped = user.IsComped
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting comp status for user {Email}", request.Email);
+            return StatusCode(500, new { message = "Failed to update user" });
         }
     }
 
@@ -148,6 +232,7 @@ public class AdminUserDto
     public bool OnboardingCompleted { get; set; }
     public int TacticalUsedPeriod { get; set; }
     public DateTime? TacticalPeriodStart { get; set; }
+    public bool IsComped { get; set; }
 }
 
 public class AdminStatsResponse
@@ -155,4 +240,16 @@ public class AdminStatsResponse
     public int TotalUsers { get; set; }
     public string Environment { get; set; } = "";
 }
+
+public class CompUserRequest
+{
+    public bool IsComped { get; set; } = true;
+}
+
+public class CompUserByEmailRequest
+{
+    public required string Email { get; set; }
+    public bool IsComped { get; set; } = true;
+}
+
 

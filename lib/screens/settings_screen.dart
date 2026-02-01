@@ -10,8 +10,12 @@ import '../services/player_profile_service.dart';
 import '../services/usage_service.dart';
 import '../services/streak_service.dart';
 import '../services/match_history_service.dart';
+import '../config/app_config.dart';
 import 'login_screen.dart';
 import 'paywall_screen.dart';
+import 'help_faq_screen.dart';
+import 'feedback_screen.dart';
+import 'legal_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,7 +40,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final streakService = Provider.of<StreakService>(context);
 
     // Dev mode: Force premium override
-    final isPremium = _forcePremiumEnabled || purchaseService.isPremium;
+    // Also check if payments are disabled (testing mode = everyone is premium)
+    final isPremium = _forcePremiumEnabled || 
+                      purchaseService.isPremium || 
+                      !AppConfig.paymentsEnabled ||
+                      AppConfig.isCompedUser(email: authService.userEmail);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
@@ -64,23 +72,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const SizedBox(height: 24),
             
-            // Subscription Section
-            _buildSectionTitle('Subscription', isDark),
-            _buildSettingsTile(
-              icon: Icons.workspace_premium,
-              iconColor: Colors.amber,
-              title: isPremium ? 'Premium Active' : 'Upgrade to Premium',
-              subtitle: isPremium 
-                  ? 'Unlimited access to all features'
-                  : 'Get unlimited AI analyses',
-              onTap: isPremium ? null : () => _openPaywall(),
-              trailing: isPremium 
-                  ? const Icon(Icons.check_circle, color: Colors.green)
-                  : const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            
-            const SizedBox(height: 24),
+            // Subscription Section (hidden during testing mode)
+            if (AppConfig.paymentsEnabled) ...[
+              _buildSectionTitle('Subscription', isDark),
+              _buildSettingsTile(
+                icon: Icons.workspace_premium,
+                iconColor: Colors.amber,
+                title: isPremium ? 'Premium Active' : 'Upgrade to Premium',
+                subtitle: isPremium 
+                    ? 'Unlimited access to all features'
+                    : 'Get unlimited AI analyses',
+                onTap: isPremium ? null : () => _openPaywall(),
+                trailing: isPremium 
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : const Icon(Icons.arrow_forward_ios, size: 16),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 24),
+            ] else ...[
+              // Testing mode indicator
+              Container(
+                margin: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.science_outlined, color: Colors.green, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Testing Mode',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                          Text(
+                            'Full access enabled for testers',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.green[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             
             // Appearance Section
             _buildSectionTitle('Appearance', isDark),
@@ -128,7 +176,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconColor: Colors.orange,
               title: 'Help & FAQ',
               subtitle: 'Get answers to common questions',
-              onTap: () => _showComingSoon('Help & FAQ'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpFaqScreen()),
+              ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -137,7 +188,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               iconColor: Colors.teal,
               title: 'Send Feedback',
               subtitle: 'Help us improve Composure',
-              onTap: () => _showComingSoon('Feedback'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FeedbackScreen()),
+              ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -159,7 +213,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.description_outlined,
               iconColor: Colors.grey,
               title: 'Terms of Service',
-              onTap: () => _showComingSoon('Terms'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LegalScreen(
+                    documentType: LegalDocumentType.termsOfService,
+                  ),
+                ),
+              ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -167,7 +228,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.privacy_tip_outlined,
               iconColor: Colors.grey,
               title: 'Privacy Policy',
-              onTap: () => _showComingSoon('Privacy'),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LegalScreen(
+                    documentType: LegalDocumentType.privacyPolicy,
+                  ),
+                ),
+              ),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -196,7 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: GestureDetector(
                 onTap: _handleVersionTap,
                 child: Text(
-                  'Composure v1.0.0 (Build 41)',
+                  'Composure v1.0.0 (Build 42)',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.grey[500],

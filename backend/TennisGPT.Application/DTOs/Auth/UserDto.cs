@@ -10,4 +10,9 @@ public class UserDto
     public bool OnboardingCompleted { get; set; } = false;
     public int TacticalUsedThisPeriod { get; set; } = 0;
     public int TacticalRemaining { get; set; } = 4;
+    
+    /// <summary>
+    /// Lifetime free access - bypasses all paywalls and limits.
+    /// </summary>
+    public bool IsComped { get; set; } = false;
 }

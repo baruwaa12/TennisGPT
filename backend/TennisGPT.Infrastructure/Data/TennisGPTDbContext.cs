@@ -34,6 +34,7 @@ public class TennisGPTDbContext : DbContext
             
             entity.Property(e => e.OnboardingCompleted).HasDefaultValue(false);
             entity.Property(e => e.TacticalUsedPeriod).HasDefaultValue(0);
+            entity.Property(e => e.IsComped).HasDefaultValue(false);
         });
 
         // Match configuration

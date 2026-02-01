@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../utils/tennis_validator.dart';
+import '../widgets/voice_input_button.dart';
+import '../config/app_config.dart';
 import 'paywall_screen.dart';
 
 /// Post-Match Debrief Screen
@@ -399,31 +402,45 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   }
 
   Widget _buildCustomInput() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: TextField(
-        controller: _customController,
-        style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-        maxLines: 3,
-        decoration: InputDecoration(
-          hintText: 'Describe what happened in your match...',
-          hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-            color: AppTheme.textMutedColor(context).withOpacity(0.5),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Voice input hint (matches Tactical screen)
+        Row(
+          children: [
+            Icon(
+              Icons.mic,
+              size: 14,
+              color: AppTheme.textMutedColor(context).withOpacity(0.5),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Voice enabled',
+              style: AppTheme.labelThemed(context).copyWith(
+                fontSize: 11,
+                color: AppTheme.textMutedColor(context).withOpacity(0.5),
+              ),
+            ),
+          ],
         ),
-        onChanged: (value) {
-          setState(() {
-            _selectedSituation = value.isNotEmpty ? value : null;
-            _localError = null;
-          });
-        },
-      ),
+        const SizedBox(height: AppTheme.spaceSM),
+        
+        // VoiceTextField - same component as Tactical screen
+        VoiceTextField(
+          controller: _customController,
+          hintText: 'Describe what happened in your match...',
+          maxLines: 3,
+          style: AppTheme.bodyMediumThemed(context).copyWith(
+            color: AppTheme.textPrimaryColor(context),
+          ),
+          onChanged: (value) {
+            setState(() {
+              _selectedSituation = value.isNotEmpty ? value : null;
+              _localError = null;
+            });
+          },
+        ),
+      ],
     );
   }
 
@@ -739,11 +756,15 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
       }
     }
 
-    // Check usage limits
+    // Check usage limits (respects feature flags)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
     
-    if (!purchaseService.isPremium && !usageService.canUseDebrief) {
+    // Skip paywall if: payments disabled, user is comped, or user is premium
+    final shouldShowPaywall = AppConfig.shouldShowPaywall(email: authService.userEmail);
+    
+    if (shouldShowPaywall && !purchaseService.isPremium && !usageService.canUseDebrief) {
       HapticFeedback.mediumImpact();
       final result = await Navigator.push<bool>(
         context,
