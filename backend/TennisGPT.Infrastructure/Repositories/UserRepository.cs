@@ -23,6 +23,11 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId);
     }
+    
+    public async Task<User?> GetByAppleIdAsync(string appleId)
+    {
+        return await _context.Users.FirstOrDefaultAsync(u => u.AppleId == appleId);
+    }
 
     public async Task<User?> GetByEmailAsync(string email)
     {

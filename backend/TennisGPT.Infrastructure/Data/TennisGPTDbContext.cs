@@ -22,6 +22,7 @@ public class TennisGPTDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.GoogleId).IsUnique();
+            entity.HasIndex(e => e.AppleId).IsUnique();
             entity.HasIndex(e => e.Email);
 
             entity.Property(e => e.GoogleId).IsRequired();

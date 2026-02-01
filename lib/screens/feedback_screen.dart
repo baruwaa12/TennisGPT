@@ -21,7 +21,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   
   static const String _supportEmail = 'ademolabaruwa09@gmail.com';
   static const String _appVersion = '1.0.0';
-  static const String _buildNumber = '42';
+  static const String _buildNumber = '43';
 
   final List<Map<String, String>> _categories = [
     {'id': 'general', 'label': 'General Feedback', 'emoji': '💬'},

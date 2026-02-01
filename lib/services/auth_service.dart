@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'token_service.dart';
 import 'user_storage_service.dart';
 
@@ -37,6 +38,9 @@ class AuthService extends ChangeNotifier {
   
   // Callback to clear all local data on sign out (MUST be awaited)
   Future<void> Function()? onSignOut;
+  
+  // Callback to reinitialize user-scoped services after login/restored session
+  Future<void> Function()? onUserChanged;
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
@@ -48,6 +52,76 @@ class AuthService extends ChangeNotifier {
   bool get isPremium => _userPlan == 'premium';
   bool get onboardingCompleted => _onboardingCompleted;
   int get tacticalRemaining => _tacticalRemaining;
+
+  Future<void> signInWithApple() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      if (!await SignInWithApple.isAvailable()) {
+        _error = 'Apple Sign-In is not available on this device';
+        return;
+      }
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final identityToken = credential.identityToken;
+      if (identityToken == null || identityToken.isEmpty) {
+        _error = 'Failed to get Apple identity token';
+        return;
+      }
+
+      final displayName = [
+        credential.givenName,
+        credential.familyName,
+      ].where((part) => part != null && part!.isNotEmpty).join(' ').trim();
+
+      final response = await http.post(
+        Uri.parse('$_apiBaseUrl/api/auth/apple'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'identityToken': identityToken,
+          'email': credential.email,
+          'displayName': displayName.isNotEmpty ? displayName : null,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          _error = 'Server returned empty response';
+          return;
+        }
+
+        final data = jsonDecode(response.body);
+        await _handleAuthResponse(data);
+      } else {
+        String errorMessage = 'Authentication failed (${response.statusCode})';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (_) {
+            errorMessage = response.body;
+          }
+        }
+        _error = errorMessage;
+      }
+    } catch (e) {
+      _error = 'Error: $e';
+      if (kDebugMode) {
+        print('AuthService: Apple Sign-In exception - $e');
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> initialize() async {
     if (kDebugMode) {
@@ -150,34 +224,7 @@ class AuthService extends ChangeNotifier {
         }
         
         final data = jsonDecode(response.body);
-
-        // Save tokens
-        await _tokenService.saveTokens(
-          accessToken: data['accessToken'],
-          refreshToken: data['refreshToken'],
-        );
-
-        // Set user info
-        final user = data['user'];
-        _userDisplayName = user['displayName'];
-        _userPhotoURL = user['photoUrl'];
-        _userEmail = user['email'];
-        _userPlan = user['plan'] ?? 'free';
-        _onboardingCompleted = user['onboardingCompleted'] ?? false;
-        _tacticalRemaining = user['tacticalRemaining'] ?? 4;
-        _isAuthenticated = true;
-        _error = null;
-        
-        // Set current user for user-specific storage (each user gets their own data)
-        await UserStorageService.setCurrentUser(_userEmail);
-        
-        // Notify about onboarding status from backend
-        onOnboardingStatusReceived?.call(_onboardingCompleted);
-
-        if (kDebugMode) {
-          print('AuthService: ✅ Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining, onboarding: $_onboardingCompleted)');
-          print('AuthService: ✅ isAuthenticated=$_isAuthenticated, isLoading=$_isLoading');
-        }
+        await _handleAuthResponse(data);
       } else {
         // Handle error response
         String errorMessage = 'Authentication failed (${response.statusCode})';
@@ -297,6 +344,11 @@ class AuthService extends ChangeNotifier {
         
         // Set current user for user-specific storage
         await UserStorageService.setCurrentUser(_userEmail);
+        
+        // Reinitialize user-scoped services after session restore
+        if (onUserChanged != null) {
+          await onUserChanged!();
+        }
 
         if (kDebugMode) {
           print('AuthService: Restored session for $_userEmail (plan: $_userPlan)');
@@ -320,6 +372,41 @@ class AuthService extends ChangeNotifier {
       }
     }
     notifyListeners();
+  }
+
+  Future<void> _handleAuthResponse(Map<String, dynamic> data) async {
+    // Save tokens
+    await _tokenService.saveTokens(
+      accessToken: data['accessToken'],
+      refreshToken: data['refreshToken'],
+    );
+
+    // Set user info
+    final user = data['user'];
+    _userDisplayName = user['displayName'];
+    _userPhotoURL = user['photoUrl'];
+    _userEmail = user['email'];
+    _userPlan = user['plan'] ?? 'free';
+    _onboardingCompleted = user['onboardingCompleted'] ?? false;
+    _tacticalRemaining = user['tacticalRemaining'] ?? 4;
+    _isAuthenticated = true;
+    _error = null;
+
+    // Set current user for user-specific storage (each user gets their own data)
+    await UserStorageService.setCurrentUser(_userEmail);
+
+    // Reinitialize user-scoped services for the signed-in user
+    if (onUserChanged != null) {
+      await onUserChanged!();
+    }
+
+    // Notify about onboarding status from backend
+    onOnboardingStatusReceived?.call(_onboardingCompleted);
+
+    if (kDebugMode) {
+      print('AuthService: ✅ Authenticated as $_userEmail (plan: $_userPlan, remaining: $_tacticalRemaining, onboarding: $_onboardingCompleted)');
+      print('AuthService: ✅ isAuthenticated=$_isAuthenticated, isLoading=$_isLoading');
+    }
   }
 
   Future<bool> _refreshToken() async {

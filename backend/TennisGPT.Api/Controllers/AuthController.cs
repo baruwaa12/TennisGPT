@@ -37,6 +37,28 @@ public class AuthController : ControllerBase
         }
     }
 
+    [HttpPost("apple")]
+    public async Task<ActionResult<AuthResponse>> AuthenticateWithApple([FromBody] AppleTokenRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(request.IdentityToken))
+            {
+                return BadRequest(new { message = "identityToken is required" });
+            }
+
+            var result = await _authService.AuthenticateWithAppleAsync(
+                request.IdentityToken,
+                request.Email,
+                request.DisplayName);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
     {

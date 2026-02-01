@@ -76,6 +76,24 @@ class MyApp extends StatelessWidget {
                 print('main.dart: All user data cleared - ready for new user');
               }
             };
+            
+            // Sync onboarding status from backend to local profile service
+            authService.onOnboardingStatusReceived = (completed) async {
+              await profileService.syncFromBackend(completed);
+            };
+            
+            // Reinitialize user-scoped services after login/session restore
+            authService.onUserChanged = () async {
+              await profileService.resetProfile();
+              await usageService.resetAllUsage();
+              await streakService.resetStreak();
+              await matchHistoryService.resetAllMatches();
+              
+              await profileService.initialize();
+              await usageService.initialize();
+              await streakService.initialize();
+              await matchHistoryService.initialize();
+            };
           },
         ),
       ],

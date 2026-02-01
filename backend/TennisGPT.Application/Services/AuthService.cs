@@ -14,15 +14,18 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IGoogleAuthClient _googleAuthClient;
+    private readonly IAppleAuthClient _appleAuthClient;
     private readonly IConfiguration _configuration;
 
     public AuthService(
         IUserRepository userRepository,
         IGoogleAuthClient googleAuthClient,
+        IAppleAuthClient appleAuthClient,
         IConfiguration configuration)
     {
         _userRepository = userRepository;
         _googleAuthClient = googleAuthClient;
+        _appleAuthClient = appleAuthClient;
         _configuration = configuration;
     }
 
@@ -67,6 +70,81 @@ public class AuthService : IAuthService
             user.Email = googleUser.Email;
             user.DisplayName = googleUser.DisplayName;
             user.PhotoUrl = googleUser.PhotoUrl;
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userRepository.UpdateAsync(user);
+        }
+
+        // Generate tokens
+        var jwtToken = GenerateJwtToken(user);
+        var newRefreshToken = GenerateRefreshToken();
+
+        // Store refresh token
+        user.RefreshToken = newRefreshToken;
+        user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+        await _userRepository.UpdateAsync(user);
+
+        return new AuthResponse
+        {
+            AccessToken = jwtToken,
+            RefreshToken = newRefreshToken,
+            User = MapToDto(user)
+        };
+    }
+
+    public async Task<AuthResponse> AuthenticateWithAppleAsync(string identityToken, string? email, string? displayName)
+    {
+        var appleUser = await _appleAuthClient.ValidateIdentityTokenAsync(identityToken);
+        if (appleUser == null)
+        {
+            throw new UnauthorizedAccessException("Invalid Apple identity token");
+        }
+
+        // Prefer email from token; fall back to provided email from credential
+        var resolvedEmail = appleUser.Email ?? email;
+
+        // Find by Apple ID first
+        var user = await _userRepository.GetByAppleIdAsync(appleUser.AppleId);
+
+        // Fallback: link to existing account by email (if we have it)
+        if (user == null && !string.IsNullOrWhiteSpace(resolvedEmail))
+        {
+            user = await _userRepository.GetByEmailAsync(resolvedEmail);
+        }
+
+        if (user == null)
+        {
+            if (string.IsNullOrWhiteSpace(resolvedEmail))
+            {
+                throw new UnauthorizedAccessException("Apple account email not available. Please re-authorize.");
+            }
+
+            user = await _userRepository.CreateAsync(new User
+            {
+                GoogleId = $"apple:{appleUser.AppleId}", // Required field, namespace to avoid collisions
+                AppleId = appleUser.AppleId,
+                Email = resolvedEmail,
+                DisplayName = displayName,
+                LastLoginAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            // Link Apple ID if not already set
+            if (string.IsNullOrEmpty(user.AppleId))
+            {
+                user.AppleId = appleUser.AppleId;
+            }
+
+            // Update email/name if provided
+            if (!string.IsNullOrWhiteSpace(resolvedEmail))
+            {
+                user.Email = resolvedEmail;
+            }
+            if (!string.IsNullOrWhiteSpace(displayName))
+            {
+                user.DisplayName = displayName;
+            }
+
             user.LastLoginAt = DateTime.UtcNow;
             await _userRepository.UpdateAsync(user);
         }

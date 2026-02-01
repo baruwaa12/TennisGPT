@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../services/auth_service.dart';
 import '../services/player_profile_service.dart';
@@ -49,6 +51,40 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.signInWithGoogle();
+
+      if (!mounted) return;
+
+      // Fallback navigation if the AuthWrapper doesn't rebuild immediately.
+      if (authService.isAuthenticated) {
+        final profileService = context.read<PlayerProfileService>();
+        await profileService.initialize();
+        final hasCompletedOnboarding =
+            authService.onboardingCompleted || profileService.hasCompletedOnboarding;
+
+        final nextScreen = hasCompletedOnboarding
+            ? const HomeScreen()
+            : const OnboardingScreen();
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => nextScreen),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await authService.signInWithApple();
 
       if (!mounted) return;
 
@@ -226,6 +262,28 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
+
+                    // Apple Sign In (iOS only)
+                    if (defaultTargetPlatform == TargetPlatform.iOS) ...[
+                      const SizedBox(height: 16),
+                      FutureBuilder<bool>(
+                        future: SignInWithApple.isAvailable(),
+                        builder: (context, snapshot) {
+                          if (snapshot.data != true) {
+                            return const SizedBox.shrink();
+                          }
+                          return SignInWithAppleButton(
+                            style: isDark
+                                ? SignInWithAppleButtonStyle.white
+                                : SignInWithAppleButtonStyle.black,
+                            onPressed: () {
+                              if (isLoading) return;
+                              _signInWithApple();
+                            },
+                          );
+                        },
+                      ),
+                    ],
 
                     const SizedBox(height: 40),
 

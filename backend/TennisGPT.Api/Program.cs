@@ -25,6 +25,7 @@ builder.Services.AddScoped<ICheckInRepository, CheckInRepository>();
 
 // External clients
 builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
+builder.Services.AddHttpClient<IAppleAuthClient, AppleAuthClient>();
 builder.Services.AddHttpClient<IOpenAIClient, OpenAIClient>();
 
 // Application services
