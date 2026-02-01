@@ -79,17 +79,28 @@ public class AppleAuthClient : IAppleAuthClient
                 ClockSkew = TimeSpan.FromMinutes(5) // Increased for clock differences
             };
             
+            // Disable default claim mapping so 'sub' stays as 'sub'
+            tokenHandler.InboundClaimTypeMap.Clear();
+            
             var principal = tokenHandler.ValidateToken(identityToken, validationParams, out var validatedToken);
             var jwtToken = (JwtSecurityToken)validatedToken;
             
-            var appleId = principal.FindFirst("sub")?.Value;
+            // Try multiple ways to get the Apple ID (sub claim)
+            var appleId = principal.FindFirst("sub")?.Value 
+                ?? principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? jwtToken.Subject;
+            
+            _logger.LogInformation("Found AppleId/sub: '{AppleId}'", appleId ?? "NULL");
+            
             if (string.IsNullOrEmpty(appleId))
             {
-                _logger.LogWarning("Apple token validated but no 'sub' claim found");
+                _logger.LogWarning("Apple token validated but no 'sub' claim found. Claims: {Claims}", 
+                    string.Join(", ", principal.Claims.Select(c => $"{c.Type}={c.Value}")));
                 return null;
             }
             
-            var email = principal.FindFirst("email")?.Value;
+            var email = principal.FindFirst("email")?.Value 
+                ?? principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
             var emailVerified = principal.FindFirst("email_verified")?.Value == "true";
             
             _logger.LogInformation("Apple Sign-In successful for AppleId: {AppleId}", appleId);
