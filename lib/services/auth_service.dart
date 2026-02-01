@@ -90,6 +90,11 @@ class AuthService extends ChangeNotifier {
           'email': credential.email,
           'displayName': displayName.isNotEmpty ? displayName : null,
         }),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Server request timed out. Please try again.');
+        },
       );
 
       if (response.statusCode == 200) {
@@ -204,6 +209,7 @@ class AuthService extends ChangeNotifier {
       }
 
       // Send to backend - prefer ID token, fall back to access token for web
+      // Add timeout to prevent infinite hanging if server is slow/down
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/api/auth/google'),
         headers: {'Content-Type': 'application/json'},
@@ -211,6 +217,11 @@ class AuthService extends ChangeNotifier {
           'idToken': idToken,
           'accessToken': accessToken,
         }),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Server request timed out. Please try again.');
+        },
       );
 
       if (response.statusCode == 200) {

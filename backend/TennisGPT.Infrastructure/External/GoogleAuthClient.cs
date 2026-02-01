@@ -8,13 +8,26 @@ namespace TennisGPT.Infrastructure.External;
 
 public class GoogleAuthClient : IGoogleAuthClient
 {
-    private readonly string _clientId;
+    private readonly List<string> _clientIds;
     private readonly HttpClient _httpClient;
 
     public GoogleAuthClient(IConfiguration configuration, HttpClient httpClient)
     {
-        _clientId = configuration["Google:ClientId"]
+        // Support multiple client IDs (web, iOS, Android) separated by semicolons
+        var clientIdConfig = configuration["Google:ClientId"]
             ?? throw new InvalidOperationException("Google:ClientId not configured");
+        
+        _clientIds = clientIdConfig
+            .Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(id => id.Trim())
+            .Where(id => !string.IsNullOrEmpty(id))
+            .ToList();
+        
+        if (_clientIds.Count == 0)
+        {
+            throw new InvalidOperationException("Google:ClientId must contain at least one valid client ID");
+        }
+        
         _httpClient = httpClient;
     }
 
@@ -22,9 +35,10 @@ public class GoogleAuthClient : IGoogleAuthClient
     {
         try
         {
+            // Accept tokens from any of the configured client IDs
             var settings = new GoogleJsonWebSignature.ValidationSettings
             {
-                Audience = [_clientId]
+                Audience = _clientIds
             };
 
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
