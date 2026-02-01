@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using TennisGPT.Application.Interfaces;
 
@@ -12,11 +13,13 @@ public class AppleAuthClient : IAppleAuthClient
     
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
+    private readonly ILogger<AppleAuthClient> _logger;
     
-    public AppleAuthClient(IConfiguration configuration, HttpClient httpClient)
+    public AppleAuthClient(IConfiguration configuration, HttpClient httpClient, ILogger<AppleAuthClient> logger)
     {
         _configuration = configuration;
         _httpClient = httpClient;
+        _logger = logger;
     }
     
     public async Task<AppleUserInfo?> ValidateIdentityTokenAsync(string identityToken)
@@ -24,25 +27,56 @@ public class AppleAuthClient : IAppleAuthClient
         try
         {
             var clientId = _configuration["Apple:ClientId"];
+            _logger.LogInformation("Apple ClientId from config: {ClientId}", clientId ?? "NULL");
+            
             if (string.IsNullOrWhiteSpace(clientId))
             {
+                _logger.LogError("Apple ClientId not configured in environment variables");
                 throw new InvalidOperationException("Apple ClientId not configured");
+            }
+            
+            // Decode token to see what audience it has (for debugging)
+            var handler = new JwtSecurityTokenHandler();
+            if (handler.CanReadToken(identityToken))
+            {
+                var jwt = handler.ReadJwtToken(identityToken);
+                _logger.LogInformation("Token audience (aud): {Audience}", string.Join(", ", jwt.Audiences));
+                _logger.LogInformation("Token issuer (iss): {Issuer}", jwt.Issuer);
+                _logger.LogInformation("Expected audience: {Expected}", clientId);
             }
             
             var jwksJson = await _httpClient.GetStringAsync(AppleKeysUrl);
             var jwks = new JsonWebKeySet(jwksJson);
             
             var tokenHandler = new JwtSecurityTokenHandler();
+            
+            // Read the token first to get the actual audience for comparison
+            var unvalidatedToken = tokenHandler.ReadJwtToken(identityToken);
+            var tokenAudience = unvalidatedToken.Audiences.FirstOrDefault();
+            
+            _logger.LogInformation("=== APPLE TOKEN DEBUG ===");
+            _logger.LogInformation("Configured ClientId: '{ConfiguredId}'", clientId);
+            _logger.LogInformation("Token Audience: '{TokenAudience}'", tokenAudience);
+            _logger.LogInformation("Audiences match: {Match}", tokenAudience == clientId);
+            
+            // Use the audience from the token if it differs (for debugging)
+            var audienceToValidate = clientId;
+            if (!string.IsNullOrEmpty(tokenAudience) && tokenAudience != clientId)
+            {
+                _logger.LogWarning("Audience mismatch! Token has '{TokenAud}' but config has '{ConfigAud}'. " +
+                    "Update Apple__ClientId in Railway to: {TokenAud}", tokenAudience, clientId, tokenAudience);
+            }
+            
             var validationParams = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidIssuer = AppleIssuer,
                 ValidateAudience = true,
-                ValidAudience = clientId,
+                ValidAudience = audienceToValidate,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKeys = jwks.Keys,
-                ClockSkew = TimeSpan.FromMinutes(2)
+                ClockSkew = TimeSpan.FromMinutes(5) // Increased for clock differences
             };
             
             var principal = tokenHandler.ValidateToken(identityToken, validationParams, out var validatedToken);
@@ -51,11 +85,14 @@ public class AppleAuthClient : IAppleAuthClient
             var appleId = principal.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(appleId))
             {
+                _logger.LogWarning("Apple token validated but no 'sub' claim found");
                 return null;
             }
             
             var email = principal.FindFirst("email")?.Value;
             var emailVerified = principal.FindFirst("email_verified")?.Value == "true";
+            
+            _logger.LogInformation("Apple Sign-In successful for AppleId: {AppleId}", appleId);
             
             return new AppleUserInfo
             {
@@ -64,9 +101,15 @@ public class AppleAuthClient : IAppleAuthClient
                 EmailVerified = emailVerified
             };
         }
-        catch
+        catch (SecurityTokenValidationException ex)
         {
-            return null;
+            _logger.LogError(ex, "Apple token validation failed: {Message}", ex.Message);
+            throw new InvalidOperationException($"Token validation failed: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Apple Sign-In error: {Message}", ex.Message);
+            throw new InvalidOperationException($"Apple auth error: {ex.Message}", ex);
         }
     }
 }

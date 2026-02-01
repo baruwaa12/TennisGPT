@@ -93,7 +93,17 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> AuthenticateWithAppleAsync(string identityToken, string? email, string? displayName)
     {
-        var appleUser = await _appleAuthClient.ValidateIdentityTokenAsync(identityToken);
+        AppleUserInfo? appleUser;
+        try
+        {
+            appleUser = await _appleAuthClient.ValidateIdentityTokenAsync(identityToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Pass through the specific error from AppleAuthClient
+            throw new UnauthorizedAccessException(ex.Message, ex);
+        }
+        
         if (appleUser == null)
         {
             throw new UnauthorizedAccessException("Invalid Apple identity token");
