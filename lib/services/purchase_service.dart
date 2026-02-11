@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 
 /// PurchaseService handles all RevenueCat subscription logic.
 /// 
 /// Subscription Products:
-/// - tennisgpt_monthly: $9.99/month
-/// - tennisgpt_annual: $59.99/year (best value)
+/// - composure_founder_monthly: £4.99/month (first 200 users, locked forever)
+/// - composure_monthly: £9.99/month
+/// - composure_annual: £59.99/year (best value)
 class PurchaseService extends ChangeNotifier {
   // RevenueCat API Keys
   // TODO: Replace with your actual RevenueCat API keys from https://app.revenuecat.com
@@ -19,11 +21,19 @@ class PurchaseService extends ChangeNotifier {
       _revenueCatApiKeyGoogle != 'YOUR_REVENUECAT_GOOGLE_API_KEY';
   
   // Product identifiers
-  static const String monthlyProductId = 'tennisgpt_monthly';
-  static const String annualProductId = 'tennisgpt_annual';
+  static const String founderMonthlyProductId = 'composure_founder_monthly';
+  static const String monthlyProductId = 'composure_monthly';
+  static const String annualProductId = 'composure_annual';
+  
+  // Offering identifiers
+  static const String founderOfferingId = 'founder';
+  static const String defaultOfferingId = 'default';
   
   // Entitlement identifier
   static const String premiumEntitlement = 'premium';
+  
+  // Founder spots tracking key
+  static const String _founderSpotsTakenKey = 'founder_spots_taken';
 
   bool _isInitialized = false;
   bool _isPremium = false;
@@ -31,6 +41,7 @@ class PurchaseService extends ChangeNotifier {
   String? _error;
   Offerings? _offerings;
   CustomerInfo? _customerInfo;
+  int _founderSpotsTaken = 0;
 
   // Getters
   bool get isInitialized => _isInitialized;
@@ -39,6 +50,12 @@ class PurchaseService extends ChangeNotifier {
   String? get error => _error;
   Offerings? get offerings => _offerings;
   CustomerInfo? get customerInfo => _customerInfo;
+  
+  // Founder plan getters
+  int get founderSpotsTaken => _founderSpotsTaken;
+  int get founderSpotsRemaining => 
+      (AppConfig.founderSpotsTotal - _founderSpotsTaken).clamp(0, AppConfig.founderSpotsTotal);
+  bool get isFounderAvailable => founderSpotsRemaining > 0;
 
   /// Initialize RevenueCat SDK
   Future<void> initialize() async {
@@ -47,6 +64,9 @@ class PurchaseService extends ChangeNotifier {
     try {
       _isLoading = true;
       notifyListeners();
+      
+      // Load founder spots count from local storage
+      await _loadFounderSpots();
 
       // Skip if RevenueCat is not configured (placeholder keys)
       if (!isConfigured) {
@@ -96,6 +116,7 @@ class PurchaseService extends ChangeNotifier {
       if (kDebugMode) {
         print('PurchaseService: Initialized successfully');
         print('PurchaseService: Premium status: $_isPremium');
+        print('PurchaseService: Founder spots remaining: $founderSpotsRemaining');
       }
     } catch (e) {
       _error = 'Failed to initialize purchases: $e';
@@ -105,6 +126,25 @@ class PurchaseService extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+  
+  /// Load founder spots count from local storage
+  /// In production, consider fetching this from your backend for accuracy
+  Future<void> _loadFounderSpots() async {
+    final prefs = await SharedPreferences.getInstance();
+    _founderSpotsTaken = prefs.getInt(_founderSpotsTakenKey) ?? 0;
+  }
+  
+  /// Increment founder spots taken (call after successful founder purchase)
+  Future<void> _recordFounderPurchase() async {
+    _founderSpotsTaken++;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_founderSpotsTakenKey, _founderSpotsTaken);
+    notifyListeners();
+    
+    if (kDebugMode) {
+      print('PurchaseService: Founder spot claimed. Remaining: $founderSpotsRemaining');
     }
   }
 
@@ -153,6 +193,22 @@ class PurchaseService extends ChangeNotifier {
     }
   }
 
+  /// Get founder monthly subscription package
+  Package? get founderMonthlyPackage {
+    // Try to get from 'founder' offering first
+    final founderOffering = _offerings?.getOffering(founderOfferingId);
+    if (founderOffering != null) {
+      for (var package in founderOffering.availablePackages) {
+        if (package.storeProduct.identifier == founderMonthlyProductId) {
+          return package;
+        }
+      }
+      // Fall back to monthly package in founder offering
+      return founderOffering.monthly;
+    }
+    return null;
+  }
+
   /// Get monthly subscription package
   Package? get monthlyPackage {
     return _offerings?.current?.monthly;
@@ -163,14 +219,41 @@ class PurchaseService extends ChangeNotifier {
     return _offerings?.current?.annual;
   }
 
+  /// Get founder monthly price string
+  String get founderMonthlyPriceString {
+    return founderMonthlyPackage?.storeProduct.priceString ?? AppConfig.founderMonthlyPriceDisplay;
+  }
+
   /// Get monthly price string
   String get monthlyPriceString {
-    return monthlyPackage?.storeProduct.priceString ?? '\$9.99';
+    return monthlyPackage?.storeProduct.priceString ?? AppConfig.regularMonthlyPriceDisplay;
   }
 
   /// Get annual price string
   String get annualPriceString {
-    return annualPackage?.storeProduct.priceString ?? '\$59.99';
+    return annualPackage?.storeProduct.priceString ?? AppConfig.annualPriceDisplay;
+  }
+
+  /// Purchase founder monthly subscription
+  Future<bool> purchaseFounderMonthly() async {
+    if (!isFounderAvailable) {
+      _error = 'Founder spots are no longer available';
+      notifyListeners();
+      return false;
+    }
+    
+    final package = founderMonthlyPackage;
+    if (package == null) {
+      _error = 'Founder package not available';
+      notifyListeners();
+      return false;
+    }
+    
+    final success = await _purchasePackage(package);
+    if (success) {
+      await _recordFounderPurchase();
+    }
+    return success;
   }
 
   /// Purchase monthly subscription

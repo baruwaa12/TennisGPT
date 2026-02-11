@@ -93,6 +93,15 @@ class MyApp extends StatelessWidget {
               await usageService.initialize();
               await streakService.initialize();
               await matchHistoryService.initialize();
+              
+              // Identify user with RevenueCat for subscription tracking
+              final email = authService.userEmail;
+              if (email != null) {
+                await purchaseService.identifyUser(email);
+                if (kDebugMode) {
+                  print('main.dart: Identified user with RevenueCat: $email');
+                }
+              }
             };
           },
         ),

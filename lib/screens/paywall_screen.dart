@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/purchase_service.dart';
+import '../config/app_config.dart';
 
 enum PaywallTrigger {
   matchLimit,
@@ -24,34 +26,58 @@ class PaywallScreen extends StatefulWidget {
   State<PaywallScreen> createState() => _PaywallScreenState();
 }
 
-class _PaywallScreenState extends State<PaywallScreen> {
-  bool _isAnnualSelected = true;
+enum _SelectedPlan { founder, monthly, annual }
 
-  String get _triggerMessage {
+class _PaywallScreenState extends State<PaywallScreen> {
+  _SelectedPlan _selectedPlan = _SelectedPlan.founder;
+
+  String get _triggerTitle {
     switch (widget.trigger) {
       case PaywallTrigger.matchLimit:
-        return "You've logged 5 matches!\nUnlock unlimited tracking.";
+        return "You've hit the free match limit";
       case PaywallTrigger.tacticalAnalysisLimit:
-        return "You've used your 4 free analyses.\nUnlock unlimited tactical insights.";
       case PaywallTrigger.prepSessionLimit:
-        return "You've used your 4 free analyses.\nUnlock unlimited preparation.";
       case PaywallTrigger.debriefLimit:
-        return "You've used your 4 free analyses.\nUnlock unlimited post-match analysis.";
+        return "You've used your free analyses";
       case PaywallTrigger.general:
-        return "Level up your tennis game";
+        return 'Become a Founder Member';
+    }
+  }
+
+  String get _triggerSubtitle {
+    switch (widget.trigger) {
+      case PaywallTrigger.matchLimit:
+        return 'Unlock unlimited match logging and tactical insights.';
+      case PaywallTrigger.tacticalAnalysisLimit:
+      case PaywallTrigger.prepSessionLimit:
+      case PaywallTrigger.debriefLimit:
+        return 'Unlock unlimited tactical analysis after every match.';
+      case PaywallTrigger.general:
+        return 'Lock in founder pricing before spots run out.';
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    // Default to founder if available, otherwise annual
+    if (!purchaseService.isFounderAvailable) {
+      _selectedPlan = _SelectedPlan.annual;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final purchaseService = Provider.of<PurchaseService>(context);
     
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -64,48 +90,53 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ),
                 ),
                 
-                // Header
-                const SizedBox(height: 8),
+                // Founder spots banner
+                if (purchaseService.isFounderAvailable) ...[
+                  _buildFounderBanner(purchaseService),
+                  const SizedBox(height: 20),
+                ],
+                
+                // Title
                 Text(
-                  '🎯',
-                  style: const TextStyle(fontSize: 56),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Unlock Full Tactical Power',
+                  _triggerTitle,
                   style: GoogleFonts.poppins(
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.grey[800],
+                    color: isDark ? Colors.white : Colors.grey[900],
+                    height: 1.2,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _triggerMessage,
+                  _triggerSubtitle,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 
-                // Free vs Premium comparison
-                _buildComparisonCard(),
+                // What you get (benefit-focused, not feature list)
+                _buildBenefits(isDark),
                 
                 const SizedBox(height: 24),
                 
                 // Pricing options
-                _buildPricingOptions(),
+                _buildPricingOptions(purchaseService, isDark),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 
                 // Subscribe button
-                _buildSubscribeButton(),
+                _buildSubscribeButton(purchaseService),
+                
+                const SizedBox(height: 12),
+                
+                // Guarantee
+                _buildGuarantee(isDark),
                 
                 const SizedBox(height: 16),
                 
@@ -123,7 +154,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 
                 // Legal text
                 Text(
@@ -143,7 +174,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(
-                      onPressed: () {/* TODO: Open terms */},
+                      onPressed: () => _openUrl(AppConfig.termsUrl),
                       child: Text(
                         'Terms of Use',
                         style: GoogleFonts.poppins(
@@ -154,7 +185,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     ),
                     Text(' • ', style: TextStyle(color: Colors.grey[400])),
                     TextButton(
-                      onPressed: () {/* TODO: Open privacy */},
+                      onPressed: () => _openUrl(AppConfig.privacyUrl),
                       child: Text(
                         'Privacy Policy',
                         style: GoogleFonts.poppins(
@@ -165,6 +196,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -173,88 +205,32 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildComparisonCard() {
+  // ──────────────────────────────────────────────
+  // Founder spots banner (urgency)
+  // ──────────────────────────────────────────────
+  Widget _buildFounderBanner(PurchaseService purchaseService) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: [Colors.amber.shade600, Colors.orange.shade700],
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Free section
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.lock_open, color: Colors.grey[600], size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'FREE',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildFeatureRow('5 matches logged', false),
-                _buildFeatureRow('4 free AI analyses', false),
-                _buildFeatureRow('Basic performance stats', false),
-              ],
-            ),
-          ),
-          
-          // Premium section
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade100,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(Icons.star, color: Colors.amber, size: 16),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'PREMIUM',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildFeatureRow('Unlimited match logging', true),
-                _buildFeatureRow('Unlimited tactical analysis', true),
-                _buildFeatureRow('Opponent scouting', true),
-                _buildFeatureRow('Advanced analytics', true),
-                _buildFeatureRow('AI weekly insights', true),
-                _buildFeatureRow('Export your data', true),
-              ],
+          const Icon(Icons.local_fire_department, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              'Founder pricing: ${purchaseService.founderSpotsRemaining} of ${AppConfig.founderSpotsTotal} spots left',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -262,243 +238,275 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
-  Widget _buildFeatureRow(String text, bool isPremium) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            isPremium ? Icons.check_circle : Icons.remove_circle_outline,
-            color: isPremium ? Colors.green : Colors.grey[400],
-            size: 18,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: isPremium ? Colors.grey[800] : Colors.grey[600],
+  // ──────────────────────────────────────────────
+  // Benefits (outcome-focused copy)
+  // ──────────────────────────────────────────────
+  Widget _buildBenefits(bool isDark) {
+    final benefits = [
+      _BenefitItem(
+        icon: Icons.insights,
+        text: 'Unlimited tactical analysis after every match',
+      ),
+      _BenefitItem(
+        icon: Icons.sports_tennis,
+        text: 'Unlimited match logging & full history',
+      ),
+      _BenefitItem(
+        icon: Icons.trending_up,
+        text: 'Trends & patterns (surface, opponent type, win rate)',
+      ),
+      _BenefitItem(
+        icon: Icons.fitness_center,
+        text: 'Drills + next-match plan based on your data',
+      ),
+      _BenefitItem(
+        icon: Icons.star_outline,
+        text: 'Early access to new features',
+      ),
+    ];
+
+    return Column(
+      children: benefits.map((b) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(b.icon, color: Colors.green, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                b.text,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[300] : Colors.grey[800],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      )).toList(),
     );
   }
 
-  Widget _buildPricingOptions() {
-    final purchaseService = Provider.of<PurchaseService>(context);
-    
+  // ──────────────────────────────────────────────
+  // Pricing options (Founder + Monthly + Annual)
+  // ──────────────────────────────────────────────
+  Widget _buildPricingOptions(PurchaseService purchaseService, bool isDark) {
     return Column(
       children: [
-        // Annual option (BEST VALUE)
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            setState(() => _isAnnualSelected = true);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _isAnnualSelected ? Colors.green.shade50 : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _isAnnualSelected ? Colors.green : Colors.grey.shade300,
-                width: _isAnnualSelected ? 2 : 1,
-              ),
-              boxShadow: _isAnnualSelected
-                  ? [
-                      BoxShadow(
-                        color: Colors.green.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _isAnnualSelected ? Colors.green : Colors.grey,
-                      width: 2,
-                    ),
-                    color: _isAnnualSelected ? Colors.green : Colors.transparent,
-                  ),
-                  child: _isAnnualSelected
-                      ? const Icon(Icons.check, color: Colors.white, size: 16)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Annual',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'SAVE 50%',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'Best value for serious players',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  purchaseService.annualPriceString,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: _isAnnualSelected ? Colors.green : Colors.grey[800],
-                  ),
-                ),
-                Text(
-                  '/yr',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
+        // Founder option (if spots available)
+        if (purchaseService.isFounderAvailable)
+          _buildPlanTile(
+            plan: _SelectedPlan.founder,
+            title: 'Founder',
+            subtitle: 'Locks in forever. Limited spots.',
+            priceText: purchaseService.founderMonthlyPriceString,
+            priceSuffix: '/mo',
+            badgeText: 'BEST DEAL',
+            badgeColor: Colors.amber.shade700,
+            accentColor: Colors.amber.shade700,
+            isDark: isDark,
           ),
+        
+        if (purchaseService.isFounderAvailable)
+          const SizedBox(height: 10),
+        
+        // Annual option
+        _buildPlanTile(
+          plan: _SelectedPlan.annual,
+          title: 'Annual',
+          subtitle: 'Best value for committed players',
+          priceText: purchaseService.annualPriceString,
+          priceSuffix: '/yr',
+          badgeText: 'SAVE 50%',
+          badgeColor: Colors.green,
+          accentColor: Colors.green,
+          isDark: isDark,
         ),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         
         // Monthly option
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            setState(() => _isAnnualSelected = false);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: !_isAnnualSelected ? Colors.blue.shade50 : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: !_isAnnualSelected ? Colors.blue : Colors.grey.shade300,
-                width: !_isAnnualSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: !_isAnnualSelected ? Colors.blue : Colors.grey,
-                      width: 2,
-                    ),
-                    color: !_isAnnualSelected ? Colors.blue : Colors.transparent,
-                  ),
-                  child: !_isAnnualSelected
-                      ? const Icon(Icons.check, color: Colors.white, size: 16)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Monthly',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Flexible option',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  purchaseService.monthlyPriceString,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: !_isAnnualSelected ? Colors.blue : Colors.grey[800],
-                  ),
-                ),
-                Text(
-                  '/mo',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
+        _buildPlanTile(
+          plan: _SelectedPlan.monthly,
+          title: 'Monthly',
+          subtitle: 'Flexible option',
+          priceText: purchaseService.monthlyPriceString,
+          priceSuffix: '/mo',
+          accentColor: Colors.blue,
+          isDark: isDark,
         ),
       ],
     );
   }
 
-  Widget _buildSubscribeButton() {
-    final purchaseService = Provider.of<PurchaseService>(context);
+  Widget _buildPlanTile({
+    required _SelectedPlan plan,
+    required String title,
+    required String subtitle,
+    required String priceText,
+    required String priceSuffix,
+    String? badgeText,
+    Color? badgeColor,
+    required Color accentColor,
+    required bool isDark,
+  }) {
+    final isSelected = _selectedPlan == plan;
+    
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setState(() => _selectedPlan = plan);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? accentColor.withOpacity(isDark ? 0.15 : 0.06)
+              : (isDark ? Colors.grey[900] : Colors.white),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? accentColor : (isDark ? Colors.grey[800]! : Colors.grey.shade300),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.18),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Radio indicator
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? accentColor : Colors.grey,
+                  width: 2,
+                ),
+                color: isSelected ? accentColor : Colors.transparent,
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            // Title + subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.grey[900],
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: badgeColor ?? accentColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: GoogleFonts.poppins(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey[500] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Price
+            Text(
+              priceText,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? accentColor : (isDark ? Colors.white : Colors.grey[800]),
+              ),
+            ),
+            Text(
+              priceSuffix,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: isDark ? Colors.grey[500] : Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // Subscribe button (direct-response CTA)
+  // ──────────────────────────────────────────────
+  Widget _buildSubscribeButton(PurchaseService purchaseService) {
     final isLoading = purchaseService.isLoading;
+    
+    String buttonText;
+    List<Color> gradient;
+    
+    switch (_selectedPlan) {
+      case _SelectedPlan.founder:
+        buttonText = 'Become a Founder';
+        gradient = [Colors.amber.shade600, Colors.orange.shade700];
+        break;
+      case _SelectedPlan.annual:
+        buttonText = 'Get Annual Access';
+        gradient = [Colors.green.shade500, Colors.green.shade700];
+        break;
+      case _SelectedPlan.monthly:
+        buttonText = 'Start Monthly';
+        gradient = [Colors.blue.shade500, Colors.blue.shade700];
+        break;
+    }
     
     return GestureDetector(
       onTap: isLoading ? null : _subscribe,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _isAnnualSelected
-                ? [Colors.green.shade500, Colors.green.shade700]
-                : [Colors.blue.shade500, Colors.blue.shade700],
-          ),
+          gradient: LinearGradient(colors: gradient),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: (_isAnnualSelected ? Colors.green : Colors.blue).withOpacity(0.3),
+              color: gradient.first.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -515,7 +523,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ),
                 )
               : Text(
-                  'Start Premium 🎯',
+                  buttonText,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -527,28 +535,84 @@ class _PaywallScreenState extends State<PaywallScreen> {
     );
   }
 
+  // ──────────────────────────────────────────────
+  // Guarantee box (risk reversal)
+  // ──────────────────────────────────────────────
+  Widget _buildGuarantee(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.green.withOpacity(0.08) : Colors.green.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.green.withOpacity(0.2) : Colors.green.shade200,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.shield_outlined, color: Colors.green.shade700, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '7-Day "3-Match" Guarantee',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green.shade800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  AppConfig.guaranteeText,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // Actions
+  // ──────────────────────────────────────────────
   Future<void> _subscribe() async {
     HapticFeedback.mediumImpact();
     
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     
     bool success;
-    if (_isAnnualSelected) {
-      success = await purchaseService.purchaseAnnual();
-    } else {
-      success = await purchaseService.purchaseMonthly();
+    switch (_selectedPlan) {
+      case _SelectedPlan.founder:
+        success = await purchaseService.purchaseFounderMonthly();
+        break;
+      case _SelectedPlan.annual:
+        success = await purchaseService.purchaseAnnual();
+        break;
+      case _SelectedPlan.monthly:
+        success = await purchaseService.purchaseMonthly();
+        break;
     }
     
     if (success && mounted) {
       HapticFeedback.heavyImpact();
-      Navigator.pop(context, true); // Return true to indicate successful purchase
+      Navigator.pop(context, true);
+      
+      final message = _selectedPlan == _SelectedPlan.founder
+          ? 'Welcome, Founder! Unlimited access unlocked.'
+          : 'Welcome to Premium! Unlimited access unlocked.';
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            '🎉 Welcome to Premium! Unlimited access unlocked.',
-            style: GoogleFonts.poppins(),
-          ),
+          content: Text(message, style: GoogleFonts.poppins()),
           backgroundColor: Colors.green,
         ),
       );
@@ -575,7 +639,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '✅ Purchases restored! Welcome back.',
+              'Purchases restored! Welcome back.',
               style: GoogleFonts.poppins(),
             ),
             backgroundColor: Colors.green,
@@ -594,4 +658,17 @@ class _PaywallScreenState extends State<PaywallScreen> {
       }
     }
   }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+}
+
+class _BenefitItem {
+  final IconData icon;
+  final String text;
+  const _BenefitItem({required this.icon, required this.text});
 }

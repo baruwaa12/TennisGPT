@@ -10,15 +10,15 @@ class AppConfig {
   /// Whether payments/subscriptions are enabled.
   /// Set to FALSE for testing builds (full access for testers).
   /// Set to TRUE when ready to monetize.
-  static const bool paymentsEnabled = false;
+  static const bool paymentsEnabled = true;
   
   /// Whether to show paywall screens.
   /// When false, all users get premium-like access.
-  static const bool showPaywalls = false;
+  static const bool showPaywalls = true;
   
   /// Whether to enforce usage limits.
   /// When false, limits are not enforced (unlimited for testers).
-  static const bool enforceLimits = false;
+  static const bool enforceLimits = true;
   
   // ============================================================
   // DAILY LIMITS (when enforceLimits = true)
@@ -31,13 +31,29 @@ class AppConfig {
   static const int dailyMatchLogLimit = 20;
   
   // ============================================================
+  // FOUNDER PLAN CONFIG
+  // ============================================================
+  
+  /// Total founder spots available (once gone, only regular pricing)
+  static const int founderSpotsTotal = 200;
+  
+  /// Founder pricing display strings (actual prices set in App Store Connect / RevenueCat)
+  static const String founderMonthlyPriceDisplay = '£4.99';
+  static const String regularMonthlyPriceDisplay = '£9.99';
+  static const String annualPriceDisplay = '£59.99';
+  
+  /// Guarantee text
+  static const String guaranteeText =
+      'Log 3 matches in your first 7 days. If Composure isn\'t useful, email us for a full refund.';
+  
+  // ============================================================
   // COMPED USERS (lifetime free access)
   // ============================================================
   
   /// List of emails that get lifetime free access.
   /// These users bypass ALL paywalls and limits.
   static const List<String> compedEmails = [
-    'nicholas@example.com', // Replace with actual email
+    'ademolabaruwa09@gmail.com', // Founder
     // Add more comped users here
   ];
   
@@ -55,6 +71,8 @@ class AppConfig {
   static const String appVersion = '1.0.0';
   static const String buildNumber = '46';
   static const String supportEmail = 'ademolabaruwa09@gmail.com';
+  static const String termsUrl = 'https://composure.app/terms';
+  static const String privacyUrl = 'https://composure.app/privacy';
   
   // ============================================================
   // HELPER METHODS
