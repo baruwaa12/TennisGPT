@@ -38,10 +38,10 @@
 `If you want founder access, I can send you the link now - GBP 4.99/month locked in. (first 200 players)`
 
 ### Day 2 (Feb 12): App Monetization Checklist
-- [ ] Verify in-app prices and plan labels match offer.
-- [ ] Verify paywall text includes founder pricing + guarantee.
-- [ ] Verify Terms/Privacy links are valid.
-- [ ] Prepare a quick purchase test checklist for sandbox/TestFlight.
+- [X] Verify in-app prices and plan labels match offer.
+- [X] Verify paywall text includes founder pricing + guarantee.
+- [X] Verify Terms/Privacy links are valid.
+- [X] Prepare a quick purchase test checklist for sandbox/TestFlight.
 
 ### Day 3 (Feb 13): Lead Tracker Setup
 - [ ] Create lead tracker (Notion/Airtable/Sheet).
@@ -95,3 +95,28 @@
 - [ ] DM scripts are tested and refined.
 - [ ] Tracker is active with baseline data.
 - [ ] First soft outreach batch completed.
+
+## Dad Tasks Mapping (Where It Fits)
+- [ ] **Buy domain name** -> Day 5 (Landing Page Live).
+- [ ] **Website with app screenshots** -> Day 5 (Landing Page Live).
+- [ ] **Terms + Privacy pages on website** -> Day 5 (or keep in-app legal screens as backup).
+- [ ] **Host app info online** -> Day 5 (domain + landing page with App Store/TestFlight link).
+- [ ] **Blog for SEO** -> Start in Month 2 (not a blocker for this week).
+
+## Video Plan (Thailand Start)
+No filming required this week in Japan. Start this on/after Feb 19.
+
+### Minimum Weekly Video Output (Thailand)
+- [ ] `3` short videos/week (20-45 seconds each).
+- [ ] `1` app demo clip/week (30-60 seconds).
+- [ ] `1` founder story clip every 2 weeks.
+
+### Video Types To Film
+- [ ] **Proof clip:** You playing + one tactical takeaway + app screen.
+- [ ] **Mistake clip:** Common match mistake + what to do instead.
+- [ ] **App walkthrough:** Log match -> AI insight -> next action.
+- [ ] **Founder clip:** Why you built Composure as a real player.
+
+### Video CTA (Use Consistently)
+- [ ] End each video with: `Become Founder`.
+- [ ] Keep founder offer in caption: `£4.99/month locked in (first 200).`
