@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/purchase_service.dart';
 import '../config/app_config.dart';
+import 'legal_screen.dart';
 
 enum PaywallTrigger {
   matchLimit,
@@ -174,7 +174,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     TextButton(
-                      onPressed: () => _openUrl(AppConfig.termsUrl),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LegalScreen(
+                            documentType: LegalDocumentType.termsOfService,
+                          ),
+                        ),
+                      ),
                       child: Text(
                         'Terms of Use',
                         style: GoogleFonts.poppins(
@@ -185,7 +192,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     ),
                     Text(' • ', style: TextStyle(color: Colors.grey[400])),
                     TextButton(
-                      onPressed: () => _openUrl(AppConfig.privacyUrl),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LegalScreen(
+                            documentType: LegalDocumentType.privacyPolicy,
+                          ),
+                        ),
+                      ),
                       child: Text(
                         'Privacy Policy',
                         style: GoogleFonts.poppins(
@@ -656,13 +670,6 @@ class _PaywallScreenState extends State<PaywallScreen> {
           ),
         );
       }
-    }
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }

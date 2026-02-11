@@ -20,10 +20,22 @@
 ## Daily Schedule (Feb 11 - Feb 18)
 
 ### Day 1 (Feb 11): Lock Offer + Messaging
-- [ ] Finalize one canonical founder offer statement.
-- [ ] Add it to your notes doc and DM templates.
-- [ ] Confirm your support email and guarantee wording.
-- [ ] Decide your single CTA for this week (`Become Founder` or `Join Founder List`).
+- [x] Finalize one canonical founder offer statement.
+- [x] Add it to your notes doc and DM templates.
+- [x] Confirm your support email and guarantee wording.
+- [x] Decide your single CTA for this week (`Become Founder` or `Join Founder List`).
+
+**Canonical founder offer statement (use everywhere):**
+`Composure Founder Access: GBP 4.99/month for the first 200 players (locked in forever). Regular pricing is GBP 9.99/month or GBP 59.99/year. 7-day guarantee: log 3 matches in your first week and if it's not useful, email for a full refund.`
+
+**Support email (use everywhere):**
+`ademolabaruwa09@gmail.com`
+
+**Single CTA for this week (use everywhere):**
+`Become Founder`
+
+**DM CTA line (paste-ready):**
+`If you want founder access, I can send you the link now - GBP 4.99/month locked in. (first 200 players)`
 
 ### Day 2 (Feb 12): App Monetization Checklist
 - [ ] Verify in-app prices and plan labels match offer.
