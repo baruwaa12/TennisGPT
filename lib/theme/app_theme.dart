@@ -14,17 +14,21 @@ class AppTheme {
 
   // ============ COLORS ============
   
-  /// Primary brand color - deep teal/green, confident but not aggressive
-  static const Color primary = Color(0xFF0D9488);
-  static const Color primaryLight = Color(0xFF14B8A6);
-  static const Color primaryDark = Color(0xFF0F766E);
+  /// Primary brand color - confident blue accent
+  static const Color primary = Color(0xFF2563EB);
+  static const Color primaryLight = Color(0xFF3B82F6);
+  static const Color primaryDark = Color(0xFF1D4ED8);
+  
+  /// Soft glow blue for highlights and subtle accents
+  static const Color softGlow = Color(0xFF3B82F6);
   
   /// Surface colors - layered depth system (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
-  static const Color surfaceDark = Color(0xFF0A0A0B);
-  static const Color surfaceCard = Color(0xFF141416);
-  static const Color surfaceElevated = Color(0xFF1C1C1F);
-  static const Color surfaceBorder = Color(0xFF2A2A2E);
+  static const Color surfaceDark = Color(0xFF0B0F1A);
+  static const Color surfaceSecondary = Color(0xFF111827);
+  static const Color surfaceCard = Color(0xFF161D2E);
+  static const Color surfaceElevated = Color(0xFF1E2A42);
+  static const Color surfaceBorder = Color(0xFF243352);
   
   /// Text colors - clear hierarchy (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
@@ -212,29 +216,30 @@ class AppTheme {
     height: 1.4,
   );
   
-  /// Stats/numbers - large display
+  /// Stats/numbers - large display (hero stats like win rate)
   static TextStyle get statLarge => GoogleFonts.inter(
-    fontSize: 36,
-    fontWeight: FontWeight.w700,
+    fontSize: 42,
+    fontWeight: FontWeight.w800,
     color: textPrimary,
-    letterSpacing: -1,
-    height: 1.1,
+    letterSpacing: -1.5,
+    height: 1.05,
   );
   
   /// Stats - medium display
   static TextStyle get statMedium => GoogleFonts.inter(
-    fontSize: 24,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    height: 1.2,
-  );
-  
-  /// Score display - prominent
-  static TextStyle get scoreDisplay => GoogleFonts.inter(
     fontSize: 28,
     fontWeight: FontWeight.w700,
     color: textPrimary,
     letterSpacing: -0.5,
+    height: 1.15,
+  );
+  
+  /// Score display - prominent
+  static TextStyle get scoreDisplay => GoogleFonts.inter(
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    color: textPrimary,
+    letterSpacing: -0.75,
   );
 
   // ============ THEME-AWARE TEXT STYLES ============
@@ -293,18 +298,19 @@ class AppTheme {
   );
 
   static TextStyle statLargeThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 36,
-    fontWeight: FontWeight.w700,
+    fontSize: 42,
+    fontWeight: FontWeight.w800,
     color: textPrimaryColor(context),
-    letterSpacing: -1,
-    height: 1.1,
+    letterSpacing: -1.5,
+    height: 1.05,
   );
 
   static TextStyle statMediumThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 24,
-    fontWeight: FontWeight.w600,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
     color: textPrimaryColor(context),
-    height: 1.2,
+    letterSpacing: -0.5,
+    height: 1.15,
   );
 
   /// Get theme-aware input decoration
@@ -342,19 +348,47 @@ class AppTheme {
   
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.2),
-      blurRadius: 8,
+      color: Colors.black.withOpacity(0.25),
+      blurRadius: 10,
       offset: const Offset(0, 2),
     ),
   ];
   
   static List<BoxShadow> get elevatedShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.3),
-      blurRadius: 16,
+      color: Colors.black.withOpacity(0.35),
+      blurRadius: 20,
       offset: const Offset(0, 4),
     ),
   ];
+  
+  /// Subtle blue glow for primary CTA buttons
+  static List<BoxShadow> get ctaGlow => [
+    BoxShadow(
+      color: primary.withOpacity(0.4),
+      blurRadius: 16,
+      spreadRadius: 0,
+      offset: const Offset(0, 4),
+    ),
+    BoxShadow(
+      color: softGlow.withOpacity(0.2),
+      blurRadius: 32,
+      spreadRadius: -4,
+      offset: const Offset(0, 8),
+    ),
+  ];
+  
+  /// Theme-aware CTA glow (only applies in dark mode for subtlety)
+  static List<BoxShadow> ctaGlowThemed(BuildContext context) {
+    return isDark(context) ? ctaGlow : [
+      BoxShadow(
+        color: primary.withOpacity(0.25),
+        blurRadius: 12,
+        spreadRadius: 0,
+        offset: const Offset(0, 4),
+      ),
+    ];
+  }
 
   // ============ DECORATIONS ============
   

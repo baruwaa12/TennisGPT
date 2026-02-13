@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 /// Help & FAQ Screen
 /// 
@@ -13,7 +14,7 @@ class HelpFaqScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           'Help & FAQ',
@@ -32,7 +33,7 @@ class HelpFaqScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                color: isDark ? AppTheme.surfaceCard : Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -40,12 +41,12 @@ class HelpFaqScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.help_outline_rounded,
-                      color: Colors.green,
+                      color: AppTheme.primary,
                       size: 28,
                     ),
                   ),
@@ -92,14 +93,14 @@ class HelpFaqScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                color: isDark ? AppTheme.surfaceCard : Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.mail_outline_rounded,
-                    color: Colors.green,
+                    color: AppTheme.primary,
                     size: 32,
                   ),
                   const SizedBox(height: 12),
@@ -140,7 +141,7 @@ class HelpFaqScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppTheme.surfaceCard : Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Theme(
@@ -156,7 +157,7 @@ class HelpFaqScreen extends StatelessWidget {
               color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
-          iconColor: Colors.green,
+          iconColor: AppTheme.primary,
           collapsedIconColor: Colors.grey[500],
           children: [
             Text(

@@ -1,0 +1,16 @@
+---
+description: When the user asks for copy, respond with paste-ready copy only
+alwaysApply: true
+---
+
+# Direct Response Copy
+
+When the user asks for **copy** (e.g., “write copy”, “give me copy”, “ad copy”, “landing page copy”, “email copy”):
+
+- Produce **paste-ready copy** as the primary output (no meta-explanations, no process narration).
+- Default to **3 strong variants** (A/B/C) unless the user asks for exactly one.
+- Match the **requested format and channel** (e.g., ads, email, landing page, push notification, app store listing).
+- If key details are missing, make **reasonable assumptions** and keep them minimal; do not block on questions.
+- Keep wording **specific and concrete**, avoid generic filler.
+- Include a clear **CTA** when appropriate.
+

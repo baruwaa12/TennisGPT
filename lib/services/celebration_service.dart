@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart';
 
 enum CelebrationType {
   firstMatch,
@@ -171,9 +172,9 @@ class CelebrationService {
   static Color _getColor(CelebrationType type) {
     switch (type) {
       case CelebrationType.firstMatch:
-        return Colors.green.shade600;
+        return AppTheme.primary;
       case CelebrationType.firstAnalysis:
-        return Colors.blue.shade600;
+        return AppTheme.primaryDark;
       case CelebrationType.threeStreak:
         return Colors.orange.shade600;
       case CelebrationType.sevenStreak:
@@ -181,9 +182,9 @@ class CelebrationService {
       case CelebrationType.tenMatches:
         return Colors.purple.shade600;
       case CelebrationType.firstWin:
-        return Colors.green.shade600;
+        return AppTheme.win;
       case CelebrationType.milestone:
-        return Colors.indigo.shade600;
+        return AppTheme.primaryDark;
     }
   }
 

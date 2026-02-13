@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
@@ -57,7 +58,7 @@ class ThemeService extends ChangeNotifier {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.green,
+        seedColor: AppTheme.primary,
         brightness: Brightness.light,
         onSurface: Colors.grey[800]!, // Text color on surfaces
       ),
@@ -92,19 +93,19 @@ class ThemeService extends ChangeNotifier {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.green, width: 2),
+          borderSide: BorderSide(color: AppTheme.primary, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
         labelStyle: TextStyle(color: Colors.grey[700]),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: Colors.green,
-        selectionColor: Colors.green.withOpacity(0.3),
-        selectionHandleColor: Colors.green,
+        cursorColor: AppTheme.primary,
+        selectionColor: AppTheme.primary.withOpacity(0.3),
+        selectionHandleColor: AppTheme.primary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -130,13 +131,13 @@ class ThemeService extends ChangeNotifier {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.green,
+        seedColor: AppTheme.primary,
         brightness: Brightness.dark,
         onSurface: Colors.white, // Text color on surfaces
       ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: AppTheme.surfaceDark,
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF1E1E1E),
+        backgroundColor: AppTheme.surfaceSecondary,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -147,14 +148,14 @@ class ThemeService extends ChangeNotifier {
         ),
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xFF1E1E1E),
+        color: AppTheme.surfaceCard,
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       textTheme: darkTextTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF2C2C2C),
+        fillColor: AppTheme.surfaceElevated,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -165,19 +166,19 @@ class ThemeService extends ChangeNotifier {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.green, width: 2),
+          borderSide: BorderSide(color: AppTheme.primary, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
         labelStyle: TextStyle(color: Colors.grey[400]),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: Colors.green,
-        selectionColor: Colors.green.withOpacity(0.3),
-        selectionHandleColor: Colors.green,
+        cursorColor: AppTheme.primary,
+        selectionColor: AppTheme.primary.withOpacity(0.3),
+        selectionHandleColor: AppTheme.primary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -188,7 +189,7 @@ class ThemeService extends ChangeNotifier {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      dividerColor: Colors.grey[800],
+      dividerColor: AppTheme.surfaceBorder,
     );
   }
 }

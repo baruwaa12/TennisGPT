@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/purchase_service.dart';
 import '../config/app_config.dart';
+import '../theme/app_theme.dart';
 import 'legal_screen.dart';
 
 enum PaywallTrigger {
@@ -73,7 +74,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final purchaseService = Provider.of<PurchaseService>(context);
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -186,7 +187,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         'Terms of Use',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.blue,
+                          color: AppTheme.primary,
                         ),
                       ),
                     ),
@@ -204,7 +205,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         'Privacy Policy',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.blue,
+                          color: AppTheme.primary,
                         ),
                       ),
                     ),
@@ -287,10 +288,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(b.icon, color: Colors.green, size: 20),
+              child: Icon(b.icon, color: AppTheme.primary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -339,8 +340,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
           priceText: purchaseService.annualPriceString,
           priceSuffix: '/yr',
           badgeText: 'SAVE 50%',
-          badgeColor: Colors.green,
-          accentColor: Colors.green,
+          badgeColor: AppTheme.primary,
+          accentColor: AppTheme.primary,
           isDark: isDark,
         ),
         
@@ -353,7 +354,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           subtitle: 'Flexible option',
           priceText: purchaseService.monthlyPriceString,
           priceSuffix: '/mo',
-          accentColor: Colors.blue,
+          accentColor: AppTheme.primaryLight,
           isDark: isDark,
         ),
       ],
@@ -503,11 +504,11 @@ class _PaywallScreenState extends State<PaywallScreen> {
         break;
       case _SelectedPlan.annual:
         buttonText = 'Get Annual Access';
-        gradient = [Colors.green.shade500, Colors.green.shade700];
+        gradient = [AppTheme.primary, AppTheme.primaryDark];
         break;
       case _SelectedPlan.monthly:
         buttonText = 'Start Monthly';
-        gradient = [Colors.blue.shade500, Colors.blue.shade700];
+        gradient = [AppTheme.primaryLight, AppTheme.primary];
         break;
     }
     
@@ -556,15 +557,15 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? Colors.green.withOpacity(0.08) : Colors.green.shade50,
+        color: isDark ? AppTheme.primary.withOpacity(0.08) : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.green.withOpacity(0.2) : Colors.green.shade200,
+          color: isDark ? AppTheme.primary.withOpacity(0.2) : AppTheme.primary.withOpacity(0.3),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.shield_outlined, color: Colors.green.shade700, size: 22),
+          Icon(Icons.shield_outlined, color: AppTheme.primary, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -575,7 +576,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.green.shade800,
+                    color: AppTheme.primaryDark,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -627,7 +628,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message, style: GoogleFonts.poppins()),
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.primary,
         ),
       );
     } else if (purchaseService.error != null && mounted) {
@@ -656,7 +657,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
               'Purchases restored! Welcome back.',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primary,
           ),
         );
       } else {

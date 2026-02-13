@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/match_performance.dart';
+import '../theme/app_theme.dart';
 
 /// Quick post-match reflection screen with guided options
 class MatchReflectionScreen extends StatefulWidget {
@@ -144,7 +145,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           '📝 Match Reflection',
@@ -173,8 +174,8 @@ Based on this post-match reflection, provide specific tactical advice for improv
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isWin 
-                    ? (isDark ? Colors.green.shade900 : Colors.green.shade50)
-                    : (isDark ? Colors.blue.shade900 : Colors.blue.shade50),
+                    ? (isDark ? AppTheme.win.withOpacity(0.15) : const Color(0xFFF0FDF4))
+                    : (isDark ? AppTheme.primary.withOpacity(0.15) : const Color(0xFFEFF6FF)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -228,7 +229,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
               options: strengthOptions,
               selected: _selectedStrengths,
               isDark: isDark,
-              accentColor: Colors.green,
+              accentColor: AppTheme.win,
             ),
             const SizedBox(height: 8),
             _buildOtherInput(
@@ -274,16 +275,10 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.blue.shade500, Colors.blue.shade700],
+                    colors: [AppTheme.primary, AppTheme.primaryDark],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blue.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: AppTheme.ctaGlow,
                 ),
                 child: Center(
                   child: _isGettingAdvice
@@ -344,7 +339,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
 
   Widget _buildAdviceView(bool isDark) {
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           '🎯 Tactical Advice',
@@ -362,7 +357,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                color: isDark ? AppTheme.surfaceCard : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -380,10 +375,10 @@ Based on this post-match reflection, provide specific tactical advice for improv
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.psychology, color: Colors.blue, size: 24),
+                        color: AppTheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.psychology, color: AppTheme.primary, size: 24),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -420,16 +415,10 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.green.shade500, Colors.green.shade700],
+                    colors: [AppTheme.primary, AppTheme.primaryDark],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: AppTheme.ctaGlow,
                 ),
                 child: Center(
                   child: Text(
@@ -476,7 +465,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
             decoration: BoxDecoration(
               color: isSelected
                   ? accentColor.withOpacity(isDark ? 0.3 : 0.15)
-                  : (isDark ? const Color(0xFF2C2C2C) : Colors.white),
+                  : (isDark ? AppTheme.surfaceElevated : Colors.white),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected 
@@ -527,7 +516,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
           fontSize: 14,
         ),
         filled: true,
-        fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+        fillColor: isDark ? AppTheme.surfaceElevated : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
@@ -538,7 +527,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.blue, width: 2),
+          borderSide: BorderSide(color: AppTheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),

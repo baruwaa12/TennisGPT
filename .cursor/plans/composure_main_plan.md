@@ -14,11 +14,13 @@ Prepare foundation so Thailand = execution, not preparation.
 
 ------------------------------------------------------------------------
 
-## DAY 1 - Lock Positioning + Landing Page
+## DAY 1 - Lock Positioning
 
 ### Positioning (Do Once, Do Not Edit)
 
 Composure helps competitive tennis players stop losing tight matches because of mental mistakes.
+
+## DAY 2 - Write 10 Hooks + Build Landing Page
 
 ### Build Simple Landing Page
 
@@ -34,19 +36,6 @@ Include:
 - Email capture (`Join Early Access`)
 
 No redesigning. Functional only.
-
-------------------------------------------------------------------------
-
-## DAY 2 - Write 10 Hooks
-
-Examples:
-- Your backhand is not bad. You are just late.
-- Why you always lose at 4-4.
-- Stop focusing on fancy takebacks.
-- You do not lose because of technique.
-- You are not bad. You are tight.
-
-Write only. Do not film yet.
 
 ------------------------------------------------------------------------
 

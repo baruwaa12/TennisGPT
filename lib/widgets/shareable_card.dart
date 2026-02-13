@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
+import '../theme/app_theme.dart';
 
 enum ShareableCardType {
   tacticalAnalysis,
@@ -45,13 +46,13 @@ class ShareableCard extends StatelessWidget {
   Color get _defaultColor {
     switch (type) {
       case ShareableCardType.tacticalAnalysis:
-        return Colors.blue;
+        return AppTheme.primary;
       case ShareableCardType.matchResult:
-        return Colors.green;
+        return AppTheme.primary;
       case ShareableCardType.streak:
         return Colors.orange;
       case ShareableCardType.insight:
-        return Colors.purple;
+        return AppTheme.primaryDark;
     }
   }
 
@@ -211,11 +212,11 @@ class ShareButton extends StatelessWidget {
     
     return TextButton.icon(
       onPressed: _share,
-      icon: Icon(Icons.share, size: 18, color: color ?? Colors.blue),
+      icon: Icon(Icons.share, size: 18, color: color ?? AppTheme.primary),
       label: Text(
         'Share',
         style: GoogleFonts.poppins(
-          color: color ?? Colors.blue,
+          color: color ?? AppTheme.primary,
           fontWeight: FontWeight.w500,
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/player_profile_service.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_theme.dart';
 import '../home_screen.dart';
 import '../paywall_screen.dart';
 import '../../utils/tennis_validator.dart';
@@ -148,7 +149,7 @@ Please provide a brief tactical insight to show the value of the app.
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -163,7 +164,7 @@ Please provide a brief tactical insight to show the value of the app.
                       margin: EdgeInsets.only(right: index < 4 ? 8 : 0),
                       decoration: BoxDecoration(
                         color: index <= _currentPage
-                            ? Colors.green
+                            ? AppTheme.primary
                             : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -300,10 +301,10 @@ Please provide a brief tactical insight to show the value of the app.
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.green.shade50 : Colors.grey[100],
+                    color: isSelected ? AppTheme.primary.withOpacity(0.08) : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? Colors.green : Colors.transparent,
+                      color: isSelected ? AppTheme.primary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -315,10 +316,10 @@ Please provide a brief tactical insight to show the value of the app.
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? Colors.green : Colors.grey,
+                            color: isSelected ? AppTheme.primary : Colors.grey,
                             width: 2,
                           ),
-                          color: isSelected ? Colors.green : Colors.transparent,
+                          color: isSelected ? AppTheme.primary : Colors.transparent,
                         ),
                         child: isSelected
                             ? const Icon(Icons.check, color: Colors.white, size: 16)
@@ -407,10 +408,10 @@ Please provide a brief tactical insight to show the value of the app.
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.green.shade50 : Colors.grey[100],
+                    color: isSelected ? AppTheme.primary.withOpacity(0.08) : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? Colors.green : Colors.transparent,
+                      color: isSelected ? AppTheme.primary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -423,12 +424,12 @@ Please provide a brief tactical insight to show the value of the app.
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: isSelected ? Colors.green.shade700 : Colors.grey[800],
+                          color: isSelected ? AppTheme.primary : Colors.grey[800],
                         ),
                       ),
                       const Spacer(),
                       if (isSelected)
-                        Icon(Icons.check_circle, color: Colors.green.shade600),
+                        Icon(Icons.check_circle, color: AppTheme.primary),
                     ],
                   ),
                 ),
@@ -524,7 +525,7 @@ Please provide a brief tactical insight to show the value of the app.
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: _matchResult == 'Win' ? Colors.green : Colors.grey[100],
+                      color: _matchResult == 'Win' ? AppTheme.win : Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
@@ -550,7 +551,7 @@ Please provide a brief tactical insight to show the value of the app.
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: _matchResult == 'Loss' ? Colors.blue : Colors.grey[100],
+                      color: _matchResult == 'Loss' ? AppTheme.loss : Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
@@ -628,7 +629,7 @@ Please provide a brief tactical insight to show the value of the app.
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
+              color: AppTheme.primary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -644,14 +645,14 @@ Please provide a brief tactical insight to show the value of the app.
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
+                          color: AppTheme.primaryDark,
                         ),
                       ),
                       Text(
                         'Based on your match vs ${_opponentController.text}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.green.shade600,
+                          color: AppTheme.primary,
                         ),
                       ),
                     ],
@@ -675,7 +676,7 @@ Please provide a brief tactical insight to show the value of the app.
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const CircularProgressIndicator(color: Colors.green),
+                          CircularProgressIndicator(color: AppTheme.primary),
                           const SizedBox(height: 16),
                           Text(
                             'Analyzing your match...',
@@ -739,7 +740,7 @@ Please provide a brief tactical insight to show the value of the app.
                 child: ElevatedButton(
                   onPressed: _showPaywall,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -770,19 +771,11 @@ Please provide a brief tactical insight to show the value of the app.
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: onPressed != null
-                ? [Colors.green.shade500, Colors.green.shade700]
+                ? [AppTheme.primary, AppTheme.primaryDark]
                 : [Colors.grey.shade400, Colors.grey.shade500],
           ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: onPressed != null
-              ? [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          boxShadow: onPressed != null ? AppTheme.ctaGlow : null,
         ),
         child: Center(
           child: Text(

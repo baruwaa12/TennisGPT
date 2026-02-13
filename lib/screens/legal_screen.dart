@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 
 enum LegalDocumentType {
   termsOfService,
@@ -41,7 +42,7 @@ class LegalScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           _title,
@@ -56,7 +57,7 @@ class LegalScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            color: isDark ? AppTheme.surfaceCard : Colors.white,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(

@@ -11,6 +11,7 @@ import '../services/usage_service.dart';
 import '../services/streak_service.dart';
 import '../services/match_history_service.dart';
 import '../config/app_config.dart';
+import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'paywall_screen.dart';
 import 'help_faq_screen.dart';
@@ -47,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       AppConfig.isCompedUser(email: authService.userEmail);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           'Settings',
@@ -84,7 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : 'Get unlimited AI analyses',
                 onTap: isPremium ? null : () => _openPaywall(),
                 trailing: isPremium 
-                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    ? Icon(Icons.check_circle, color: AppTheme.win)
                     : const Icon(Icons.arrow_forward_ios, size: 16),
                 isDark: isDark,
               ),
@@ -95,13 +96,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: AppTheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.science_outlined, color: Colors.green, size: 20),
+                    Icon(Icons.science_outlined, color: AppTheme.primary, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -112,14 +113,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.green[700],
+                              color: AppTheme.primaryDark,
                             ),
                           ),
                           Text(
                             'Full access enabled for testers',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.green[600],
+                              color: AppTheme.primary,
                             ),
                           ),
                         ],
@@ -150,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSectionTitle('Player Profile', isDark),
             _buildSettingsTile(
               icon: Icons.sports_tennis,
-              iconColor: Colors.green,
+              iconColor: AppTheme.primary,
               title: 'Skill Level',
               subtitle: _getLevelLabel(profileService.playerLevel),
               onTap: () => _showLevelPicker(profileService),
@@ -185,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             _buildSettingsTile(
               icon: Icons.feedback_outlined,
-              iconColor: Colors.teal,
+              iconColor: AppTheme.primary,
               title: 'Send Feedback',
               subtitle: 'Help us improve Composure',
               onTap: () => Navigator.push(
@@ -373,14 +374,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           margin: const EdgeInsets.only(top: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Current Usage',
+        color: isDark ? AppTheme.surfaceCard : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Current Usage',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -406,7 +407,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'Can use AI: ${usageService.canUseTacticalAnalysis ? "Yes" : "No (paywall)"}',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  color: usageService.canUseTacticalAnalysis ? Colors.green : Colors.red,
+                  color: usageService.canUseTacticalAnalysis ? AppTheme.win : AppTheme.loss,
                 ),
               ),
             ],
@@ -446,7 +447,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Usage counters reset - restart screens to see changes', style: GoogleFonts.poppins()),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primary,
           ),
         );
       }
@@ -492,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('All test data reset - navigate to other screens to see changes', style: GoogleFonts.poppins()),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.primary,
           ),
         );
       }
@@ -508,7 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppTheme.surfaceCard : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -522,7 +523,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: Colors.green.shade100,
+            backgroundColor: AppTheme.primary.withOpacity(0.15),
             backgroundImage: authService.userPhotoURL != null
                 ? NetworkImage(authService.userPhotoURL!)
                 : null,
@@ -530,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? Text(
                     (authService.userDisplayName ?? 'U')[0].toUpperCase(),
                     style: TextStyle(
-                      color: Colors.green.shade700,
+                      color: AppTheme.primaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                     ),
@@ -600,7 +601,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? AppTheme.surfaceCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -671,7 +672,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          color: isDark ? AppTheme.surfaceCard : Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -760,7 +761,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.brightness_auto),
               title: Text('System', style: GoogleFonts.poppins()),
               trailing: themeService.themeMode == ThemeMode.system 
-                  ? const Icon(Icons.check, color: Colors.green) : null,
+                  ? Icon(Icons.check, color: AppTheme.primary) : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.system);
                 Navigator.pop(context);
@@ -770,7 +771,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.light_mode),
               title: Text('Light', style: GoogleFonts.poppins()),
               trailing: themeService.themeMode == ThemeMode.light 
-                  ? const Icon(Icons.check, color: Colors.green) : null,
+                  ? Icon(Icons.check, color: AppTheme.primary) : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.light);
                 Navigator.pop(context);
@@ -780,7 +781,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.dark_mode),
               title: Text('Dark', style: GoogleFonts.poppins()),
               trailing: themeService.themeMode == ThemeMode.dark 
-                  ? const Icon(Icons.check, color: Colors.green) : null,
+                  ? Icon(Icons.check, color: AppTheme.primary) : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.dark);
                 Navigator.pop(context);
@@ -810,7 +811,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: Text(option['title']!, style: GoogleFonts.poppins()),
               subtitle: Text(option['subtitle']!, style: GoogleFonts.poppins(fontSize: 12)),
               trailing: profileService.playerLevel == option['id'] 
-                  ? const Icon(Icons.check, color: Colors.green) : null,
+                  ? Icon(Icons.check, color: AppTheme.primary) : null,
               onTap: () {
                 profileService.setPlayerLevel(option['id']!);
                 Navigator.pop(context);
@@ -840,7 +841,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: Text(option['emoji']!, style: const TextStyle(fontSize: 24)),
               title: Text(option['title']!, style: GoogleFonts.poppins()),
               trailing: profileService.primaryGoal == option['id'] 
-                  ? const Icon(Icons.check, color: Colors.green) : null,
+                  ? Icon(Icons.check, color: AppTheme.primary) : null,
               onTap: () {
                 profileService.setPrimaryGoal(option['id']!);
                 Navigator.pop(context);
@@ -865,7 +866,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$feature coming soon!', style: GoogleFonts.poppins()),
-        backgroundColor: Colors.blue,
+        backgroundColor: AppTheme.primary,
       ),
     );
   }

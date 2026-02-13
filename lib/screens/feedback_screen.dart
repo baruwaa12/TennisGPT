@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
+import '../theme/app_theme.dart';
 
 /// Send Feedback Screen
 /// 
@@ -103,7 +104,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                 'Opening email app...',
                 style: GoogleFonts.poppins(),
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: AppTheme.primary,
             ),
           );
           Navigator.pop(context);
@@ -142,7 +143,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[50],
+      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
       appBar: AppBar(
         title: Text(
           'Send Feedback',
@@ -163,7 +164,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  color: isDark ? AppTheme.surfaceCard : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -171,12 +172,12 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.teal.withOpacity(0.1),
+                        color: AppTheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.feedback_outlined,
-                        color: Colors.teal,
+                        color: AppTheme.primary,
                         size: 28,
                       ),
                     ),
@@ -237,11 +238,11 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.teal.withOpacity(0.1)
-                            : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
+                            ? AppTheme.primary.withOpacity(0.1)
+                            : (isDark ? AppTheme.surfaceCard : Colors.white),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isSelected ? Colors.teal : Colors.grey.shade300,
+                          color: isSelected ? AppTheme.primary : Colors.grey.shade300,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -256,7 +257,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                               fontSize: 13,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                               color: isSelected
-                                  ? Colors.teal
+                                  ? AppTheme.primary
                                   : (isDark ? Colors.white : Colors.grey[700]),
                             ),
                           ),
@@ -281,9 +282,9 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  color: isDark ? AppTheme.surfaceCard : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: isDark ? AppTheme.surfaceBorder : Colors.grey.shade300),
                 ),
                 child: TextField(
                   controller: _feedbackController,
@@ -310,7 +311,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: AppTheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -318,7 +319,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                     Icon(
                       Icons.info_outline,
                       size: 16,
-                      color: Colors.blue[700],
+                      color: AppTheme.primary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -326,7 +327,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                         'App version and device info will be included automatically',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.blue[700],
+                          color: AppTheme.primary,
                         ),
                       ),
                     ),
@@ -342,7 +343,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                 child: ElevatedButton(
                   onPressed: _isSending ? null : _sendFeedback,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

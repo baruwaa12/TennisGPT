@@ -6,6 +6,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../services/auth_service.dart';
 import '../services/player_profile_service.dart';
+import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'onboarding/onboarding_screen.dart';
 
@@ -123,9 +124,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = theme.brightness == Brightness.dark;
     
     // Theme-aware colors
-    final backgroundColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+    final backgroundColor = isDark ? AppTheme.surfaceCard : Colors.white;
     final textColor = isDark ? Colors.white : Colors.grey[800]!;
-    final subtitleColor = isDark ? Colors.green.shade300 : Colors.green.shade600;
+    final subtitleColor = isDark ? AppTheme.primaryLight : AppTheme.primaryDark;
 
     return Scaffold(
       body: GestureDetector(
@@ -136,8 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: isDark 
-                ? [const Color(0xFF1A1A1A), const Color(0xFF0D0D0D)]
-                : [Colors.green.shade50, Colors.green.shade100],
+                ? [AppTheme.surfaceSecondary, AppTheme.surfaceDark]
+                : [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
             ),
           ),
           child: SafeArea(
@@ -156,8 +157,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(60),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withOpacity(isDark ? 0.2 : 0.3),
-                            blurRadius: 20,
+                            color: AppTheme.primary.withOpacity(isDark ? 0.3 : 0.25),
+                            blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
                         ],
@@ -165,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Icon(
                         Icons.sports_tennis,
                         size: 60,
-                        color: Colors.green.shade400,
+                        color: AppTheme.primaryLight,
                       ),
                     ),
 
@@ -177,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.green.shade800,
+                        color: isDark ? Colors.white : AppTheme.primaryDark,
                       ),
                     ),
 
@@ -227,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.green.shade400,
+                                        AppTheme.primaryLight,
                                       ),
                                     ),
                                   )
@@ -336,8 +337,8 @@ class _LoginScreenState extends State<LoginScreen> {
     
     // Consistent theme-aware colors
     final titleColor = isDark ? Colors.white : Colors.grey[800]!;
-    final subtitleColor = isDark ? Colors.grey[400]! : Colors.green.shade600;
-    final iconBgColor = isDark ? Colors.green.shade900 : Colors.green.shade100;
+    final subtitleColor = isDark ? Colors.grey[400]! : AppTheme.primaryDark;
+    final iconBgColor = isDark ? AppTheme.primary.withOpacity(0.15) : AppTheme.primary.withOpacity(0.1);
     
     return Row(
       children: [
@@ -349,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: Icon(
             icon,
-            color: Colors.green.shade400,
+            color: AppTheme.primaryLight,
             size: 20,
           ),
         ),
