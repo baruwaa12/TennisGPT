@@ -195,3 +195,6 @@ Thumbs.db
 PublishProfiles/
 appsettings.Development.json
 
+# Next.js build output (landing)
+landing/.next/
+
