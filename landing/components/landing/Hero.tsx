@@ -32,7 +32,7 @@ export function Hero() {
           </div>
           <div className="flex justify-center lg:justify-end">
             <PhoneMockup
-              src="/screenshots/home-dashboard.jpg"
+              src="/screenshots/home-dashboard.png"
               alt="Composure home dashboard"
             />
           </div>

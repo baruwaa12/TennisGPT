@@ -1,87 +1,50 @@
 import { Container } from "@/components/ui/Container";
 import { PhoneMockup } from "@/components/ui/PhoneMockup";
 
-type ShowcaseRow =
-  | {
-      title: string;
-      paragraph: string;
-      bullets: string[];
-      image: string;
-      imageAlt: string;
-      layout: "single";
-    }
-  | {
-      title: string;
-      paragraph: string;
-      bullets: string[];
-      images: [string, string];
-      imageAlt: string;
-      layout: "double";
-    };
-
-const rows: ShowcaseRow[] = [
-  {
-    title: "Performance Tracking",
-    paragraph:
-      "See your match history, win rates, and patterns at a glance. No spreadsheets — just clarity.",
-    bullets: [
-      "Dashboard view of recent matches",
-      "Trends across surfaces and opponents",
-    ],
-    image: "/screenshots/home-dashboard.jpg",
-    imageAlt: "Home dashboard",
-    layout: "single" as const,
-  },
+const rows = [
   {
     title: "Tactical Coach",
     paragraph:
-      "Describe what went wrong and get tailored drills. AI-powered advice that fits your game.",
+      "Get structured, analytical feedback after every match. Pattern detection across your history surfaces what you can't see yourself.",
     bullets: [
-      "Specific adjustments for your issues",
-      "Drill plans with reps and goals",
+      "AI-powered recommendations with clear reasoning",
+      "Multi-match pattern detection with frequency tracking",
     ],
-    image: "/screenshots/tactical-coach.jpg",
-    imageAlt: "Tactical coach",
-    layout: "single" as const,
+    image: "/screenshots/tactical-coach.png",
+    imageAlt: "Tactical coach results showing pattern detection and recommendations",
   },
   {
-    title: "Pre-match Prep",
+    title: "Pre-Match Prep",
     paragraph:
-      "Lock in before you step on court. Calm, repeatable routines that reduce nerves.",
+      "Build your game plan around a primary weapon. Define your serve strategy, opponent weakness hypothesis, and first two service games before you step on court.",
     bullets: [
-      "Guided pre-match checklists",
-      "Mental cues that work under pressure",
+      "Weapon-based strategy system",
+      "Structured routines you can repeat under pressure",
     ],
-    image: "/screenshots/pre-match-prep.jpg",
-    imageAlt: "Pre-match prep",
-    layout: "single" as const,
+    image: "/screenshots/pre-match-prep.png",
+    imageAlt: "Pre-match prep with weapon selection system",
   },
   {
     title: "Match Debrief",
     paragraph:
-      "Reflect right after a match while it&apos;s fresh. Turn raw outcomes into clear next steps.",
+      "Structured reflection immediately after a match. Select what happened, and Composure turns it into actionable tactical adjustments.",
     bullets: [
-      "Structured debrief prompts",
-      "Links to tactics and prep for next time",
+      "Guided debrief prompts for common match scenarios",
+      "Feeds directly into pattern tracking",
     ],
-    image: "/screenshots/match-debrief.jpg",
-    imageAlt: "Match debrief",
-    layout: "single" as const,
+    image: "/screenshots/match-debrief.png",
+    imageAlt: "Match debrief with structured reflection prompts",
   },
   {
-    title: "Logging Options",
+    title: "Quick Match Log",
     paragraph:
-      "Log matches your way — quick capture or detailed breakdown. Both feed the same insights.",
+      "Log a match in under 30 seconds. Score, result, surface — done. Every entry feeds your tactical history and pattern analysis.",
     bullets: [
-      "Quick match log for fast entry",
-      "Detailed match log for deep reflection",
+      "Fast4 and standard format support",
+      "Set-by-set score capture",
     ],
-    images: [
-      "/screenshots/quick-match-log.jpg",
-      "/screenshots/detailed-match-log.jpg",
-    ],
-    imageAlt: "Match logging options",
-    layout: "double" as const,
+    image: "/screenshots/quick-match-log.png",
+    imageAlt: "Quick match log with score entry",
   },
 ];
 
@@ -93,9 +56,7 @@ export function Showcase() {
           {rows.map((row, i) => (
             <div
               key={row.title}
-              className={`grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-center ${
-                i % 2 === 1 ? "lg:flex-row-reverse" : ""
-              }`}
+              className="grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-center"
             >
               <div className={i % 2 === 1 ? "lg:order-2" : ""}>
                 <h3 className="text-2xl font-bold mb-4">{row.title}</h3>
@@ -106,21 +67,12 @@ export function Showcase() {
                   ))}
                 </ul>
               </div>
-              <div className={`flex gap-4 justify-center ${i % 2 === 1 ? "lg:order-1" : ""}`}>
-                {row.layout === "double" ? (
-                  <div className="flex flex-wrap justify-center gap-4">
-                    <PhoneMockup
-                      src={row.images[0]}
-                      alt={`${row.imageAlt} - Quick`}
-                    />
-                    <PhoneMockup
-                      src={row.images[1]}
-                      alt={`${row.imageAlt} - Detailed`}
-                    />
-                  </div>
-                ) : (
-                  <PhoneMockup src={row.image} alt={row.imageAlt} />
-                )}
+              <div
+                className={`flex justify-center ${
+                  i % 2 === 1 ? "lg:order-1" : ""
+                }`}
+              >
+                <PhoneMockup src={row.image} alt={row.imageAlt} />
               </div>
             </div>
           ))}
