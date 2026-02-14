@@ -18,16 +18,14 @@ import '../config/app_config.dart';
 import 'paywall_screen.dart';
 
 /// Tactical Coach Screen
-/// 
-/// UX Philosophy: Coach-first, not AI-first
-/// The screen should feel like a trusted tennis coach reviewing form,
-/// not a chatbot waiting for questions.
-/// 
-/// Key UX Shifts:
-/// - Insights are PRESENTED, not requested
-/// - Focus areas are the PRIMARY interaction
-/// - Free-text input is OPTIONAL and de-emphasized
-/// - CTAs frame as "reviewing prepared insights"
+///
+/// Redesigned to display structured analytical output:
+/// - Summary Card
+/// - 3 Recommendation Cards (Title / Why / How)
+/// - Pattern Detected Highlight Card
+/// - Next Match Focus Banner
+///
+/// Clean, structured, analytical. No hype visuals.
 class TacticalCoachScreen extends StatefulWidget {
   const TacticalCoachScreen({super.key});
 
@@ -40,14 +38,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   final ScrollController _scrollController = ScrollController();
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   final GlobalKey _insightCardKey = GlobalKey();
-  
+
   List<MatchPerformance> _recentMatches = [];
   String? _selectedFocus;
-  String? _insightResponse;
+  Map<String, dynamic>? _analysisResult;
   String? _errorMessage;
   bool _isLoading = true;
   bool _isGenerating = false;
-  
+
   // Calculated stats
   int _wins = 0;
   int _total = 0;
@@ -62,28 +60,32 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       'title': 'Break down your opponent',
       'subtitle': 'Patterns to exploit',
       'icon': Icons.person_search_rounded,
-      'prompt': 'Analyze my recent opponents and identify tactical patterns I can exploit in future matches',
+      'prompt':
+          'Analyze my recent opponents and identify tactical patterns I can exploit in future matches',
     },
     {
       'id': 'patterns',
       'title': 'Fix recurring mistakes',
       'subtitle': 'Address weak patterns',
       'icon': Icons.repeat_rounded,
-      'prompt': 'Identify recurring patterns in my losses and provide actionable fixes',
+      'prompt':
+          'Identify recurring patterns in my losses and provide actionable fixes',
     },
     {
       'id': 'upcoming',
       'title': 'Prepare for next match',
       'subtitle': 'Tactical game plan',
       'icon': Icons.calendar_today_rounded,
-      'prompt': 'Help me prepare a tactical game plan for my next match based on my recent form',
+      'prompt':
+          'Help me prepare a tactical game plan for my next match based on my recent form',
     },
     {
       'id': 'drills',
       'title': 'Practice with purpose',
       'subtitle': 'Targeted drill plan',
       'icon': Icons.fitness_center_rounded,
-      'prompt': 'Create a focused practice drill plan targeting my specific weaknesses',
+      'prompt':
+          'Create a focused practice drill plan targeting my specific weaknesses',
     },
   ];
 
@@ -101,19 +103,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   void _scrollToInsight() {
-    // Use post-frame callback to ensure widget is built first
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Additional delay for iOS rendering
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_insightCardKey.currentContext != null) {
           Scrollable.ensureVisible(
             _insightCardKey.currentContext!,
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOut,
-            alignment: 0.1, // Show slightly below top
+            alignment: 0.1,
           );
         } else if (_scrollController.hasClients) {
-          // Fallback: scroll to bottom
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
             duration: const Duration(milliseconds: 400),
@@ -126,34 +125,33 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final matches = await _matchHistoryService.getRecentMatches(10);
-      
-      // Calculate stats
-      final wins = matches.where((m) => m.result.toLowerCase() == 'win').length;
+
+      final wins =
+          matches.where((m) => m.result.toLowerCase() == 'win').length;
       final total = matches.length;
-      
-      // Determine form trend
+
       String trend = '';
       if (matches.length >= 3) {
         final last3 = matches.take(3).toList();
-        final recentWins = last3.where((m) => m.result.toLowerCase() == 'win').length;
+        final recentWins =
+            last3.where((m) => m.result.toLowerCase() == 'win').length;
         if (recentWins >= 2) {
           trend = 'Trending up';
         } else if (recentWins <= 1) {
           trend = 'Room to improve';
         }
       }
-      
-      // Calculate top strength and weakness
+
       String topStrength = 'Serve';
       String needsWork = 'Consistency';
-      
+
       if (matches.isNotEmpty) {
         final strengthTotals = <String, int>{};
         final weaknessTotals = <String, int>{};
-        
+
         for (final match in matches) {
           match.strengths.forEach((key, value) {
             strengthTotals[key] = (strengthTotals[key] ?? 0) + value;
@@ -162,7 +160,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             weaknessTotals[key] = (weaknessTotals[key] ?? 0) + value;
           });
         }
-        
+
         if (strengthTotals.isNotEmpty) {
           topStrength = strengthTotals.entries
               .reduce((a, b) => a.value > b.value ? a : b)
@@ -174,7 +172,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               .key;
         }
       }
-      
+
       setState(() {
         _recentMatches = matches;
         _wins = wins;
@@ -196,7 +194,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         SnackBar(
           content: Text(
             'Select a focus area to continue',
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: Colors.white),
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: Colors.white),
           ),
           backgroundColor: AppTheme.warning,
           behavior: SnackBarBehavior.floating,
@@ -208,20 +207,20 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       return;
     }
 
-    // Get the focus area's base prompt
-    final focusArea = _focusAreas.firstWhere((f) => f['id'] == _selectedFocus);
+    final focusArea =
+        _focusAreas.firstWhere((f) => f['id'] == _selectedFocus);
     String query = focusArea['prompt'];
-    
-    // Add optional context if provided
+
     final additionalContext = _contextController.text.trim();
     if (additionalContext.isNotEmpty) {
-      // Validate tennis-related content
       final validationError = TennisValidator.validate(additionalContext);
       if (validationError != null) {
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(validationError, style: AppTheme.bodyMediumThemed(context).copyWith(color: Colors.white)),
+            content: Text(validationError,
+                style: AppTheme.bodyMediumThemed(context)
+                    .copyWith(color: Colors.white)),
             backgroundColor: AppTheme.warning,
             behavior: SnackBarBehavior.floating,
           ),
@@ -231,15 +230,17 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       query = '$query\n\nAdditional context from player: $additionalContext';
     }
 
-    // Check usage limits (respects feature flags)
-    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final purchaseService =
+        Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
-    
-    // Skip paywall if: payments disabled, user is comped, or user is premium
-    final shouldShowPaywall = AppConfig.shouldShowPaywall(email: authService.userEmail);
-    
-    if (shouldShowPaywall && !purchaseService.isPremium && !usageService.canUseTacticalAnalysis) {
+
+    final shouldShowPaywall =
+        AppConfig.shouldShowPaywall(email: authService.userEmail);
+
+    if (shouldShowPaywall &&
+        !purchaseService.isPremium &&
+        !usageService.canUseTacticalAnalysis) {
       HapticFeedback.mediumImpact();
       final result = await Navigator.push<bool>(
         context,
@@ -252,8 +253,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       if (result != true) return;
     }
 
-    // Add player profile context
-    final profileService = Provider.of<PlayerProfileService>(context, listen: false);
+    final profileService =
+        Provider.of<PlayerProfileService>(context, listen: false);
     final playerContext = profileService.getPlayerContext();
     if (playerContext.isNotEmpty) {
       query = '$playerContext\n\n$query';
@@ -261,45 +262,45 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
     setState(() {
       _isGenerating = true;
-      _insightResponse = null;
+      _analysisResult = null;
       _errorMessage = null;
     });
-    
+
     HapticFeedback.mediumImpact();
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.tacticalAnalysis(query, _recentMatches);
-      
+      final response =
+          await apiService.tacticalAnalysis(query, _recentMatches);
+
       setState(() {
         _isGenerating = false;
-        _insightResponse = response;
+        _analysisResult = response;
       });
-      
+
       if (response != null) {
         _scrollToInsight();
       }
-      
+
       if (response == null && mounted) {
         final errorMsg = apiService.error ?? 'Unable to generate insight';
         setState(() => _errorMessage = errorMsg);
         return;
       }
-      
-      // Record usage for free users
+
       if (!purchaseService.isPremium) {
         await usageService.recordTacticalAnalysis();
       }
-      
+
       HapticFeedback.lightImpact();
-      
-      // Celebrations and streaks
+
       if (response != null && mounted) {
         CelebrationService.checkFirstAnalysis(context);
-        
-        final streakService = Provider.of<StreakService>(context, listen: false);
+
+        final streakService =
+            Provider.of<StreakService>(context, listen: false);
         final streakMilestone = await streakService.recordActivity();
-        
+
         if (streakMilestone != null && mounted) {
           CelebrationService.showAchievement(
             context,
@@ -325,88 +326,75 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
         child: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            )
-          : CustomScrollView(
-              controller: _scrollController,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              slivers: [
-                // Subtle header
-                SliverAppBar(
-                  backgroundColor: AppTheme.scaffoldBackground(context),
-                  elevation: 0,
-                  pinned: true,
-                  centerTitle: true,
-                  leading: IconButton(
-                    icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  title: Text(
-                    'Tactical Coach',
-                    style: AppTheme.headingSmallThemed(context).copyWith(
-                      color: AppTheme.textSecondaryColor(context),
+            ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.primary),
+              )
+            : CustomScrollView(
+                controller: _scrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                slivers: [
+                  SliverAppBar(
+                    backgroundColor: AppTheme.scaffoldBackground(context),
+                    elevation: 0,
+                    pinned: true,
+                    centerTitle: true,
+                    leading: IconButton(
+                      icon: Icon(Icons.arrow_back,
+                          color: AppTheme.textSecondaryColor(context)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    title: Text(
+                      'Tactical Coach',
+                      style: AppTheme.headingSmallThemed(context).copyWith(
+                        color: AppTheme.textSecondaryColor(context),
+                      ),
                     ),
                   ),
-                ),
-                
-                SliverPadding(
-                  padding: AppTheme.screenPadding,
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      // Current Form Card (Primary visual anchor)
-                      _buildCurrentFormCard(),
-                      
-                      const SizedBox(height: AppTheme.spaceLG),
-                      
-                      // Focus Areas (Primary interaction)
-                      _buildFocusAreasSection(),
-                      
-                      const SizedBox(height: AppTheme.spaceLG),
-                      
-                      // Optional Context Input (De-emphasized)
-                      _buildOptionalContextInput(),
-                      
-                      const SizedBox(height: AppTheme.spaceLG),
-                      
-                      // Primary CTA
-                      _buildPrimaryCTA(),
-                      
-                      // Loading state
-                      if (_isGenerating) ...[
+                  SliverPadding(
+                    padding: AppTheme.screenPadding,
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _buildCurrentFormCard(),
                         const SizedBox(height: AppTheme.spaceLG),
-                        _buildLoadingState(),
-                      ],
-                      
-                      // Error state
-                      if (_errorMessage != null && !_isGenerating) ...[
+                        _buildFocusAreasSection(),
                         const SizedBox(height: AppTheme.spaceLG),
-                        _buildErrorState(),
-                      ],
-                      
-                      // Insight Response
-                      if (_insightResponse != null && !_isGenerating) ...[
+                        _buildOptionalContextInput(),
                         const SizedBox(height: AppTheme.spaceLG),
-                        _buildInsightCard(),
-                      ],
-                      
-                      const SizedBox(height: AppTheme.spaceXXL),
-                    ]),
+                        _buildPrimaryCTA(),
+
+                        if (_isGenerating) ...[
+                          const SizedBox(height: AppTheme.spaceLG),
+                          _buildLoadingState(),
+                        ],
+
+                        if (_errorMessage != null && !_isGenerating) ...[
+                          const SizedBox(height: AppTheme.spaceLG),
+                          _buildErrorState(),
+                        ],
+
+                        // Structured analysis output
+                        if (_analysisResult != null && !_isGenerating) ...[
+                          const SizedBox(height: AppTheme.spaceLG),
+                          _buildStructuredAnalysis(),
+                        ],
+
+                        const SizedBox(height: AppTheme.spaceXXL),
+                      ]),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
       ),
     );
   }
 
-  /// Current Form Card
-  /// Primary visual anchor - shows form at a glance
-  /// Hierarchy: Form % + trend → Last 5 → Strength/Needs work
+  // ============ Current Form Card ============
+
   Widget _buildCurrentFormCard() {
     final winPercentage = _total > 0 ? ((_wins / _total) * 100).round() : 0;
     final hasMatches = _recentMatches.isNotEmpty;
-    
+
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
@@ -417,42 +405,31 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
-              Icon(
-                Icons.show_chart_rounded,
-                color: AppTheme.primary,
-                size: 20,
-              ),
+              Icon(Icons.show_chart_rounded, color: AppTheme.primary, size: 20),
               const SizedBox(width: AppTheme.spaceSM),
-              Text(
-                'Current Form',
-                style: AppTheme.headingSmallThemed(context),
-              ),
+              Text('Current Form', style: AppTheme.headingSmallThemed(context)),
             ],
           ),
-          
           const SizedBox(height: AppTheme.spaceMD),
-          
           if (hasMatches) ...[
-            // Primary: Win rate + trend
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   '$winPercentage%',
                   style: AppTheme.statLargeThemed(context).copyWith(
-                    color: winPercentage >= 50 ? AppTheme.win : AppTheme.textPrimaryColor(context),
+                    color: winPercentage >= 50
+                        ? AppTheme.win
+                        : AppTheme.textPrimaryColor(context),
                   ),
                 ),
                 const SizedBox(width: AppTheme.spaceSM),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(
-                    'win rate',
-                    style: AppTheme.bodySmallThemed(context),
-                  ),
+                  child: Text('win rate',
+                      style: AppTheme.bodySmallThemed(context)),
                 ),
                 if (_formTrend.isNotEmpty) ...[
                   const Spacer(),
@@ -462,20 +439,21 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       vertical: AppTheme.spaceXS,
                     ),
                     decoration: BoxDecoration(
-                      color: _formTrend.contains('up') 
+                      color: _formTrend.contains('up')
                           ? AppTheme.win.withOpacity(0.15)
                           : AppTheme.warning.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusSM),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _formTrend.contains('up') 
+                          _formTrend.contains('up')
                               ? Icons.trending_up_rounded
                               : Icons.trending_flat_rounded,
                           size: 14,
-                          color: _formTrend.contains('up') 
+                          color: _formTrend.contains('up')
                               ? AppTheme.win
                               : AppTheme.warning,
                         ),
@@ -483,7 +461,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         Text(
                           _formTrend,
                           style: AppTheme.labelThemed(context).copyWith(
-                            color: _formTrend.contains('up') 
+                            color: _formTrend.contains('up')
                                 ? AppTheme.win
                                 : AppTheme.warning,
                           ),
@@ -494,16 +472,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 ],
               ],
             ),
-            
             const SizedBox(height: AppTheme.spaceMD),
-            
-            // Secondary: Last 5 match indicators
             Row(
               children: [
-                Text(
-                  'Last ${_recentMatches.take(5).length}',
-                  style: AppTheme.labelThemed(context),
-                ),
+                Text('Last ${_recentMatches.take(5).length}',
+                    style: AppTheme.labelThemed(context)),
                 const SizedBox(width: AppTheme.spaceSM),
                 ..._recentMatches.take(5).map((match) {
                   final isWin = match.result.toLowerCase() == 'win';
@@ -519,10 +492,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 }),
               ],
             ),
-            
             const SizedBox(height: AppTheme.spaceMD),
-            
-            // Tertiary: Strength / Needs work
             Row(
               children: [
                 Expanded(
@@ -544,7 +514,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             ),
           ] else
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+              padding:
+                  const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               child: Text(
                 'Log matches to see your form analysis',
                 style: AppTheme.bodyMediumThemed(context),
@@ -581,13 +552,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: AppTheme.labelThemed(context).copyWith(fontSize: 11),
-                ),
+                Text(label,
+                    style: AppTheme.labelThemed(context)
+                        .copyWith(fontSize: 11)),
                 Text(
                   value,
-                  style: AppTheme.headingSmallThemed(context).copyWith(fontSize: 13),
+                  style: AppTheme.headingSmallThemed(context)
+                      .copyWith(fontSize: 13),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -598,30 +569,25 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Focus Areas Section
-  /// PRIMARY interaction - coach lenses, not AI tools
+  // ============ Focus Areas Section ============
+
   Widget _buildFocusAreasSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Choose a focus',
-          style: AppTheme.headingMediumThemed(context),
-        ),
+        Text('Choose a focus', style: AppTheme.headingMediumThemed(context)),
         const SizedBox(height: AppTheme.spaceXS),
-        Text(
-          'What would you like to work on?',
-          style: AppTheme.bodySmallThemed(context),
-        ),
+        Text('What would you like to work on?',
+            style: AppTheme.bodySmallThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
-        
         ...List.generate(_focusAreas.length, (index) {
           final focus = _focusAreas[index];
           final isSelected = _selectedFocus == focus['id'];
-          
+
           return Padding(
             padding: EdgeInsets.only(
-              bottom: index < _focusAreas.length - 1 ? AppTheme.spaceSM : 0,
+              bottom:
+                  index < _focusAreas.length - 1 ? AppTheme.spaceSM : 0,
             ),
             child: GestureDetector(
               onTap: () {
@@ -634,12 +600,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(AppTheme.spaceMD),
                 decoration: BoxDecoration(
-                  color: isSelected 
+                  color: isSelected
                       ? AppTheme.primary.withOpacity(0.1)
                       : AppTheme.cardBackground(context),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusMD),
                   border: Border.all(
-                    color: isSelected 
+                    color: isSelected
                         ? AppTheme.primary
                         : AppTheme.borderColor(context),
                     width: isSelected ? 1.5 : 1,
@@ -650,15 +617,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                     Container(
                       padding: const EdgeInsets.all(AppTheme.spaceSM),
                       decoration: BoxDecoration(
-                        color: isSelected 
+                        color: isSelected
                             ? AppTheme.primary.withOpacity(0.2)
                             : AppTheme.elevatedBackground(context),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
                         focus['icon'] as IconData,
                         size: 20,
-                        color: isSelected 
+                        color: isSelected
                             ? AppTheme.primary
                             : AppTheme.textSecondaryColor(context),
                       ),
@@ -670,8 +638,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         children: [
                           Text(
                             focus['title'] as String,
-                            style: AppTheme.headingSmallThemed(context).copyWith(
-                              color: isSelected 
+                            style: AppTheme.headingSmallThemed(context)
+                                .copyWith(
+                              color: isSelected
                                   ? AppTheme.textPrimaryColor(context)
                                   : AppTheme.textSecondaryColor(context),
                             ),
@@ -700,9 +669,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Optional Context Input
-  /// De-emphasized, positioned AFTER focus areas
-  /// Now includes voice input button
+  // ============ Optional Context Input ============
+
   Widget _buildOptionalContextInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,14 +679,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           children: [
             Text(
               'Add context',
-              style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
+              style: AppTheme.labelThemed(context)
+                  .copyWith(color: AppTheme.textMutedColor(context)),
             ),
             const Spacer(),
-            Icon(
-              Icons.mic,
-              size: 14,
-              color: AppTheme.textMutedColor(context).withOpacity(0.5),
-            ),
+            Icon(Icons.mic,
+                size: 14,
+                color: AppTheme.textMutedColor(context).withOpacity(0.5)),
             const SizedBox(width: 4),
             Text(
               'Voice enabled',
@@ -741,27 +708,30 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           controller: _contextController,
           hintText: 'e.g., Facing a left-handed opponent...',
           maxLines: 2,
-          style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+          style: AppTheme.bodyMediumThemed(context)
+              .copyWith(color: AppTheme.textPrimaryColor(context)),
         ),
       ],
     );
   }
 
-  /// Primary CTA
-  /// Framed as reviewing something prepared, not asking
+  // ============ Primary CTA ============
+
   Widget _buildPrimaryCTA() {
     final hasSelection = _selectedFocus != null;
-    
+
     return GestureDetector(
       onTap: _isGenerating || !hasSelection ? null : _getInsight,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: hasSelection ? AppTheme.primary : AppTheme.elevatedBackground(context),
+          color: hasSelection
+              ? AppTheme.primary
+              : AppTheme.elevatedBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: hasSelection 
-              ? null 
+          border: hasSelection
+              ? null
               : Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Center(
@@ -773,7 +743,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
+                        color: hasSelection
+                            ? Colors.white
+                            : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
                     ),
@@ -781,7 +753,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                     Text(
                       'Preparing insight...',
                       style: AppTheme.headingSmallThemed(context).copyWith(
-                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
+                        color: hasSelection
+                            ? Colors.white
+                            : AppTheme.textMutedColor(context),
                       ),
                     ),
                   ],
@@ -789,7 +763,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               : Text(
                   'View tactical insight',
                   style: AppTheme.headingSmallThemed(context).copyWith(
-                    color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
+                    color: hasSelection
+                        ? Colors.white
+                        : AppTheme.textMutedColor(context),
                   ),
                 ),
         ),
@@ -797,7 +773,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Loading State
+  // ============ Loading State ============
+
   Widget _buildLoadingState() {
     return TGCard(
       padding: AppTheme.cardPaddingLarge,
@@ -805,16 +782,15 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         children: [
           const CircularProgressIndicator(color: AppTheme.primary),
           const SizedBox(height: AppTheme.spaceMD),
-          Text(
-            'Analyzing your recent form...',
-            style: AppTheme.bodyMediumThemed(context),
-          ),
+          Text('Analyzing your recent form...',
+              style: AppTheme.bodyMediumThemed(context)),
         ],
       ),
     );
   }
 
-  /// Error State
+  // ============ Error State ============
+
   Widget _buildErrorState() {
     return Container(
       padding: AppTheme.cardPaddingLarge,
@@ -829,7 +805,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             'Unable to generate insight',
-            style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.loss),
+            style: AppTheme.headingSmallThemed(context)
+                .copyWith(color: AppTheme.loss),
           ),
           const SizedBox(height: AppTheme.spaceXS),
           Text(
@@ -844,7 +821,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             },
             child: Text(
               'Dismiss',
-              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.primary),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(color: AppTheme.primary),
             ),
           ),
         ],
@@ -852,21 +830,80 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Insight Card
-  /// Presented as prepared coaching insight
-  Widget _buildInsightCard() {
-    return Container(
+  // ============ Structured Analysis Output ============
+
+  Widget _buildStructuredAnalysis() {
+    final data = _analysisResult!;
+    final summary = data['summary'] as String? ?? '';
+    final recommendations =
+        (data['recommendations'] as List<dynamic>?) ?? [];
+    final patternDetected = data['patternDetected'] as String? ?? '';
+    final nextMatchFocus = data['nextMatchFocus'] as String? ?? '';
+
+    // Build share text from structured data
+    final shareText = _buildShareText(
+        summary, recommendations, patternDetected, nextMatchFocus);
+
+    return Column(
       key: _insightCardKey,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1) Summary Card
+        _buildSummaryCard(summary),
+
+        const SizedBox(height: AppTheme.spaceMD),
+
+        // 2) Recommendation Cards
+        if (recommendations.isNotEmpty) ...[
+          Text('Recommendations',
+              style: AppTheme.headingMediumThemed(context)),
+          const SizedBox(height: AppTheme.spaceSM),
+          ...recommendations.asMap().entries.map((entry) {
+            final rec = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+              child: _buildRecommendationCard(
+                index: entry.key + 1,
+                title: rec['title'] as String? ?? '',
+                why: rec['why'] as String? ?? '',
+                how: rec['how'] as String? ?? '',
+              ),
+            );
+          }),
+          const SizedBox(height: AppTheme.spaceSM),
+        ],
+
+        // 3) Pattern Detected Highlight Card
+        if (patternDetected.isNotEmpty)
+          _buildPatternDetectedCard(patternDetected),
+
+        if (patternDetected.isNotEmpty)
+          const SizedBox(height: AppTheme.spaceMD),
+
+        // 4) Next Match Focus Banner
+        if (nextMatchFocus.isNotEmpty)
+          _buildNextMatchFocusBanner(nextMatchFocus),
+
+        const SizedBox(height: AppTheme.spaceLG),
+
+        // Actions row
+        _buildActionsRow(shareText),
+      ],
+    );
+  }
+
+  /// Summary Card — analytical overview
+  Widget _buildSummaryCard(String summary) {
+    return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
         color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
@@ -876,74 +913,284 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: const Icon(
-                  Icons.lightbulb_outline_rounded,
+                  Icons.analytics_outlined,
                   color: AppTheme.primary,
                   size: 20,
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSM),
-              Text(
-                'Tactical Insight',
-                style: AppTheme.headingMediumThemed(context),
-              ),
+              Text('Summary',
+                  style: AppTheme.headingMediumThemed(context)),
             ],
           ),
-          
           const SizedBox(height: AppTheme.spaceMD),
-          
           Divider(color: AppTheme.borderColor(context), height: 1),
-          
           const SizedBox(height: AppTheme.spaceMD),
-          
-          // Insight content
           Text(
-            _insightResponse!,
-            style: AppTheme.bodyLargeThemed(context).copyWith(
-              height: 1.7,
-            ),
-          ),
-          
-          const SizedBox(height: AppTheme.spaceLG),
-          
-          Divider(color: AppTheme.borderColor(context), height: 1),
-          
-          const SizedBox(height: AppTheme.spaceMD),
-          
-          // Actions
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ShareButton(
-                shareText: ShareTextGenerator.tacticalAnalysis(_insightResponse!),
-                subject: 'My Tactical Insight',
-                color: AppTheme.primary,
-              ),
-              const SizedBox(width: AppTheme.spaceMD),
-              TextButton.icon(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  setState(() {
-                    _insightResponse = null;
-                    _selectedFocus = null;
-                    _contextController.clear();
-                  });
-                },
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  size: 18,
-                  color: AppTheme.textSecondaryColor(context),
-                ),
-                label: Text(
-                  'New focus',
-                  style: AppTheme.headingSmallThemed(context).copyWith(
-                    color: AppTheme.textSecondaryColor(context),
-                  ),
-                ),
-              ),
-            ],
+            summary,
+            style: AppTheme.bodyLargeThemed(context).copyWith(height: 1.6),
           ),
         ],
       ),
     );
+  }
+
+  /// Recommendation Card — title, why, how
+  Widget _buildRecommendationCard({
+    required int index,
+    required String title,
+    required String why,
+    required String how,
+  }) {
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title row with index badge
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(
+                    '$index',
+                    style: AppTheme.labelThemed(context).copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTheme.headingSmallThemed(context),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppTheme.spaceMD),
+
+          // Why section
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSM),
+            decoration: BoxDecoration(
+              color: AppTheme.elevatedBackground(context),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.lightbulb_outline_rounded,
+                    size: 16,
+                    color: AppTheme.textMutedColor(context)),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Why it matters',
+                          style: AppTheme.labelThemed(context).copyWith(
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Text(why,
+                          style: AppTheme.bodySmallThemed(context)
+                              .copyWith(height: 1.4)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppTheme.spaceSM),
+
+          // How section
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSM),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+              border:
+                  Border.all(color: AppTheme.primary.withOpacity(0.15)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.play_circle_outline_rounded,
+                    size: 16, color: AppTheme.primary),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('How to apply',
+                          style: AppTheme.labelThemed(context).copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primary)),
+                      const SizedBox(height: 2),
+                      Text(how,
+                          style: AppTheme.bodySmallThemed(context)
+                              .copyWith(height: 1.4)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Pattern Detected Highlight Card
+  Widget _buildPatternDetectedCard(String pattern) {
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.warning.withOpacity(0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSM),
+            decoration: BoxDecoration(
+              color: AppTheme.warning.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            ),
+            child: Icon(Icons.pattern_rounded,
+                color: AppTheme.warning, size: 20),
+          ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Pattern Detected',
+                    style: AppTheme.headingSmallThemed(context)
+                        .copyWith(color: AppTheme.warning)),
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  pattern,
+                  style: AppTheme.bodyMediumThemed(context)
+                      .copyWith(height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Next Match Focus Banner
+  Widget _buildNextMatchFocusBanner(String focus) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spaceLG,
+        vertical: AppTheme.spaceMD,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.flag_rounded, color: AppTheme.primary, size: 20),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Next Match Focus',
+                    style: AppTheme.labelThemed(context).copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(
+                  focus,
+                  style: AppTheme.bodyMediumThemed(context).copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Actions row (share + new focus)
+  Widget _buildActionsRow(String shareText) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ShareButton(
+          shareText: shareText,
+          subject: 'My Tactical Analysis',
+          color: AppTheme.primary,
+        ),
+        const SizedBox(width: AppTheme.spaceMD),
+        TextButton.icon(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            setState(() {
+              _analysisResult = null;
+              _selectedFocus = null;
+              _contextController.clear();
+            });
+          },
+          icon: Icon(Icons.refresh_rounded,
+              size: 18, color: AppTheme.textSecondaryColor(context)),
+          label: Text(
+            'New focus',
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              color: AppTheme.textSecondaryColor(context),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _buildShareText(String summary, List<dynamic> recommendations,
+      String patternDetected, String nextMatchFocus) {
+    final buffer = StringBuffer();
+    buffer.writeln('Tactical Analysis — Composure');
+    buffer.writeln();
+    buffer.writeln('Summary: $summary');
+    buffer.writeln();
+    for (var i = 0; i < recommendations.length; i++) {
+      final rec = recommendations[i];
+      buffer.writeln(
+          '${i + 1}. ${rec['title'] ?? ''}: ${rec['how'] ?? ''}');
+    }
+    if (patternDetected.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Pattern: $patternDetected');
+    }
+    if (nextMatchFocus.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Next Focus: $nextMatchFocus');
+    }
+    return buffer.toString();
   }
 }

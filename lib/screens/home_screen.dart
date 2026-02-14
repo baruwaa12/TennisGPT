@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Header with timed greeting
+  /// Header with timed greeting + elite positioning tagline
   Widget _buildHeader(BuildContext context, AuthService authService, String firstName) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -166,22 +166,34 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Timed greeting with name
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _getGreeting(),
-                style: AppTheme.bodySmallThemed(context).copyWith(
-                  color: AppTheme.textMutedColor(context),
+          // Timed greeting with name + tagline
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getGreeting(),
+                  style: AppTheme.bodySmallThemed(context).copyWith(
+                    color: AppTheme.textMutedColor(context),
+                  ),
                 ),
-              ),
-              Text(
-                firstName,
-                style: AppTheme.headingMediumThemed(context),
-              ),
-            ],
+                Text(
+                  firstName,
+                  style: AppTheme.headingMediumThemed(context),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Structured Tactical Intelligence',
+                  style: AppTheme.labelThemed(context).copyWith(
+                    color: AppTheme.primary.withOpacity(0.7),
+                    fontSize: 11,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
           ),
           
           // Settings icon
@@ -510,20 +522,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Tools Section - Minimal, secondary
+  /// Tools Section - Analytical positioning
   Widget _buildToolsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tools', style: AppTheme.headingSmallThemed(context)),
+        Text('Analysis Tools', style: AppTheme.headingSmallThemed(context)),
         
         const SizedBox(height: AppTheme.spaceMD),
         
         Row(
           children: [
             Expanded(child: _buildToolItem(
-              icon: Icons.psychology_outlined,
-              label: 'Tactical',
+              icon: Icons.analytics_outlined,
+              label: 'Tactical\nAnalysis',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const TacticalCoachScreen()),
@@ -532,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: AppTheme.spaceSM),
             Expanded(child: _buildToolItem(
               icon: Icons.flag_outlined,
-              label: 'Pre-Match',
+              label: 'Pre-Match\nPrep',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const MentalCheckInScreen()),
@@ -541,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: AppTheme.spaceSM),
             Expanded(child: _buildToolItem(
               icon: Icons.edit_note_outlined,
-              label: 'Debrief',
+              label: 'Post-Match\nDebrief',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const EmotionalResetScreen()),

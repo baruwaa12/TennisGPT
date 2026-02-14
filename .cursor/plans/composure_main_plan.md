@@ -36,7 +36,7 @@ Include:
 - Email capture (`Join Early Access`)
 
 No redesigning. Functional only.
-
+cd landin
 ------------------------------------------------------------------------
 
 ## DAY 3-7 - Warm Instagram Account + Format Research
@@ -168,7 +168,7 @@ Then:
 
 # What You Do NOT Do
 
-- No strategy rewrites
+- No strategy rewrites 
 - No multiple accounts early
 - No chasing virality
 - No emotional reactions to views

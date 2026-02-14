@@ -158,7 +158,7 @@ public class CoachingController : ControllerBase
     }
 
     [HttpPost("tactical-analysis")]
-    public async Task<ActionResult<CoachingResponse>> TacticalAnalysis([FromBody] TacticalAnalysisRequest request)
+    public async Task<ActionResult<TacticalAnalysisResponse>> TacticalAnalysis([FromBody] TacticalAnalysisRequest request)
     {
         var requestId = GenerateRequestId();
         var userId = GetUserId();
@@ -187,10 +187,9 @@ public class CoachingController : ControllerBase
 
             var response = await _openAIService.TacticalAnalysisAsync(request.MatchDescription, matchesJson);
             
-            _logger.LogInformation("[{RequestId}] TacticalAnalysis success, Response length={Length}", 
-                requestId, response?.Length ?? 0);
+            _logger.LogInformation("[{RequestId}] TacticalAnalysis success", requestId);
             
-            return Ok(new CoachingResponse { Response = response });
+            return Ok(response);
         }
         catch (Exception ex)
         {

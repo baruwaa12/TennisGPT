@@ -293,7 +293,9 @@ class ApiService extends ChangeNotifier {
     }
   }
 
-  Future<String?> tacticalAnalysis(String matchDescription, List<MatchPerformance>? recentMatches) async {
+  /// Tactical analysis now returns structured JSON from the backend.
+  /// Returns a Map with keys: summary, recommendations, patternDetected, nextMatchFocus.
+  Future<Map<String, dynamic>?> tacticalAnalysis(String matchDescription, List<MatchPerformance>? recentMatches) async {
     _isLoading = true;
     _error = null;
     _lastRequestId = _generateRequestId();
@@ -301,7 +303,7 @@ class ApiService extends ChangeNotifier {
 
     try {
       final matchesJson = recentMatches != null && recentMatches.isNotEmpty
-          ? recentMatches.take(3).map((match) => match.toJson()).toList()
+          ? recentMatches.take(10).map((match) => match.toJson()).toList()
           : null;
 
       final response = await _makeRequest(
@@ -312,7 +314,50 @@ class ApiService extends ChangeNotifier {
         },
         requestId: _lastRequestId!,
       );
-      return _processResponse(response, _lastRequestId!);
+
+      if (response == null) {
+        _setError(ApiErrorCode.timeout, requestId: _lastRequestId);
+        return null;
+      }
+
+      if (response.statusCode == 200) {
+        final data = _safeJsonDecode(response.body);
+        if (data == null) {
+          _setError(ApiErrorCode.invalidResponse, requestId: _lastRequestId);
+          return null;
+        }
+
+        // The backend now returns the structured TacticalAnalysisResponse directly
+        // with keys: summary, recommendations, patternDetected, nextMatchFocus
+        if (data.containsKey('summary')) {
+          _lastErrorCode = ApiErrorCode.none;
+          _error = null;
+          notifyListeners();
+          return data;
+        }
+
+        // Fallback: legacy CoachingResponse format (response field)
+        if (data.containsKey('response')) {
+          _lastResponse = data['response'];
+          _lastErrorCode = ApiErrorCode.none;
+          _error = null;
+          notifyListeners();
+          // Wrap in structured format for backward compatibility
+          return {
+            'summary': data['response'] ?? '',
+            'recommendations': <Map<String, dynamic>>[],
+            'patternDetected': '',
+            'nextMatchFocus': '',
+          };
+        }
+
+        _setError(ApiErrorCode.invalidResponse, requestId: _lastRequestId);
+        return null;
+      }
+
+      // Handle error status codes
+      _processResponse(response, _lastRequestId!);
+      return null;
     } catch (e) {
       _setError(ApiErrorCode.networkError,
         debugMessage: e.toString(),
@@ -322,6 +367,15 @@ class ApiService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Returns just the summary text from tactical analysis.
+  /// Use this for screens that store/display a plain string.
+  Future<String?> tacticalAnalysisSummary(String matchDescription, List<MatchPerformance>? recentMatches) async {
+    final result = await tacticalAnalysis(matchDescription, recentMatches);
+    if (result == null) return null;
+    // Return summary, or fall back to full JSON string
+    return result['summary'] as String? ?? result.toString();
   }
 
   Future<String?> generateDrillsFromHistory(List<MatchPerformance> matches) async {

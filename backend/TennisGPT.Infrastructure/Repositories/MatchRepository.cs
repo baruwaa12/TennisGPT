@@ -23,7 +23,7 @@ public class MatchRepository : IMatchRepository
     {
         return await _context.Matches
             .Where(m => m.UserId == userId)
-            .OrderByDescending(m => m.Date)
+            .OrderByDescending(m => m.CreatedAt)
             .ToListAsync();
     }
 
@@ -31,7 +31,7 @@ public class MatchRepository : IMatchRepository
     {
         return await _context.Matches
             .Where(m => m.UserId == userId)
-            .OrderByDescending(m => m.Date)
+            .OrderByDescending(m => m.CreatedAt)
             .Take(count)
             .ToListAsync();
     }

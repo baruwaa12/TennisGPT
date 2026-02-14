@@ -9,20 +9,23 @@ import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
-import '../utils/tennis_validator.dart';
 import '../widgets/voice_input_button.dart';
 import '../config/app_config.dart';
 import 'paywall_screen.dart';
 
-/// Pre-Match Prep Screen
-/// 
-/// UX Philosophy: Focused pre-match briefing, not gamification
-/// 
-/// Key principles:
-/// - Clarity over complexity (1 primary tactic, optional secondary)
-/// - Readiness over confidence (grounded, not ego-driven)
-/// - Completable in under 60 seconds
-/// - Feels like "locking in the plan"
+/// Pre-Match Prep Screen — Weapon System
+///
+/// Structured around defining primary weapon + opponent weakness.
+/// Clean, analytical, no hype.
+///
+/// Flow:
+/// 1. Select primary weapon (required)
+/// 2. Select secondary weapon (optional)
+/// 3. Opponent weakness hypothesis (dropdown + custom)
+/// 4. Serve strategy (if Serve selected as weapon)
+/// 5. Optional opponent name
+/// 6. Readiness level
+/// 7. Generate structured briefing
 class MentalCheckInScreen extends StatefulWidget {
   const MentalCheckInScreen({super.key});
 
@@ -32,58 +35,79 @@ class MentalCheckInScreen extends StatefulWidget {
 
 class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
   final TextEditingController _opponentController = TextEditingController();
+  final TextEditingController _customWeaknessController =
+      TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   int _readinessLevel = 7;
-  String? _primaryTactic;
-  String? _secondaryTactic;
+  String? _primaryWeapon;
+  String? _secondaryWeapon;
+  String? _opponentWeakness;
+  String? _serveStrategy;
   bool _isLoading = false;
   bool _hasSubmitted = false;
   String? _briefingResponse;
   String? _errorMessage;
 
-  /// Tactical options - clear, intentional choices
-  /// Structured for primary (pick one) + optional secondary
-  static const List<Map<String, dynamic>> _tacticOptions = [
+  /// Primary/Secondary weapon options
+  static const List<Map<String, dynamic>> _weaponOptions = [
     {
-      'id': 'control_rallies',
-      'label': 'Control the rallies',
-      'description': 'Dictate pace and direction',
-      'icon': Icons.adjust_rounded,
+      'id': 'serve',
+      'label': 'Serve',
+      'icon': Icons.sports_tennis_rounded,
     },
     {
-      'id': 'attack_weakness',
-      'label': 'Target their weakness',
-      'description': 'Exploit patterns',
-      'icon': Icons.gps_fixed_rounded,
+      'id': 'forehand',
+      'label': 'Forehand',
+      'icon': Icons.swipe_right_rounded,
     },
     {
-      'id': 'stay_solid',
-      'label': 'Stay solid',
-      'description': 'Minimize errors, wait for openings',
-      'icon': Icons.shield_outlined,
+      'id': 'backhand',
+      'label': 'Backhand',
+      'icon': Icons.swipe_left_rounded,
     },
     {
-      'id': 'move_them',
-      'label': 'Move them around',
-      'description': 'Use angles and depth',
-      'icon': Icons.swap_horiz_rounded,
+      'id': 'return',
+      'label': 'Return',
+      'icon': Icons.replay_rounded,
     },
     {
-      'id': 'serve_plus_one',
-      'label': 'Serve + 1 patterns',
-      'description': 'Win points early',
+      'id': 'serve_volley',
+      'label': 'Serve + Volley',
       'icon': Icons.bolt_rounded,
     },
     {
-      'id': 'vary_pace',
-      'label': 'Vary the pace',
-      'description': 'Disrupt their timing',
-      'icon': Icons.speed_rounded,
+      'id': 'net_play',
+      'label': 'Net Play',
+      'icon': Icons.arrow_upward_rounded,
+    },
+    {
+      'id': 'movement_defense',
+      'label': 'Movement / Defense',
+      'icon': Icons.shield_outlined,
     },
   ];
 
-  /// Readiness labels - calm, grounded (not emotional)
+  /// Opponent weakness hypotheses
+  static const List<String> _weaknessOptions = [
+    'Weak backhand',
+    'Weak forehand',
+    'Poor movement',
+    'Struggles vs heavy spin',
+    'Weak second serve',
+    'Poor under pressure',
+    'Custom',
+  ];
+
+  /// Serve strategy options (shown when Serve is primary weapon)
+  static const List<String> _serveStrategyOptions = [
+    'Heavy kick wide on Ad side',
+    'Body serve under pressure',
+    'Flat down T surprise',
+    'Target backhand return',
+    'Mix spin + pace shift',
+  ];
+
   String _getReadinessLabel(int level) {
     if (level <= 3) return 'Building focus';
     if (level <= 5) return 'Getting there';
@@ -92,9 +116,16 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     return 'Peak readiness';
   }
 
+  Color _getReadinessColor(int level) {
+    if (level <= 3) return AppTheme.warning;
+    if (level <= 6) return AppTheme.neutral;
+    return AppTheme.win;
+  }
+
   @override
   void dispose() {
     _opponentController.dispose();
+    _customWeaknessController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -104,7 +135,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     if (_hasSubmitted && _briefingResponse != null) {
       return _buildBriefingView();
     }
-    
+
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: GestureDetector(
@@ -114,68 +145,79 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           controller: _scrollController,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           slivers: [
-          // Subtle header
-          SliverAppBar(
-            backgroundColor: AppTheme.scaffoldBackground(context),
-            elevation: 0,
-            pinned: true,
-            centerTitle: true,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Text(
-              'Pre-Match Prep',
-              style: AppTheme.headingSmallThemed(context).copyWith(
-                color: AppTheme.textSecondaryColor(context),
+            SliverAppBar(
+              backgroundColor: AppTheme.scaffoldBackground(context),
+              elevation: 0,
+              pinned: true,
+              centerTitle: true,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back,
+                    color: AppTheme.textSecondaryColor(context)),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                'Pre-Match Prep',
+                style: AppTheme.headingSmallThemed(context).copyWith(
+                  color: AppTheme.textSecondaryColor(context),
+                ),
               ),
             ),
-          ),
-          
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Compact intro
-                _buildIntroSection(),
-                
-                const SizedBox(height: AppTheme.spaceMD),
-                
-                // Opponent (optional, compact)
-                _buildOpponentInput(),
-                
-                const SizedBox(height: AppTheme.spaceLG),
-                
-                // Primary Tactic (main interaction)
-                _buildTacticSection(),
-                
-                const SizedBox(height: AppTheme.spaceLG),
-                
-                // Readiness Level (reframed slider)
-                _buildReadinessSection(),
-                
-                const SizedBox(height: AppTheme.spaceLG),
-                
-                // Error display
-                if (_errorMessage != null) ...[
-                  _buildErrorCard(),
-                  const SizedBox(height: AppTheme.spaceMD),
-                ],
-                
-                // Primary CTA
-                _buildPrimaryCTA(),
-                
-                const SizedBox(height: AppTheme.spaceXL),
-              ]),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Intro
+                  _buildIntroSection(),
+
+                  const SizedBox(height: AppTheme.spaceLG),
+
+                  // Primary Weapon (required)
+                  _buildWeaponSection(),
+
+                  const SizedBox(height: AppTheme.spaceLG),
+
+                  // Opponent Weakness Hypothesis
+                  _buildOpponentWeaknessSection(),
+
+                  const SizedBox(height: AppTheme.spaceLG),
+
+                  // Serve Strategy (conditional)
+                  if (_primaryWeapon == 'serve') ...[
+                    _buildServeStrategySection(),
+                    const SizedBox(height: AppTheme.spaceLG),
+                  ],
+
+                  // Opponent name (optional)
+                  _buildOpponentInput(),
+
+                  const SizedBox(height: AppTheme.spaceLG),
+
+                  // Readiness Level
+                  _buildReadinessSection(),
+
+                  const SizedBox(height: AppTheme.spaceLG),
+
+                  // Error display
+                  if (_errorMessage != null) ...[
+                    _buildErrorCard(),
+                    const SizedBox(height: AppTheme.spaceMD),
+                  ],
+
+                  // Primary CTA
+                  _buildPrimaryCTA(),
+
+                  const SizedBox(height: AppTheme.spaceXL),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
   }
 
-  /// Compact intro - sets the tone without taking space
+  // ============ Intro Section ============
+
   Widget _buildIntroSection() {
     return Container(
       padding: AppTheme.cardPadding,
@@ -204,11 +246,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Lock in your game plan',
+                  'Define your weapons',
                   style: AppTheme.headingSmallThemed(context),
                 ),
                 Text(
-                  'Clear focus. Calm mind. Ready to compete.',
+                  'Build strategy around a repeatable weapon.',
                   style: AppTheme.bodySmallThemed(context),
                 ),
               ],
@@ -219,7 +261,346 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     );
   }
 
-  /// Compact opponent input with voice support
+  // ============ Weapon Selection ============
+
+  Widget _buildWeaponSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Primary Weapon',
+            style: AppTheme.headingMediumThemed(context)),
+        const SizedBox(height: AppTheme.spaceXS),
+        Text(
+          'Your main attacking asset today (required)',
+          style: AppTheme.bodySmallThemed(context),
+        ),
+        const SizedBox(height: AppTheme.spaceMD),
+
+        // Weapon grid (2 columns)
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 2.4,
+          ),
+          itemCount: _weaponOptions.length,
+          itemBuilder: (context, index) {
+            final weapon = _weaponOptions[index];
+            final isPrimary = _primaryWeapon == weapon['id'];
+            final isSecondary = _secondaryWeapon == weapon['id'];
+            final isSelected = isPrimary || isSecondary;
+
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  if (isPrimary) {
+                    _primaryWeapon = null;
+                    // Reset serve strategy if serve deselected
+                    if (weapon['id'] == 'serve') _serveStrategy = null;
+                  } else if (isSecondary) {
+                    _secondaryWeapon = null;
+                  } else if (_primaryWeapon == null) {
+                    _primaryWeapon = weapon['id'];
+                  } else if (_secondaryWeapon == null) {
+                    _secondaryWeapon = weapon['id'];
+                  } else {
+                    _secondaryWeapon = weapon['id'];
+                  }
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spaceSM, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isPrimary
+                      ? AppTheme.primary.withOpacity(0.15)
+                      : isSecondary
+                          ? AppTheme.neutral.withOpacity(0.1)
+                          : AppTheme.cardBackground(context),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                  border: Border.all(
+                    color: isPrimary
+                        ? AppTheme.primary
+                        : isSecondary
+                            ? AppTheme.neutral
+                            : AppTheme.borderColor(context),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      weapon['icon'] as IconData,
+                      size: 18,
+                      color: isPrimary
+                          ? AppTheme.primary
+                          : isSecondary
+                              ? AppTheme.neutral
+                              : AppTheme.textMutedColor(context),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Expanded(
+                      child: Text(
+                        weapon['label'] as String,
+                        style: AppTheme.bodySmallThemed(context).copyWith(
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected
+                              ? AppTheme.textPrimaryColor(context)
+                              : AppTheme.textSecondaryColor(context),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isPrimary)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text('1',
+                            style: AppTheme.labelThemed(context)
+                                .copyWith(color: Colors.white, fontSize: 10)),
+                      )
+                    else if (isSecondary)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.neutral,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text('2',
+                            style: AppTheme.labelThemed(context)
+                                .copyWith(color: Colors.white, fontSize: 10)),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
+        // Helper text
+        if (_primaryWeapon != null) ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            _secondaryWeapon != null
+                ? 'Primary + secondary selected'
+                : 'Tap another for optional secondary weapon',
+            style: AppTheme.labelThemed(context).copyWith(
+              color: AppTheme.textMutedColor(context),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ============ Opponent Weakness Hypothesis ============
+
+  Widget _buildOpponentWeaknessSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Opponent Weakness',
+                style: AppTheme.headingSmallThemed(context)),
+            const SizedBox(width: AppTheme.spaceXS),
+            Text(
+              '(optional)',
+              style: AppTheme.labelThemed(context).copyWith(
+                color: AppTheme.textMutedColor(context).withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spaceSM),
+        Text('Hypothesis about their vulnerability',
+            style: AppTheme.bodySmallThemed(context)),
+        const SizedBox(height: AppTheme.spaceSM),
+
+        // Weakness chips
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _weaknessOptions.map((weakness) {
+            final isSelected = _opponentWeakness == weakness;
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  _opponentWeakness = isSelected ? null : weakness;
+                  if (weakness != 'Custom') {
+                    _customWeaknessController.clear();
+                  }
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primary.withOpacity(0.15)
+                      : AppTheme.cardBackground(context),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.primary
+                        : AppTheme.borderColor(context),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Text(
+                  weakness,
+                  style: AppTheme.bodySmallThemed(context).copyWith(
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? AppTheme.primary
+                        : AppTheme.textSecondaryColor(context),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+
+        // Custom weakness input
+        if (_opponentWeakness == 'Custom') ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.cardBackground(context),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+              border: Border.all(color: AppTheme.borderColor(context)),
+            ),
+            child: TextField(
+              controller: _customWeaknessController,
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: AppTheme.textPrimaryColor(context)),
+              decoration: InputDecoration(
+                hintText: 'Describe their weakness...',
+                hintStyle: AppTheme.bodySmallThemed(context).copyWith(
+                  color: AppTheme.textMutedColor(context).withOpacity(0.5),
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spaceMD,
+                  vertical: AppTheme.spaceSM,
+                ),
+                isDense: true,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ============ Serve Strategy (conditional) ============
+
+  Widget _buildServeStrategySection() {
+    return Container(
+      padding: AppTheme.cardPadding,
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sports_tennis_rounded,
+                  size: 18, color: AppTheme.primary),
+              const SizedBox(width: AppTheme.spaceSM),
+              Text('Serve Strategy',
+                  style: AppTheme.headingSmallThemed(context)),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceXS),
+          Text('First two service game plan',
+              style: AppTheme.bodySmallThemed(context)),
+          const SizedBox(height: AppTheme.spaceMD),
+
+          ...List.generate(_serveStrategyOptions.length, (index) {
+            final strategy = _serveStrategyOptions[index];
+            final isSelected = _serveStrategy == strategy;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                  bottom: index < _serveStrategyOptions.length - 1 ? 6 : 0),
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(
+                      () => _serveStrategy = isSelected ? null : strategy);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.primary.withOpacity(0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppTheme.primary
+                          : AppTheme.borderColor(context),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
+                        size: 18,
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.textMutedColor(context),
+                      ),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Expanded(
+                        child: Text(
+                          strategy,
+                          style: AppTheme.bodySmallThemed(context).copyWith(
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppTheme.textPrimaryColor(context)
+                                : AppTheme.textSecondaryColor(context),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ============ Opponent Input ============
+
   Widget _buildOpponentInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,11 +616,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               ),
             ),
             const Spacer(),
-            Icon(
-              Icons.mic,
-              size: 12,
-              color: AppTheme.textMutedColor(context).withOpacity(0.5),
-            ),
+            Icon(Icons.mic,
+                size: 12,
+                color: AppTheme.textMutedColor(context).withOpacity(0.5)),
           ],
         ),
         const SizedBox(height: AppTheme.spaceSM),
@@ -254,11 +633,13 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               Expanded(
                 child: TextField(
                   controller: _opponentController,
-                  style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+                  style: AppTheme.bodyMediumThemed(context)
+                      .copyWith(color: AppTheme.textPrimaryColor(context)),
                   decoration: InputDecoration(
                     hintText: 'Who are you playing?',
                     hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-                      color: AppTheme.textMutedColor(context).withOpacity(0.5),
+                      color:
+                          AppTheme.textMutedColor(context).withOpacity(0.5),
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
@@ -285,162 +666,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     );
   }
 
-  /// Tactic selection - primary focus, optional secondary
-  Widget _buildTacticSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Pick your primary focus', style: AppTheme.headingMediumThemed(context)),
-        const SizedBox(height: AppTheme.spaceXS),
-        Text(
-          'What\'s your main approach today?',
-          style: AppTheme.bodySmallThemed(context),
-        ),
-        const SizedBox(height: AppTheme.spaceMD),
-        
-        // Primary tactics grid (2 columns, compact)
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 2.0,
-          ),
-          itemCount: _tacticOptions.length,
-          itemBuilder: (context, index) {
-            final tactic = _tacticOptions[index];
-            final isPrimary = _primaryTactic == tactic['id'];
-            final isSecondary = _secondaryTactic == tactic['id'];
-            final isSelected = isPrimary || isSecondary;
-            
-            return GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  if (isPrimary) {
-                    // Deselect primary
-                    _primaryTactic = null;
-                  } else if (isSecondary) {
-                    // Deselect secondary
-                    _secondaryTactic = null;
-                  } else if (_primaryTactic == null) {
-                    // Set as primary
-                    _primaryTactic = tactic['id'];
-                  } else if (_secondaryTactic == null) {
-                    // Set as secondary (optional)
-                    _secondaryTactic = tactic['id'];
-                  } else {
-                    // Replace secondary
-                    _secondaryTactic = tactic['id'];
-                  }
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.all(AppTheme.spaceSM),
-                decoration: BoxDecoration(
-                  color: isPrimary 
-                      ? AppTheme.primary.withOpacity(0.15)
-                      : isSecondary
-                          ? AppTheme.neutral.withOpacity(0.1)
-                          : AppTheme.cardBackground(context),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                  border: Border.all(
-                    color: isPrimary 
-                        ? AppTheme.primary
-                        : isSecondary
-                            ? AppTheme.neutral
-                            : AppTheme.borderColor(context),
-                    width: isSelected ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      tactic['icon'] as IconData,
-                      size: 18,
-                      color: isPrimary 
-                          ? AppTheme.primary
-                          : isSecondary
-                              ? AppTheme.neutral
-                              : AppTheme.textMutedColor(context),
-                    ),
-                    const SizedBox(width: AppTheme.spaceSM),
-                    Expanded(
-                      child: Text(
-                        tactic['label'] as String,
-                        style: AppTheme.bodySmallThemed(context).copyWith(
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                          color: isSelected 
-                              ? AppTheme.textPrimaryColor(context)
-                              : AppTheme.textSecondaryColor(context),
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isPrimary)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '1',
-                          style: AppTheme.labelThemed(context).copyWith(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
-                        ),
-                      )
-                    else if (isSecondary)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.neutral,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '2',
-                          style: AppTheme.labelThemed(context).copyWith(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        
-        // Helper text
-        if (_primaryTactic != null) ...[
-          const SizedBox(height: AppTheme.spaceSM),
-          Text(
-            _secondaryTactic != null
-                ? 'Primary + backup selected'
-                : 'Tap another for optional backup',
-            style: AppTheme.labelThemed(context).copyWith(
-              color: AppTheme.textMutedColor(context),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
+  // ============ Readiness Section ============
 
-  /// Readiness section - grounded, not gamified
   Widget _buildReadinessSection() {
     return Container(
       padding: AppTheme.cardPadding,
@@ -455,14 +682,16 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Match readiness', style: AppTheme.headingSmallThemed(context)),
+              Text('Match readiness',
+                  style: AppTheme.headingSmallThemed(context)),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppTheme.spaceSM,
                   vertical: AppTheme.spaceXS,
                 ),
                 decoration: BoxDecoration(
-                  color: _getReadinessColor(_readinessLevel).withOpacity(0.15),
+                  color:
+                      _getReadinessColor(_readinessLevel).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
@@ -474,10 +703,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: AppTheme.spaceMD),
-          
-          // Compact slider
           Row(
             children: [
               Text(
@@ -491,12 +717,15 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                 child: SliderTheme(
                   data: SliderThemeData(
                     trackHeight: 4,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                    thumbShape:
+                        const RoundSliderThumbShape(enabledThumbRadius: 8),
+                    overlayShape:
+                        const RoundSliderOverlayShape(overlayRadius: 16),
                     activeTrackColor: _getReadinessColor(_readinessLevel),
                     inactiveTrackColor: AppTheme.borderColor(context),
                     thumbColor: _getReadinessColor(_readinessLevel),
-                    overlayColor: _getReadinessColor(_readinessLevel).withOpacity(0.2),
+                    overlayColor: _getReadinessColor(_readinessLevel)
+                        .withOpacity(0.2),
                   ),
                   child: Slider(
                     value: _readinessLevel.toDouble(),
@@ -513,15 +742,17 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               Text('/10', style: AppTheme.bodySmallThemed(context)),
             ],
           ),
-          
-          // Calm labels
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Still warming up', style: AppTheme.labelThemed(context).copyWith(fontSize: 11)),
-                Text('Ready to go', style: AppTheme.labelThemed(context).copyWith(fontSize: 11)),
+                Text('Still warming up',
+                    style:
+                        AppTheme.labelThemed(context).copyWith(fontSize: 11)),
+                Text('Ready to go',
+                    style:
+                        AppTheme.labelThemed(context).copyWith(fontSize: 11)),
               ],
             ),
           ),
@@ -530,13 +761,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     );
   }
 
-  Color _getReadinessColor(int level) {
-    if (level <= 3) return AppTheme.warning;
-    if (level <= 6) return AppTheme.neutral;
-    return AppTheme.win;
-  }
+  // ============ Error Card ============
 
-  /// Error card
   Widget _buildErrorCard() {
     return Container(
       padding: AppTheme.cardPadding,
@@ -552,31 +778,39 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           Expanded(
             child: Text(
               _errorMessage!,
-              style: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
+              style: AppTheme.bodySmallThemed(context)
+                  .copyWith(color: AppTheme.textSecondaryColor(context)),
             ),
           ),
           TextButton(
             onPressed: () => setState(() => _errorMessage = null),
-            child: Text('Dismiss', style: AppTheme.labelThemed(context).copyWith(color: AppTheme.primary)),
+            child: Text('Dismiss',
+                style: AppTheme.labelThemed(context)
+                    .copyWith(color: AppTheme.primary)),
           ),
         ],
       ),
     );
   }
 
-  /// Primary CTA - "locking in the plan"
+  // ============ Primary CTA ============
+
   Widget _buildPrimaryCTA() {
-    final hasSelection = _primaryTactic != null;
-    
+    final hasSelection = _primaryWeapon != null;
+
     return GestureDetector(
       onTap: _isLoading || !hasSelection ? null : _confirmGamePlan,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: hasSelection ? AppTheme.primary : AppTheme.elevatedBackground(context),
+          color: hasSelection
+              ? AppTheme.primary
+              : AppTheme.elevatedBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: hasSelection ? null : Border.all(color: AppTheme.borderColor(context)),
+          border: hasSelection
+              ? null
+              : Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Center(
           child: _isLoading
@@ -587,7 +821,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
+                        color: hasSelection
+                            ? Colors.white
+                            : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
                     ),
@@ -595,7 +831,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                     Text(
                       'Preparing briefing...',
                       style: AppTheme.headingSmallThemed(context).copyWith(
-                        color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
+                        color: hasSelection
+                            ? Colors.white
+                            : AppTheme.textMutedColor(context),
                       ),
                     ),
                   ],
@@ -603,7 +841,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               : Text(
                   'Confirm game plan',
                   style: AppTheme.headingSmallThemed(context).copyWith(
-                    color: hasSelection ? Colors.white : AppTheme.textMutedColor(context),
+                    color: hasSelection
+                        ? Colors.white
+                        : AppTheme.textMutedColor(context),
                   ),
                 ),
         ),
@@ -611,13 +851,14 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     );
   }
 
-  /// Briefing result view
+  // ============ Briefing Result View ============
+
   Widget _buildBriefingView() {
-    final primaryLabel = _tacticOptions.firstWhere(
-      (t) => t['id'] == _primaryTactic,
+    final primaryLabel = _weaponOptions.firstWhere(
+      (w) => w['id'] == _primaryWeapon,
       orElse: () => {'label': 'Custom'},
     )['label'];
-    
+
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: CustomScrollView(
@@ -628,15 +869,16 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
             pinned: true,
             centerTitle: true,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
+              icon: Icon(Icons.arrow_back,
+                  color: AppTheme.textSecondaryColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Game Plan',
-              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(color: AppTheme.textSecondaryColor(context)),
             ),
           ),
-          
           SliverPadding(
             padding: AppTheme.screenPadding,
             sliver: SliverList(
@@ -646,12 +888,15 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   padding: AppTheme.cardPadding,
                   decoration: BoxDecoration(
                     color: AppTheme.win.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    border: Border.all(color: AppTheme.win.withOpacity(0.3)),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusMD),
+                    border:
+                        Border.all(color: AppTheme.win.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle_outline_rounded, color: AppTheme.win, size: 20),
+                      Icon(Icons.check_circle_outline_rounded,
+                          color: AppTheme.win, size: 20),
                       const SizedBox(width: AppTheme.spaceSM),
                       Expanded(
                         child: Column(
@@ -661,10 +906,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                               _opponentController.text.isNotEmpty
                                   ? 'vs ${_opponentController.text}'
                                   : 'Ready to compete',
-                              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.win),
+                              style: AppTheme.headingSmallThemed(context)
+                                  .copyWith(color: AppTheme.win),
                             ),
                             Text(
-                              'Focus: $primaryLabel',
+                              'Weapon: $primaryLabel',
                               style: AppTheme.bodySmallThemed(context),
                             ),
                           ],
@@ -673,16 +919,18 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceLG),
-                
+
                 // Briefing content
                 Container(
                   padding: AppTheme.cardPaddingLarge,
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground(context),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                    border: Border.all(color: AppTheme.borderColor(context)),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.radiusXL),
+                    border:
+                        Border.all(color: AppTheme.borderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,29 +938,33 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(AppTheme.spaceSM),
+                            padding:
+                                const EdgeInsets.all(AppTheme.spaceSM),
                             decoration: BoxDecoration(
                               color: AppTheme.primary.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                              borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusSM),
                             ),
                             child: const Icon(
-                              Icons.lightbulb_outline_rounded,
+                              Icons.analytics_outlined,
                               color: AppTheme.primary,
                               size: 20,
                             ),
                           ),
                           const SizedBox(width: AppTheme.spaceSM),
-                          Text('Match Briefing', style: AppTheme.headingMediumThemed(context)),
+                          Text('Match Briefing',
+                              style:
+                                  AppTheme.headingMediumThemed(context)),
                         ],
                       ),
-                      
                       const SizedBox(height: AppTheme.spaceMD),
-                      Divider(color: AppTheme.borderColor(context), height: 1),
+                      Divider(
+                          color: AppTheme.borderColor(context), height: 1),
                       const SizedBox(height: AppTheme.spaceMD),
-                      
                       Text(
                         _briefingResponse!,
-                        style: AppTheme.bodyLargeThemed(context).copyWith(
+                        style:
+                            AppTheme.bodyLargeThemed(context).copyWith(
                           height: 1.7,
                           color: AppTheme.textSecondaryColor(context),
                         ),
@@ -720,9 +972,9 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceLG),
-                
+
                 // Action buttons
                 Row(
                   children: [
@@ -734,23 +986,31 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                             _hasSubmitted = false;
                             _briefingResponse = null;
                             _opponentController.clear();
-                            _primaryTactic = null;
-                            _secondaryTactic = null;
+                            _customWeaknessController.clear();
+                            _primaryWeapon = null;
+                            _secondaryWeapon = null;
+                            _opponentWeakness = null;
+                            _serveStrategy = null;
                             _readinessLevel = 7;
                           });
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: AppTheme.cardBackground(context),
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                            border: Border.all(color: AppTheme.borderColor(context)),
+                            borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD),
+                            border: Border.all(
+                                color: AppTheme.borderColor(context)),
                           ),
                           child: Center(
                             child: Text(
                               'New prep',
-                              style: AppTheme.headingSmallThemed(context).copyWith(
-                                color: AppTheme.textSecondaryColor(context),
+                              style: AppTheme.headingSmallThemed(context)
+                                  .copyWith(
+                                color:
+                                    AppTheme.textSecondaryColor(context),
                               ),
                             ),
                           ),
@@ -765,17 +1025,18 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           Navigator.pop(context);
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                            borderRadius: BorderRadius.circular(
+                                AppTheme.radiusMD),
                           ),
                           child: Center(
                             child: Text(
                               'Ready to play',
-                              style: AppTheme.headingSmallThemed(context).copyWith(
-                                color: Colors.white,
-                              ),
+                              style: AppTheme.headingSmallThemed(context)
+                                  .copyWith(color: Colors.white),
                             ),
                           ),
                         ),
@@ -783,7 +1044,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceXXL),
               ]),
             ),
@@ -793,31 +1054,47 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     );
   }
 
-  Future<void> _confirmGamePlan() async {
-    if (_primaryTactic == null) return;
+  // ============ Confirm Game Plan ============
 
-    // Get tactic labels
-    final primaryLabel = _tacticOptions.firstWhere(
-      (t) => t['id'] == _primaryTactic,
+  Future<void> _confirmGamePlan() async {
+    if (_primaryWeapon == null) return;
+
+    // Get weapon labels
+    final primaryLabel = _weaponOptions.firstWhere(
+      (w) => w['id'] == _primaryWeapon,
     )['label'];
-    final secondaryLabel = _secondaryTactic != null
-        ? _tacticOptions.firstWhere((t) => t['id'] == _secondaryTactic)['label']
+    final secondaryLabel = _secondaryWeapon != null
+        ? _weaponOptions
+            .firstWhere((w) => w['id'] == _secondaryWeapon)['label']
         : null;
 
-    // Check usage limits (respects feature flags)
-    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    // Resolve weakness text
+    String? weaknessText;
+    if (_opponentWeakness == 'Custom') {
+      weaknessText = _customWeaknessController.text.trim();
+      if (weaknessText.isEmpty) weaknessText = null;
+    } else {
+      weaknessText = _opponentWeakness;
+    }
+
+    // Check usage limits
+    final purchaseService =
+        Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
-    
-    // Skip paywall if: payments disabled, user is comped, or user is premium
-    final shouldShowPaywall = AppConfig.shouldShowPaywall(email: authService.userEmail);
-    
-    if (shouldShowPaywall && !purchaseService.isPremium && !usageService.canUsePrepSession) {
+
+    final shouldShowPaywall =
+        AppConfig.shouldShowPaywall(email: authService.userEmail);
+
+    if (shouldShowPaywall &&
+        !purchaseService.isPremium &&
+        !usageService.canUsePrepSession) {
       HapticFeedback.mediumImpact();
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PaywallScreen(trigger: PaywallTrigger.prepSessionLimit),
+          builder: (context) =>
+              const PaywallScreen(trigger: PaywallTrigger.prepSessionLimit),
         ),
       );
       if (result != true) return;
@@ -830,38 +1107,46 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     HapticFeedback.mediumImpact();
 
     try {
-      final profileService = Provider.of<PlayerProfileService>(context, listen: false);
+      final profileService =
+          Provider.of<PlayerProfileService>(context, listen: false);
       final playerContext = profileService.getPlayerContext();
-      
+
       final briefingRequest = '''
 $playerContext
 
-Pre-Match Game Plan:
+Pre-Match Weapon Plan:
 - Opponent: ${_opponentController.text.isNotEmpty ? _opponentController.text : 'Unknown'}
-- Primary tactic: $primaryLabel
-${secondaryLabel != null ? '- Backup tactic: $secondaryLabel' : ''}
+- Primary weapon: $primaryLabel
+${secondaryLabel != null ? '- Secondary weapon: $secondaryLabel' : ''}
+${weaknessText != null ? '- Opponent weakness hypothesis: $weaknessText' : ''}
+${_serveStrategy != null ? '- Serve strategy: $_serveStrategy' : ''}
 - Current readiness: $_readinessLevel/10 (${_getReadinessLabel(_readinessLevel)})
 
-Provide a focused, actionable match briefing. Keep it concise and confidence-building.
+Instructions:
+- Define game plan around the primary weapon.
+- Reference the opponent weakness if provided.
+- Include first two service game plan.
+- Include one repeatable pattern to build around.
+- Keep concise. Focus on controllable elements. No hype.
 ''';
 
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.mentalCheckIn(_readinessLevel, briefingRequest);
-      
+      final response =
+          await apiService.mentalCheckIn(_readinessLevel, briefingRequest);
+
       if (response == null) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Couldn\'t generate your briefing. Please try again.';
+          _errorMessage =
+              'Couldn\'t generate your briefing. Please try again.';
         });
         return;
       }
-      
-      // Record usage
+
       if (!purchaseService.isPremium) {
         await usageService.recordPrepSession();
       }
 
-      // Save to storage
       final entry = CheckInEntry(
         timestamp: DateTime.now().millisecondsSinceEpoch,
         rating: _readinessLevel,
@@ -874,7 +1159,7 @@ Provide a focused, actionable match briefing. Keep it concise and confidence-bui
         _hasSubmitted = true;
         _briefingResponse = response;
       });
-      
+
       HapticFeedback.lightImpact();
     } catch (e) {
       setState(() {

@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Listen to auth service errors
     final authService = Provider.of<AuthService>(context, listen: false);
     authService.addListener(_onAuthStateChanged);
   }
@@ -36,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void _onAuthStateChanged() {
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    // Show errors from AuthService as snackbars
     if (authService.error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -55,7 +53,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Fallback navigation if the AuthWrapper doesn't rebuild immediately.
       if (authService.isAuthenticated) {
         final profileService = context.read<PlayerProfileService>();
         await profileService.initialize();
@@ -89,7 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Fallback navigation if the AuthWrapper doesn't rebuild immediately.
       if (authService.isAuthenticated) {
         final profileService = context.read<PlayerProfileService>();
         await profileService.initialize();
@@ -116,15 +112,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // ============ Consistent button dimensions ============
+  static const double _authButtonHeight = 56.0;
+  static const double _authButtonRadius = 12.0;
+  static const double _authButtonFontSize = 16.0;
+  static const EdgeInsets _authButtonPadding =
+      EdgeInsets.symmetric(horizontal: 24);
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isLoading = authService.isLoading;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Theme-aware colors
-    final backgroundColor = isDark ? AppTheme.surfaceCard : Colors.white;
+
     final textColor = isDark ? Colors.white : Colors.grey[800]!;
     final subtitleColor = isDark ? AppTheme.primaryLight : AppTheme.primaryDark;
 
@@ -136,28 +137,29 @@ class _LoginScreenState extends State<LoginScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: isDark 
-                ? [AppTheme.surfaceSecondary, AppTheme.surfaceDark]
-                : [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
+              colors: isDark
+                  ? [AppTheme.surfaceSecondary, AppTheme.surfaceDark]
+                  : [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
             ),
           ),
           child: SafeArea(
             child: Center(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    /// App Logo/Icon
+                    // App Logo
                     Container(
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: backgroundColor,
+                        color: isDark ? AppTheme.surfaceCard : Colors.white,
                         borderRadius: BorderRadius.circular(60),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primary.withOpacity(isDark ? 0.3 : 0.25),
+                            color: AppTheme.primary
+                                .withOpacity(isDark ? 0.3 : 0.25),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -172,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 40),
 
-                    /// App Title
+                    // App Title
                     Text(
                       'Composure',
                       style: GoogleFonts.poppins(
@@ -184,40 +186,42 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 8),
 
-                    /// Subtitle
-                    Text(
-                      'Your AI Tennis Strategist',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: subtitleColor,
-                        fontWeight: FontWeight.w500,
+                    // Updated Subtitle — elite positioning
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'Structured Tactical Intelligence for Competitive Players',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: subtitleColor,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 48),
 
-                    /// Google Sign In Button - fully theme-aware
-                    Container(
+                    // ============ Auth Buttons (consistent) ============
+
+                    // Google Sign In — consistent dimensions
+                    SizedBox(
                       width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
+                      height: _authButtonHeight,
                       child: Material(
-                        color: Colors.transparent,
+                        color: isDark
+                            ? AppTheme.surfaceCard
+                            : Colors.white,
+                        borderRadius:
+                            BorderRadius.circular(_authButtonRadius),
+                        elevation: isDark ? 0 : 2,
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(28),
+                          borderRadius:
+                              BorderRadius.circular(_authButtonRadius),
                           onTap: isLoading ? null : _signInWithGoogle,
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: _authButtonPadding,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -227,24 +231,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(
                                         AppTheme.primaryLight,
                                       ),
                                     ),
                                   )
                                 else
-                                  Image.network(
-                                    'https://developers.google.com/identity/images/g-logo.png',
-                                    height: 24,
-                                    width: 24,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      // Fallback to icon if network image fails
-                                      return Icon(
-                                        Icons.g_mobiledata,
-                                        size: 24,
-                                        color: Colors.blue.shade700,
-                                      );
-                                    },
+                                  // Google "G" — no white box, transparent
+                                  Text(
+                                    'G',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF4285F4),
+                                    ),
                                   ),
                                 const SizedBox(width: 12),
                                 Text(
@@ -252,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ? 'Signing in...'
                                       : 'Continue with Google',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 16,
+                                    fontSize: _authButtonFontSize,
                                     fontWeight: FontWeight.w600,
                                     color: textColor,
                                   ),
@@ -264,23 +265,59 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    // Apple Sign In (iOS only)
+                    // Apple Sign In (iOS only) — matching dimensions
                     if (defaultTargetPlatform == TargetPlatform.iOS) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       FutureBuilder<bool>(
                         future: SignInWithApple.isAvailable(),
                         builder: (context, snapshot) {
                           if (snapshot.data != true) {
                             return const SizedBox.shrink();
                           }
-                          return SignInWithAppleButton(
-                            style: isDark
-                                ? SignInWithAppleButtonStyle.white
-                                : SignInWithAppleButtonStyle.black,
-                            onPressed: () {
-                              if (isLoading) return;
-                              _signInWithApple();
-                            },
+                          return SizedBox(
+                            width: double.infinity,
+                            height: _authButtonHeight,
+                            child: Material(
+                              color: isDark
+                                  ? Colors.white
+                                  : Colors.black,
+                              borderRadius: BorderRadius.circular(
+                                  _authButtonRadius),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(
+                                    _authButtonRadius),
+                                onTap: isLoading
+                                    ? null
+                                    : _signInWithApple,
+                                child: Padding(
+                                  padding: _authButtonPadding,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.apple,
+                                        size: 24,
+                                        color: isDark
+                                            ? Colors.black
+                                            : Colors.white,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Continue with Apple',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: _authButtonFontSize,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.black
+                                              : Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -288,31 +325,35 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 40),
 
-                    /// Features list
+                    // Updated Feature bullets — analytical positioning
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: backgroundColor.withOpacity(0.9),
+                        color: (isDark ? AppTheme.surfaceCard : Colors.white)
+                            .withOpacity(0.9),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
                         children: [
                           _buildFeatureItem(
-                            icon: Icons.psychology,
-                            title: 'AI-Powered Analysis',
-                            subtitle: 'Get personalized coaching insights',
+                            icon: Icons.analytics_outlined,
+                            title: 'Tactical Analysis',
+                            subtitle:
+                                'Structured insights from match data',
                           ),
                           const SizedBox(height: 16),
                           _buildFeatureItem(
-                            icon: Icons.track_changes,
-                            title: 'Match Tracking',
-                            subtitle: 'Track your performance over time',
+                            icon: Icons.pattern_rounded,
+                            title: 'Match Pattern Tracking',
+                            subtitle:
+                                'Identify recurring trends across matches',
                           ),
                           const SizedBox(height: 16),
                           _buildFeatureItem(
-                            icon: Icons.fitness_center,
-                            title: 'Mental Training',
-                            subtitle: 'Build mental resilience and focus',
+                            icon: Icons.psychology_outlined,
+                            title: 'Mental Stability Insights',
+                            subtitle:
+                                'Data-driven readiness assessment',
                           ),
                         ],
                       ),
@@ -334,12 +375,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Consistent theme-aware colors
+
     final titleColor = isDark ? Colors.white : Colors.grey[800]!;
     final subtitleColor = isDark ? Colors.grey[400]! : AppTheme.primaryDark;
-    final iconBgColor = isDark ? AppTheme.primary.withOpacity(0.15) : AppTheme.primary.withOpacity(0.1);
-    
+    final iconBgColor = isDark
+        ? AppTheme.primary.withOpacity(0.15)
+        : AppTheme.primary.withOpacity(0.1);
+
     return Row(
       children: [
         Container(

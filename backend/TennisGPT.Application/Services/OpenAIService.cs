@@ -1,18 +1,111 @@
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using TennisGPT.Application.DTOs.Coaching;
 using TennisGPT.Application.Interfaces;
 
 namespace TennisGPT.Application.Services;
 
 /// <summary>
 /// AI coaching service with analytical, data-driven responses.
-/// Tone: 65% of users prefer "Analytical and Logical" based on survey data.
+/// Tone: Analytical and Logical (locked per survey data — 60% preference).
 /// </summary>
 public class OpenAIService : IOpenAIService
 {
     private readonly IOpenAIClient _openAIClient;
+    private readonly ILogger<OpenAIService> _logger;
 
-    public OpenAIService(IOpenAIClient openAIClient)
+    /// <summary>
+    /// Locked system prompt for tactical analysis.
+    /// Temperature: 0.5 | MaxTokens: 1500
+    /// </summary>
+    private const string TacticalSystemPrompt = @"You are an elite-level tennis performance analyst.
+
+Your role is to provide structured, analytical tactical feedback based on recorded match data.
+
+TONE REQUIREMENTS:
+- Primary tone: Analytical and logical.
+- Calm, professional, and precise.
+- No hype language.
+- No motivational slogans.
+- No emotional exaggeration.
+- No slang.
+- No emojis.
+- No unnecessary praise.
+- Do not cheerlead.
+- Focus on tactical reasoning and performance trends.
+
+You think like a performance analyst reviewing match data, not a motivational coach.
+
+OUTPUT REQUIREMENTS:
+You MUST return ONLY valid JSON.
+Do NOT include markdown.
+Do NOT include backticks.
+Do NOT include explanations outside JSON.
+Do NOT include extra commentary.
+
+Return JSON in this exact structure:
+
+{
+  ""summary"": ""string"",
+  ""recommendations"": [
+    {
+      ""title"": ""string"",
+      ""why"": ""string"",
+      ""how"": ""string""
+    }
+  ],
+  ""patternDetected"": ""string"",
+  ""nextMatchFocus"": ""string""
+}
+
+RULES:
+
+1) summary:
+- Maximum 5 concise lines.
+- Explain what happened tactically.
+- Reference score context when relevant.
+- Avoid storytelling.
+
+2) recommendations:
+- EXACTLY 3 items.
+- Each must include:
+  - title (short tactical theme)
+  - why (performance reasoning)
+  - how (specific instruction)
+- Keep why and how to max 2 short sentences.
+
+3) patternDetected:
+- If multiple matches exist, identify recurring trends.
+- Reference frequency when possible (e.g., appeared in 3 of last 5 matches).
+- If insufficient data, state that more matches are required.
+- Keep concise and data-driven.
+
+4) nextMatchFocus:
+- One sentence only.
+- Must be tactical.
+- No motivational language.
+
+5) Tactical Philosophy:
+- Emphasize controllable variables.
+- Encourage defining a primary weapon:
+  Serve, Forehand, Backhand, Return, Net Play.
+- Strategy must build around repeatable weapon.
+- Avoid vague advice.
+
+6) Pre-Match Strategy Logic:
+When prep context is provided:
+- Define primary weapon.
+- Define secondary weapon.
+- Define opponent weakness hypothesis.
+- Define first two service game plan.
+- Keep structured.";
+
+    private const double TacticalTemperature = 0.5;
+
+    public OpenAIService(IOpenAIClient openAIClient, ILogger<OpenAIService> logger)
     {
         _openAIClient = openAIClient;
+        _logger = logger;
     }
 
     /// <summary>
@@ -33,7 +126,7 @@ public class OpenAIService : IOpenAIService
             - Intermediate: Standard tennis language, practical tips
             - Advanced/Competitive: Technical terms, nuanced tactics
 
-            Player's current readiness level: {mood}/5
+            Player's current readiness level: {mood}/10
             Player's notes: '{journalEntry}'
 
             Provide a structured pre-match briefing:
@@ -95,55 +188,84 @@ public class OpenAIService : IOpenAIService
     }
 
     /// <summary>
-    /// Tactical Analysis - Core feature for match strategy analysis
+    /// Tactical Analysis — Core feature.
+    /// Uses locked system prompt + structured JSON output.
+    /// Parses response into TacticalAnalysisResponse; retries once on parse failure.
     /// </summary>
-    public async Task<string> TacticalAnalysisAsync(string matchDescription, string? recentMatchesJson)
+    public async Task<TacticalAnalysisResponse> TacticalAnalysisAsync(string matchDescription, string? recentMatchesJson)
     {
-        var matchesData = string.IsNullOrEmpty(recentMatchesJson)
-            ? "No recent match data available."
-            : recentMatchesJson;
+        var matchesContext = BuildMatchContext(recentMatchesJson);
 
-        var prompt = $"""
-            You are an elite tennis strategist analyzing match data.
+        var userPrompt = $"""
+            MATCH DATA:
+            Current situation: {matchDescription}
 
-            IMPORTANT: If the situation described is not related to tennis, respond with:
-            "I can only help with tennis-related questions. Please describe a tennis situation, match, or strategy question."
+            RECENT MATCH HISTORY:
+            {matchesContext}
 
-            IMPORTANT: The description may include the player's skill level (beginner/intermediate/advanced/competitive).
-            ADAPT YOUR LANGUAGE AND COMPLEXITY to match their level:
-            - Beginner: Use simple everyday words, explain any tennis terms, focus on basic concepts they can understand
-            - Intermediate: Standard tennis language, practical tactical tips
-            - Advanced/Competitive: Technical terms, nuanced tactics, pattern analysis
-
-            **MATCH DATA:**
-            Current situation: '{matchDescription}'
-            Recent match history: {matchesData}
-
-            Deliver your analysis in this structured format:
-
-            **SUMMARY**
-            2-3 sentences assessing the overall situation. Be direct and data-focused.
-
-            **3 TACTICAL RECOMMENDATIONS**
-            1. [First recommendation]
-               - Why: [One sentence reasoning]
-               - How: [Specific execution detail]
-
-            2. [Second recommendation]
-               - Why: [One sentence reasoning]
-               - How: [Specific execution detail]
-
-            3. [Third recommendation]
-               - Why: [One sentence reasoning]
-               - How: [Specific execution detail]
-
-            **PATTERN DETECTED**
-            If match history is available, identify one recurring pattern (positive or negative).
-
-            Tone: Analytical and logical. Like a sports analyst breaking down film.
+            Analyze the data and return your response as valid JSON.
             """;
 
-        return await _openAIClient.SendPromptAsync(prompt);
+        // First attempt
+        var rawResponse = await _openAIClient.SendPromptAsync(userPrompt, TacticalSystemPrompt, TacticalTemperature);
+        
+        var parsed = TryParseTacticalResponse(rawResponse);
+        if (parsed != null) return parsed;
+
+        // Don't retry if the response is a known error/fallback (not AI content)
+        if (rawResponse.StartsWith("No response") ||
+            rawResponse.StartsWith("AI coaching") ||
+            rawResponse.StartsWith("The request took") ||
+            rawResponse.StartsWith("Unable to") ||
+            rawResponse.StartsWith("Something went wrong") ||
+            rawResponse.StartsWith("Received an unexpected") ||
+            rawResponse.StartsWith("OpenAI is experiencing") ||
+            rawResponse.StartsWith("The coaching service"))
+        {
+            _logger.LogWarning("Tactical analysis received error response, skipping retry: {Msg}", rawResponse);
+            return new TacticalAnalysisResponse
+            {
+                Summary = rawResponse,
+                Recommendations = new List<TacticalRecommendation>
+                {
+                    new() { Title = "Service unavailable", Why = "The AI service could not process your request.", How = "Please try again in a moment." }
+                },
+                PatternDetected = "",
+                NextMatchFocus = ""
+            };
+        }
+
+        // Only retry if we got actual AI content that failed to parse
+        _logger.LogWarning("Tactical analysis JSON parse failed. Raw (truncated): {Raw}", 
+            rawResponse.Length > 300 ? rawResponse[..300] : rawResponse);
+
+        var retryPrompt = $"""
+            Your previous response was not valid JSON. Return valid JSON only.
+
+            MATCH DATA:
+            Current situation: {matchDescription}
+
+            RECENT MATCH HISTORY:
+            {matchesContext}
+            """;
+
+        var retryResponse = await _openAIClient.SendPromptAsync(retryPrompt, TacticalSystemPrompt, TacticalTemperature);
+        
+        parsed = TryParseTacticalResponse(retryResponse);
+        if (parsed != null) return parsed;
+
+        // Fallback — wrap raw text in structured response
+        _logger.LogError("Tactical analysis JSON parse failed after retry. Returning fallback.");
+        return new TacticalAnalysisResponse
+        {
+            Summary = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
+            Recommendations = new List<TacticalRecommendation>
+            {
+                new() { Title = "Review needed", Why = "The analysis could not be structured automatically.", How = "Please try again or rephrase your input." }
+            },
+            PatternDetected = "Unable to determine — please retry.",
+            NextMatchFocus = "Focus on your strongest controllable weapon."
+        };
     }
 
     /// <summary>
@@ -294,5 +416,134 @@ public class OpenAIService : IOpenAIService
             """;
 
         return await _openAIClient.SendPromptAsync(prompt);
+    }
+
+    // ============ Private Helpers ============
+
+    /// <summary>
+    /// Builds multi-match context with frequency counts for the AI prompt.
+    /// </summary>
+    private static string BuildMatchContext(string? recentMatchesJson)
+    {
+        if (string.IsNullOrEmpty(recentMatchesJson))
+        {
+            return "No recent match data available. Fewer than 3 matches logged.";
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(recentMatchesJson);
+            var root = doc.RootElement;
+
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() == 0)
+            {
+                return "No recent match data available.";
+            }
+
+            var matchCount = root.GetArrayLength();
+            var wins = 0;
+            var losses = 0;
+            var surfaces = new Dictionary<string, int>();
+            var weaponCounts = new Dictionary<string, int>();
+
+            foreach (var match in root.EnumerateArray())
+            {
+                // Count outcomes
+                var result = match.TryGetProperty("result", out var resultProp) 
+                    ? resultProp.GetString()?.ToLower() : null;
+                if (result == "win") wins++;
+                else losses++;
+
+                // Count surfaces
+                if (match.TryGetProperty("surface", out var surfaceProp))
+                {
+                    var surface = surfaceProp.GetString() ?? "Unknown";
+                    surfaces[surface] = surfaces.GetValueOrDefault(surface) + 1;
+                }
+
+                // Count strengths as weapon indicators
+                if (match.TryGetProperty("strengths", out var strengthsProp) && 
+                    strengthsProp.ValueKind == JsonValueKind.Object)
+                {
+                    foreach (var str in strengthsProp.EnumerateObject())
+                    {
+                        weaponCounts[str.Name] = weaponCounts.GetValueOrDefault(str.Name) + 1;
+                    }
+                }
+            }
+
+            var contextBuilder = new System.Text.StringBuilder();
+            contextBuilder.AppendLine($"Total matches in context: {matchCount}");
+            contextBuilder.AppendLine($"Record: {wins}W - {losses}L");
+
+            if (surfaces.Count > 0)
+            {
+                var surfaceStr = string.Join(", ", surfaces.Select(s => $"{s.Key}: {s.Value}"));
+                contextBuilder.AppendLine($"Surfaces: {surfaceStr}");
+            }
+
+            if (weaponCounts.Count > 0)
+            {
+                var topWeapon = weaponCounts.OrderByDescending(w => w.Value).First();
+                contextBuilder.AppendLine($"Most frequent strength: {topWeapon.Key} (in {topWeapon.Value}/{matchCount} matches)");
+            }
+
+            contextBuilder.AppendLine();
+            contextBuilder.AppendLine("Raw match data:");
+            contextBuilder.AppendLine(recentMatchesJson);
+
+            return contextBuilder.ToString();
+        }
+        catch
+        {
+            return recentMatchesJson;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to parse an AI response string into TacticalAnalysisResponse.
+    /// Returns null on failure.
+    /// </summary>
+    private TacticalAnalysisResponse? TryParseTacticalResponse(string rawResponse)
+    {
+        try
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var result = JsonSerializer.Deserialize<TacticalAnalysisResponse>(rawResponse, options);
+            
+            // Basic validation: must have summary and exactly 3 recommendations
+            if (result != null && 
+                !string.IsNullOrWhiteSpace(result.Summary) && 
+                result.Recommendations.Count >= 1)
+            {
+                // Pad to 3 recommendations if AI returned fewer
+                while (result.Recommendations.Count < 3)
+                {
+                    result.Recommendations.Add(new TacticalRecommendation
+                    {
+                        Title = "Additional focus needed",
+                        Why = "Not enough data for a third recommendation.",
+                        How = "Log more matches to unlock deeper analysis."
+                    });
+                }
+
+                // Trim to 3 if more were returned
+                if (result.Recommendations.Count > 3)
+                {
+                    result.Recommendations = result.Recommendations.Take(3).ToList();
+                }
+
+                return result;
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Failed to deserialize tactical analysis response");
+        }
+
+        return null;
     }
 }

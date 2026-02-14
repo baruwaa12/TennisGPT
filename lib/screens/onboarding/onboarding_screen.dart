@@ -96,7 +96,7 @@ ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
 Please provide a brief tactical insight to show the value of the app.
       '''.trim();
       
-      final response = await apiService.tacticalAnalysis(matchDescription, []);
+      final response = await apiService.tacticalAnalysisSummary(matchDescription, []);
       
       setState(() {
         _aiInsight = response;

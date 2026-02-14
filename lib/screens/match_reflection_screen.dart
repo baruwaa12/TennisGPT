@@ -99,7 +99,7 @@ What needs work: ${weaknesses.join(', ')}
 Based on this post-match reflection, provide specific tactical advice for improvement.
 ''';
 
-      final response = await apiService.tacticalAnalysis(matchContext, null);
+      final response = await apiService.tacticalAnalysisSummary(matchContext, null);
       
       setState(() {
         _isGettingAdvice = false;

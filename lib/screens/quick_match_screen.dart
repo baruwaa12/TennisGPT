@@ -170,7 +170,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
       // Get AI analysis (background, non-blocking feel)
       final apiService = Provider.of<ApiService>(context, listen: false);
       final recentMatches = await _matchHistoryService.getRecentMatches(3);
-      final analysis = await apiService.tacticalAnalysis(matchDescription, recentMatches);
+      final analysis = await apiService.tacticalAnalysisSummary(matchDescription, recentMatches);
 
       // Create match
       final match = MatchPerformance(

@@ -150,7 +150,7 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
       // Get AI analysis
       final apiService = Provider.of<ApiService>(context, listen: false);
       final recentMatches = await _matchHistoryService.getRecentMatches(3);
-      final analysis = await apiService.tacticalAnalysis(matchDescription, recentMatches);
+      final analysis = await apiService.tacticalAnalysisSummary(matchDescription, recentMatches);
       
       // Generate drill recommendations
       final allMatches = await _matchHistoryService.getAllMatches();
