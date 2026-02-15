@@ -293,8 +293,8 @@ class ApiService extends ChangeNotifier {
     }
   }
 
-  /// Tactical analysis now returns structured JSON from the backend.
-  /// Returns a Map with keys: summary, recommendations, patternDetected, nextMatchFocus.
+  /// Tactical analysis returns structured Control Mode JSON from the backend.
+  /// Returns a Map with keys: whatToControl, nextMatchRule, constraintDrill, reminder, patternDetection.
   Future<Map<String, dynamic>?> tacticalAnalysis(String matchDescription, List<MatchPerformance>? recentMatches) async {
     _isLoading = true;
     _error = null;
@@ -327,9 +327,9 @@ class ApiService extends ChangeNotifier {
           return null;
         }
 
-        // The backend now returns the structured TacticalAnalysisResponse directly
-        // with keys: summary, recommendations, patternDetected, nextMatchFocus
-        if (data.containsKey('summary')) {
+        // The backend returns Control Mode format:
+        // whatToControl, nextMatchRule, constraintDrill, reminder, patternDetection
+        if (data.containsKey('whatToControl')) {
           _lastErrorCode = ApiErrorCode.none;
           _error = null;
           notifyListeners();
@@ -342,12 +342,14 @@ class ApiService extends ChangeNotifier {
           _lastErrorCode = ApiErrorCode.none;
           _error = null;
           notifyListeners();
-          // Wrap in structured format for backward compatibility
+          // Wrap in Control Mode format for backward compatibility
           return {
-            'summary': data['response'] ?? '',
-            'recommendations': <Map<String, dynamic>>[],
-            'patternDetected': '',
-            'nextMatchFocus': '',
+            'whatToControl': data['response'] ?? '',
+            'nextMatchRule': '',
+            'constraintDrill': '',
+            'reminder':
+                'Stick to what you practiced. Control the controllables.',
+            'patternDetection': null,
           };
         }
 
@@ -369,13 +371,13 @@ class ApiService extends ChangeNotifier {
     }
   }
 
-  /// Returns just the summary text from tactical analysis.
+  /// Returns just the whatToControl text from tactical analysis.
   /// Use this for screens that store/display a plain string.
   Future<String?> tacticalAnalysisSummary(String matchDescription, List<MatchPerformance>? recentMatches) async {
     final result = await tacticalAnalysis(matchDescription, recentMatches);
     if (result == null) return null;
-    // Return summary, or fall back to full JSON string
-    return result['summary'] as String? ?? result.toString();
+    // Return whatToControl, or fall back to full JSON string
+    return result['whatToControl'] as String? ?? result.toString();
   }
 
   Future<String?> generateDrillsFromHistory(List<MatchPerformance> matches) async {

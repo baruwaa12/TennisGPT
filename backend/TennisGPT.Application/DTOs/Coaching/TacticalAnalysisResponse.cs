@@ -3,35 +3,44 @@ using System.Text.Json.Serialization;
 namespace TennisGPT.Application.DTOs.Coaching;
 
 /// <summary>
-/// Structured tactical analysis response from OpenAI.
-/// Matches the enforced JSON output schema.
+/// Structured tactical analysis response — Control Mode format.
+/// 4 sections: What To Control, Next Match Rule, Constraint Drill, Reminder.
+/// Plus Pattern Detection when match history is available.
+/// Total output: 120–160 words.
 /// </summary>
 public class TacticalAnalysisResponse
 {
-    [JsonPropertyName("summary")]
-    public string Summary { get; set; } = string.Empty;
+    [JsonPropertyName("whatToControl")]
+    public string WhatToControl { get; set; } = string.Empty;
 
-    [JsonPropertyName("recommendations")]
-    public List<TacticalRecommendation> Recommendations { get; set; } = new();
+    [JsonPropertyName("nextMatchRule")]
+    public string NextMatchRule { get; set; } = string.Empty;
 
-    [JsonPropertyName("patternDetected")]
-    public string PatternDetected { get; set; } = string.Empty;
+    [JsonPropertyName("constraintDrill")]
+    public string ConstraintDrill { get; set; } = string.Empty;
 
-    [JsonPropertyName("nextMatchFocus")]
-    public string NextMatchFocus { get; set; } = string.Empty;
+    [JsonPropertyName("reminder")]
+    public string Reminder { get; set; } = string.Empty;
+
+    [JsonPropertyName("patternDetection")]
+    public PatternDetectionBlock? PatternDetection { get; set; }
 }
 
 /// <summary>
-/// A single tactical recommendation with title, reasoning, and execution.
+/// Pattern Detection block — populated when sufficient match history exists.
+/// Identifies recurring mechanical or tactical trends across logged matches.
 /// </summary>
-public class TacticalRecommendation
+public class PatternDetectionBlock
 {
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
+    [JsonPropertyName("recurringPattern")]
+    public string RecurringPattern { get; set; } = string.Empty;
 
-    [JsonPropertyName("why")]
-    public string Why { get; set; } = string.Empty;
+    [JsonPropertyName("frequency")]
+    public string Frequency { get; set; } = string.Empty;
 
-    [JsonPropertyName("how")]
-    public string How { get; set; } = string.Empty;
+    [JsonPropertyName("trigger")]
+    public string Trigger { get; set; } = string.Empty;
+
+    [JsonPropertyName("longTermFix")]
+    public string LongTermFix { get; set; } = string.Empty;
 }

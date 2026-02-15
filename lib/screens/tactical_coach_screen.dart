@@ -830,59 +830,61 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  // ============ Structured Analysis Output ============
+  // ============ Structured Analysis Output — Control Mode ============
 
   Widget _buildStructuredAnalysis() {
     final data = _analysisResult!;
-    final summary = data['summary'] as String? ?? '';
-    final recommendations =
-        (data['recommendations'] as List<dynamic>?) ?? [];
-    final patternDetected = data['patternDetected'] as String? ?? '';
-    final nextMatchFocus = data['nextMatchFocus'] as String? ?? '';
+    final whatToControl = data['whatToControl'] as String? ?? '';
+    final nextMatchRule = data['nextMatchRule'] as String? ?? '';
+    final constraintDrill = data['constraintDrill'] as String? ?? '';
+    final reminder = data['reminder'] as String? ??
+        'Stick to what you practiced. Control the controllables.';
 
-    // Build share text from structured data
+    // Pattern Detection (separate block, only if populated)
+    final patternData =
+        data['patternDetection'] as Map<String, dynamic>?;
+    final hasPattern = patternData != null &&
+        (patternData['recurringPattern'] as String? ?? '').isNotEmpty;
+
     final shareText = _buildShareText(
-        summary, recommendations, patternDetected, nextMatchFocus);
+      whatToControl,
+      nextMatchRule,
+      constraintDrill,
+      reminder,
+      patternData,
+    );
 
     return Column(
       key: _insightCardKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1) Summary Card
-        _buildSummaryCard(summary),
+        // 1) What To Control
+        _buildControlCard(whatToControl),
 
         const SizedBox(height: AppTheme.spaceMD),
 
-        // 2) Recommendation Cards
-        if (recommendations.isNotEmpty) ...[
-          Text('Recommendations',
-              style: AppTheme.headingMediumThemed(context)),
-          const SizedBox(height: AppTheme.spaceSM),
-          ...recommendations.asMap().entries.map((entry) {
-            final rec = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-              child: _buildRecommendationCard(
-                index: entry.key + 1,
-                title: rec['title'] as String? ?? '',
-                why: rec['why'] as String? ?? '',
-                how: rec['how'] as String? ?? '',
-              ),
-            );
-          }),
-          const SizedBox(height: AppTheme.spaceSM),
-        ],
+        // 2) Next Match Rule
+        if (nextMatchRule.isNotEmpty)
+          _buildNextMatchRuleCard(nextMatchRule),
 
-        // 3) Pattern Detected Highlight Card
-        if (patternDetected.isNotEmpty)
-          _buildPatternDetectedCard(patternDetected),
-
-        if (patternDetected.isNotEmpty)
+        if (nextMatchRule.isNotEmpty)
           const SizedBox(height: AppTheme.spaceMD),
 
-        // 4) Next Match Focus Banner
-        if (nextMatchFocus.isNotEmpty)
-          _buildNextMatchFocusBanner(nextMatchFocus),
+        // 3) 20-Min Constraint Drill
+        if (constraintDrill.isNotEmpty)
+          _buildConstraintDrillCard(constraintDrill),
+
+        if (constraintDrill.isNotEmpty)
+          const SizedBox(height: AppTheme.spaceMD),
+
+        // 4) Reminder
+        _buildReminderBanner(reminder),
+
+        // 5) Pattern Detection (separate section)
+        if (hasPattern) ...[
+          const SizedBox(height: AppTheme.spaceLG),
+          _buildPatternDetectionSection(patternData!),
+        ],
 
         const SizedBox(height: AppTheme.spaceLG),
 
@@ -892,14 +894,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Summary Card — analytical overview
-  Widget _buildSummaryCard(String summary) {
+  /// What To Control — the single controllable stabilizer
+  Widget _buildControlCard(String whatToControl) {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
         color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.borderColor(context)),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,13 +915,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: const Icon(
-                  Icons.analytics_outlined,
+                  Icons.center_focus_strong_rounded,
                   color: AppTheme.primary,
                   size: 20,
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSM),
-              Text('Summary',
+              Text('What To Control',
                   style: AppTheme.headingMediumThemed(context)),
             ],
           ),
@@ -927,7 +929,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           Divider(color: AppTheme.borderColor(context), height: 1),
           const SizedBox(height: AppTheme.spaceMD),
           Text(
-            summary,
+            whatToControl,
             style: AppTheme.bodyLargeThemed(context).copyWith(height: 1.6),
           ),
         ],
@@ -935,135 +937,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Recommendation Card — title, why, how
-  Widget _buildRecommendationCard({
-    required int index,
-    required String title,
-    required String why,
-    required String how,
-  }) {
+  /// Next Match Rule — "If X happens, do Y"
+  Widget _buildNextMatchRuleCard(String rule) {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
         color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title row with index badge
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: Text(
-                    '$index',
-                    style: AppTheme.labelThemed(context).copyWith(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceSM),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTheme.headingSmallThemed(context),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppTheme.spaceMD),
-
-          // Why section
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceSM),
-            decoration: BoxDecoration(
-              color: AppTheme.elevatedBackground(context),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.lightbulb_outline_rounded,
-                    size: 16,
-                    color: AppTheme.textMutedColor(context)),
-                const SizedBox(width: AppTheme.spaceSM),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Why it matters',
-                          style: AppTheme.labelThemed(context).copyWith(
-                              fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 2),
-                      Text(why,
-                          style: AppTheme.bodySmallThemed(context)
-                              .copyWith(height: 1.4)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AppTheme.spaceSM),
-
-          // How section
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceSM),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-              border:
-                  Border.all(color: AppTheme.primary.withOpacity(0.15)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.play_circle_outline_rounded,
-                    size: 16, color: AppTheme.primary),
-                const SizedBox(width: AppTheme.spaceSM),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('How to apply',
-                          style: AppTheme.labelThemed(context).copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primary)),
-                      const SizedBox(height: 2),
-                      Text(how,
-                          style: AppTheme.bodySmallThemed(context)
-                              .copyWith(height: 1.4)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Pattern Detected Highlight Card
-  Widget _buildPatternDetectedCard(String pattern) {
-    return Container(
-      padding: AppTheme.cardPaddingLarge,
-      decoration: BoxDecoration(
-        color: AppTheme.warning.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.warning.withOpacity(0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1074,7 +955,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               color: AppTheme.warning.withOpacity(0.15),
               borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
-            child: Icon(Icons.pattern_rounded,
+            child: Icon(Icons.lock_rounded,
                 color: AppTheme.warning, size: 20),
           ),
           const SizedBox(width: AppTheme.spaceMD),
@@ -1082,14 +963,15 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Pattern Detected',
-                    style: AppTheme.headingSmallThemed(context)
-                        .copyWith(color: AppTheme.warning)),
+                Text('Next Match Rule',
+                    style: AppTheme.headingSmallThemed(context)),
                 const SizedBox(height: AppTheme.spaceXS),
                 Text(
-                  pattern,
-                  style: AppTheme.bodyMediumThemed(context)
-                      .copyWith(height: 1.5),
+                  rule,
+                  style: AppTheme.bodyMediumThemed(context).copyWith(
+                    height: 1.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -1099,42 +981,164 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  /// Next Match Focus Banner
-  Widget _buildNextMatchFocusBanner(String focus) {
+  /// 20-Min Constraint Drill
+  Widget _buildConstraintDrillCard(String drill) {
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spaceSM),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.fitness_center_rounded,
+                  color: AppTheme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Text('20-Min Constraint Drill',
+                  style: AppTheme.headingSmallThemed(context)),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          Text(
+            drill,
+            style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.6),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Reminder banner — reinforcement line
+  Widget _buildReminderBanner(String reminder) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spaceLG,
         vertical: AppTheme.spaceMD,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.1),
+        color: AppTheme.elevatedBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.25)),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Row(
         children: [
-          Icon(Icons.flag_rounded, color: AppTheme.primary, size: 20),
+          Icon(Icons.replay_rounded,
+              color: AppTheme.textSecondaryColor(context), size: 20),
           const SizedBox(width: AppTheme.spaceMD),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Next Match Focus',
-                    style: AppTheme.labelThemed(context).copyWith(
-                        color: AppTheme.primary,
-                        fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Text(
-                  focus,
-                  style: AppTheme.bodyMediumThemed(context).copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            child: Text(
+              reminder,
+              style: AppTheme.bodyMediumThemed(context).copyWith(
+                fontStyle: FontStyle.italic,
+                color: AppTheme.textSecondaryColor(context),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Pattern Detection — separate analytical section
+  Widget _buildPatternDetectionSection(Map<String, dynamic> pattern) {
+    final recurringPattern =
+        pattern['recurringPattern'] as String? ?? '';
+    final frequency = pattern['frequency'] as String? ?? '';
+    final trigger = pattern['trigger'] as String? ?? '';
+    final longTermFix = pattern['longTermFix'] as String? ?? '';
+
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.warning.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spaceSM),
+                decoration: BoxDecoration(
+                  color: AppTheme.warning.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: Icon(Icons.pattern_rounded,
+                    color: AppTheme.warning, size: 20),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Text('Pattern Detection',
+                  style: AppTheme.headingSmallThemed(context)
+                      .copyWith(color: AppTheme.warning)),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+
+          // Recurring Pattern
+          if (recurringPattern.isNotEmpty) ...[
+            _buildPatternRow('Recurring Pattern', recurringPattern),
+            const SizedBox(height: AppTheme.spaceSM),
+          ],
+
+          // Frequency
+          if (frequency.isNotEmpty) ...[
+            _buildPatternRow('Frequency', frequency),
+            const SizedBox(height: AppTheme.spaceSM),
+          ],
+
+          // Trigger
+          if (trigger.isNotEmpty) ...[
+            _buildPatternRow('Trigger', trigger),
+            const SizedBox(height: AppTheme.spaceSM),
+          ],
+
+          // Long-Term Fix
+          if (longTermFix.isNotEmpty)
+            _buildPatternRow('Long-Term Fix', longTermFix),
+        ],
+      ),
+    );
+  }
+
+  /// Helper — a labeled row inside Pattern Detection
+  Widget _buildPatternRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: AppTheme.labelThemed(context).copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textSecondaryColor(context),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceSM),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTheme.bodySmallThemed(context).copyWith(height: 1.4),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1171,25 +1175,35 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  String _buildShareText(String summary, List<dynamic> recommendations,
-      String patternDetected, String nextMatchFocus) {
+  String _buildShareText(
+    String whatToControl,
+    String nextMatchRule,
+    String constraintDrill,
+    String reminder,
+    Map<String, dynamic>? patternData,
+  ) {
     final buffer = StringBuffer();
     buffer.writeln('Tactical Analysis — Composure');
     buffer.writeln();
-    buffer.writeln('Summary: $summary');
+    buffer.writeln('What To Control: $whatToControl');
+    if (nextMatchRule.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Next Match Rule: $nextMatchRule');
+    }
+    if (constraintDrill.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('20-Min Drill: $constraintDrill');
+    }
     buffer.writeln();
-    for (var i = 0; i < recommendations.length; i++) {
-      final rec = recommendations[i];
-      buffer.writeln(
-          '${i + 1}. ${rec['title'] ?? ''}: ${rec['how'] ?? ''}');
-    }
-    if (patternDetected.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('Pattern: $patternDetected');
-    }
-    if (nextMatchFocus.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('Next Focus: $nextMatchFocus');
+    buffer.writeln(reminder);
+    if (patternData != null) {
+      final rp = patternData['recurringPattern'] as String? ?? '';
+      if (rp.isNotEmpty) {
+        buffer.writeln();
+        buffer.writeln('Pattern: $rp');
+        final fix = patternData['longTermFix'] as String? ?? '';
+        if (fix.isNotEmpty) buffer.writeln('Fix: $fix');
+      }
     }
     return buffer.toString();
   }

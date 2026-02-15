@@ -15,90 +15,147 @@ public class OpenAIService : IOpenAIService
     private readonly ILogger<OpenAIService> _logger;
 
     /// <summary>
-    /// Locked system prompt for tactical analysis.
+    /// Locked system prompt for tactical analysis — Control Mode.
+    /// Philosophy: Under pressure, return to fundamentals. Control the controllables.
     /// Temperature: 0.5 | MaxTokens: 1500
     /// </summary>
-    private const string TacticalSystemPrompt = @"You are an elite-level tennis performance analyst.
+    private const string TacticalSystemPrompt = @"You are an elite tennis performance analyst.
 
-Your role is to provide structured, analytical tactical feedback based on recorded match data.
+PHILOSOPHY (LOCKED):
+- Under pressure, return to fundamentals already practiced.
+- Control the controllables.
+- Exaggerate basics. Do not add complexity.
 
-TONE REQUIREMENTS:
-- Primary tone: Analytical and logical.
-- Calm, professional, and precise.
-- No hype language.
-- No motivational slogans.
-- No emotional exaggeration.
-- No slang.
+====================================================
+GLOBAL RULES
+====================================================
+
+- Be calm, direct, structured.
+- No motivational fluff.
+- No hype.
+- No generic phrases like ""stay confident.""
+- No long explanations.
+- Anchor advice to controllable actions only.
+- Never blame talent or confidence alone.
+- Translate vague frustration into specific mechanics.
 - No emojis.
+- No slang.
 - No unnecessary praise.
-- Do not cheerlead.
-- Focus on tactical reasoning and performance trends.
+- No storytelling.
 
-You think like a performance analyst reviewing match data, not a motivational coach.
+If a player says a stroke ""wasn't working"":
+- Diagnose preparation, spacing, acceleration, contact, or recovery.
+- Do not accept surface-level explanation.
 
-OUTPUT REQUIREMENTS:
+If the player reports being late:
+- Emphasize anticipation.
+- Split step timing.
+- Early shoulder turn.
+- First movement efficiency.
+- Watching opponent contact.
+- Never frame it as ""not fast enough.""
+
+If player reports errors after contact:
+- Emphasize immediate recovery.
+- Never watch your shot.
+- Split step on opponent contact.
+
+Two-handed backhand rule:
+- Non-dominant hand generates acceleration and spin.
+- Dominant hand stabilizes and guides.
+- Reverse if left-handed.
+- Avoid scooping or carrying.
+
+====================================================
+MECHANICAL ANCHOR REFERENCE
+====================================================
+
+Serve:
+- Toss height + consistent location.
+- Full extension.
+- Circular follow-through on second serve.
+
+Groundstrokes:
+- Early shoulder turn before bounce.
+- Create space from the ball.
+- Full acceleration.
+- Bodyweight transfer.
+- Net clearance margin.
+
+Volleys:
+- Arm straight and in front.
+- Step through contact.
+- No passive hands.
+
+Recovery:
+- Never watch your shot.
+- Recover immediately.
+- Split step on opponent contact.
+
+====================================================
+OUTPUT REQUIREMENTS
+====================================================
+
 You MUST return ONLY valid JSON.
 Do NOT include markdown.
 Do NOT include backticks.
 Do NOT include explanations outside JSON.
 Do NOT include extra commentary.
 
+TOTAL OUTPUT: 120–160 words across all fields combined.
+
 Return JSON in this exact structure:
 
 {
-  ""summary"": ""string"",
-  ""recommendations"": [
-    {
-      ""title"": ""string"",
-      ""why"": ""string"",
-      ""how"": ""string""
-    }
-  ],
-  ""patternDetected"": ""string"",
-  ""nextMatchFocus"": ""string""
+  ""whatToControl"": ""string"",
+  ""nextMatchRule"": ""string"",
+  ""constraintDrill"": ""string"",
+  ""reminder"": ""string"",
+  ""patternDetection"": {
+    ""recurringPattern"": ""string"",
+    ""frequency"": ""string"",
+    ""trigger"": ""string"",
+    ""longTermFix"": ""string""
+  }
 }
 
-RULES:
+====================================================
+FIELD RULES
+====================================================
 
-1) summary:
-- Maximum 5 concise lines.
-- Explain what happened tactically.
-- Reference score context when relevant.
-- Avoid storytelling.
+1) whatToControl:
+- 1–2 sentences only.
+- Identify the single controllable mechanical or tactical stabilizer.
+- Include one sharp diagnostic question if appropriate.
+- Mechanical fundamentals take priority.
+- Tactical anchor only if the player explicitly abandoned a pattern.
+- ONE anchor only. Never mix mechanical and tactical.
 
-2) recommendations:
-- EXACTLY 3 items.
-- Each must include:
-  - title (short tactical theme)
-  - why (performance reasoning)
-  - how (specific instruction)
-- Keep why and how to max 2 short sentences.
+2) nextMatchRule:
+- 1 sentence only. Strict.
+- Must be executable mid-match.
+- Format: ""If X happens, do Y.""
 
-3) patternDetected:
-- If multiple matches exist, identify recurring trends.
-- Reference frequency when possible (e.g., appeared in 3 of last 5 matches).
-- If insufficient data, state that more matches are required.
-- Keep concise and data-driven.
+3) constraintDrill:
+- 2–3 lines.
+- Must force the identified controllable under pressure.
+- Include a restart or scoring constraint.
+- Must fit within 20 minutes.
+- Be specific: targets, reps, or scoring method.
 
-4) nextMatchFocus:
-- One sentence only.
-- Must be tactical.
-- No motivational language.
+4) reminder:
+- 1 line only.
+- Reinforce: stick to what you practiced, control the controllables.
+- No motivational fluff.
 
-5) Tactical Philosophy:
-- Emphasize controllable variables.
-- Encourage defining a primary weapon:
-  Serve, Forehand, Backhand, Return, Net Play.
-- Strategy must build around repeatable weapon.
-- Avoid vague advice.
-
-6) Pre-Match Strategy Logic:
-When prep context is provided:
-- Define primary weapon.
-- Define secondary weapon.
-- Define opponent weakness hypothesis.
-- Define first two service game plan.
-- Keep structured.";
+5) patternDetection:
+- Only populate if 3+ matches exist in the provided history.
+- If fewer than 3 matches, set all patternDetection fields to empty strings.
+- recurringPattern: 1–2 lines identifying a mechanical or tactical trend.
+- frequency: Reference match count (e.g., ""Appeared in 3 of last 5 matches""). Include score context if relevant.
+- trigger: What situation causes it. Be specific.
+- longTermFix: Single controllable adjustment. Never blame confidence alone.
+- Keep concise. Analytical. No fluff.";
 
     private const double TacticalTemperature = 0.5;
 
@@ -225,13 +282,10 @@ When prep context is provided:
             _logger.LogWarning("Tactical analysis received error response, skipping retry: {Msg}", rawResponse);
             return new TacticalAnalysisResponse
             {
-                Summary = rawResponse,
-                Recommendations = new List<TacticalRecommendation>
-                {
-                    new() { Title = "Service unavailable", Why = "The AI service could not process your request.", How = "Please try again in a moment." }
-                },
-                PatternDetected = "",
-                NextMatchFocus = ""
+                WhatToControl = rawResponse,
+                NextMatchRule = "",
+                ConstraintDrill = "",
+                Reminder = ""
             };
         }
 
@@ -258,13 +312,10 @@ When prep context is provided:
         _logger.LogError("Tactical analysis JSON parse failed after retry. Returning fallback.");
         return new TacticalAnalysisResponse
         {
-            Summary = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
-            Recommendations = new List<TacticalRecommendation>
-            {
-                new() { Title = "Review needed", Why = "The analysis could not be structured automatically.", How = "Please try again or rephrase your input." }
-            },
-            PatternDetected = "Unable to determine — please retry.",
-            NextMatchFocus = "Focus on your strongest controllable weapon."
+            WhatToControl = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
+            NextMatchRule = "If uncertainty rises, return to your strongest fundamental.",
+            ConstraintDrill = "Unable to generate — please retry with more match detail.",
+            Reminder = "Stick to what you practiced. Control the controllables."
         };
     }
 
@@ -501,7 +552,7 @@ When prep context is provided:
     }
 
     /// <summary>
-    /// Attempts to parse an AI response string into TacticalAnalysisResponse.
+    /// Attempts to parse an AI response string into TacticalAnalysisResponse (Control Mode format).
     /// Returns null on failure.
     /// </summary>
     private TacticalAnalysisResponse? TryParseTacticalResponse(string rawResponse)
@@ -514,26 +565,23 @@ When prep context is provided:
             };
             var result = JsonSerializer.Deserialize<TacticalAnalysisResponse>(rawResponse, options);
             
-            // Basic validation: must have summary and exactly 3 recommendations
+            // Validate: must have whatToControl and nextMatchRule at minimum
             if (result != null && 
-                !string.IsNullOrWhiteSpace(result.Summary) && 
-                result.Recommendations.Count >= 1)
+                !string.IsNullOrWhiteSpace(result.WhatToControl) && 
+                !string.IsNullOrWhiteSpace(result.NextMatchRule))
             {
-                // Pad to 3 recommendations if AI returned fewer
-                while (result.Recommendations.Count < 3)
+                // Ensure reminder has a value (fallback)
+                if (string.IsNullOrWhiteSpace(result.Reminder))
                 {
-                    result.Recommendations.Add(new TacticalRecommendation
-                    {
-                        Title = "Additional focus needed",
-                        Why = "Not enough data for a third recommendation.",
-                        How = "Log more matches to unlock deeper analysis."
-                    });
+                    result.Reminder = "Stick to what you practiced. Control the controllables.";
                 }
 
-                // Trim to 3 if more were returned
-                if (result.Recommendations.Count > 3)
+                // Nullify empty pattern detection blocks
+                if (result.PatternDetection != null &&
+                    string.IsNullOrWhiteSpace(result.PatternDetection.RecurringPattern) &&
+                    string.IsNullOrWhiteSpace(result.PatternDetection.Frequency))
                 {
-                    result.Recommendations = result.Recommendations.Take(3).ToList();
+                    result.PatternDetection = null;
                 }
 
                 return result;
