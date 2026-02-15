@@ -16,7 +16,8 @@ builder.Services.AddOpenApi();
 
 // Database
 builder.Services.AddDbContext<TennisGPTDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+    builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
