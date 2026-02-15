@@ -12,6 +12,7 @@ public class TennisGPTDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Match> Matches => Set<Match>();
     public DbSet<CheckIn> CheckIns => Set<CheckIn>();
+    public DbSet<SavedEntry> SavedEntries => Set<SavedEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,6 +67,23 @@ public class TennisGPTDbContext : DbContext
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.CheckIns)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // SavedEntry configuration
+        modelBuilder.Entity<SavedEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.Category });
+            entity.HasIndex(e => e.CreatedAtUtc).IsDescending();
+
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.Category)
+                .HasConversion<int>();
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.SavedEntries)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

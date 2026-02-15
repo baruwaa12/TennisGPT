@@ -36,6 +36,7 @@ public class User
     // Navigation properties
     public ICollection<Match> Matches { get; set; } = [];
     public ICollection<CheckIn> CheckIns { get; set; } = [];
+    public ICollection<SavedEntry> SavedEntries { get; set; } = [];
     
     // Quota constants
     public const int FreeTierMonthlyLimit = 4;

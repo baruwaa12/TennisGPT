@@ -35,6 +35,9 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   bool _showCustomInput = false;
   String? _localError;
   bool _isLoading = false;
+  bool _isSaving = false;
+  bool _showSavedTab = false;
+  List<Map<String, dynamic>> _savedEntries = [];
 
   /// Debrief options - neutral, coach-like framing
   /// Focus on patterns and situations, not blame or identity
@@ -112,6 +115,11 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: Consumer<ApiService>(
         builder: (context, apiService, child) {
+          // Show saved tab
+          if (_showSavedTab) {
+            return _buildSavedView(context);
+          }
+
           // Show response view if we have a response
           if (apiService.lastResponse != null) {
             return _buildResponseView(context, apiService);
@@ -148,6 +156,22 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               color: AppTheme.textSecondaryColor(context),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() => _showSavedTab = true);
+                _loadSavedDebriefs();
+              },
+              child: Text(
+                'Saved',
+                style: AppTheme.labelThemed(context).copyWith(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
         
         SliverPadding(
@@ -662,6 +686,46 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               ),
               
               const SizedBox(height: AppTheme.spaceLG),
+
+              // Save button
+              GestureDetector(
+                onTap: _isSaving
+                    ? null
+                    : () => _saveCurrentDebrief(apiService.lastResponse!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground(context),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isSaving)
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primary,
+                          ),
+                        )
+                      else
+                        Icon(Icons.bookmark_outline_rounded,
+                            size: 18, color: AppTheme.primary),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Text(
+                        _isSaving ? 'Saving...' : 'Save debrief',
+                        style: AppTheme.headingSmallThemed(context)
+                            .copyWith(color: AppTheme.primary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppTheme.spaceMD),
               
               // Action buttons
               Row(
@@ -800,5 +864,175 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         _localError = e.toString();
       });
     }
+  }
+
+  // ============ Save + Saved Tab ============
+
+  Future<void> _saveCurrentDebrief(String content) async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    HapticFeedback.lightImpact();
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final success = await apiService.saveDebrief(content);
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Saved (max 3 stored)' : 'Could not save. Try again.',
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: Colors.white),
+            ),
+            backgroundColor: success ? AppTheme.win : AppTheme.loss,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _loadSavedDebriefs() async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final entries = await apiService.getSavedDebriefs();
+    if (mounted) {
+      setState(() => _savedEntries = entries);
+    }
+  }
+
+  Widget _buildSavedView(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          backgroundColor: AppTheme.scaffoldBackground(context),
+          elevation: 0,
+          pinned: true,
+          centerTitle: true,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back,
+                color: AppTheme.textSecondaryColor(context)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            'Match Debrief',
+            style: AppTheme.headingSmallThemed(context)
+                .copyWith(color: AppTheme.textSecondaryColor(context)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() => _showSavedTab = false);
+              },
+              child: Text(
+                'Back',
+                style: AppTheme.labelThemed(context).copyWith(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SliverPadding(
+          padding: AppTheme.screenPadding,
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              if (_savedEntries.isEmpty) ...[
+                const SizedBox(height: AppTheme.spaceXL),
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.bookmark_border_rounded,
+                          size: 48, color: AppTheme.textMutedColor(context)),
+                      const SizedBox(height: AppTheme.spaceMD),
+                      Text('No saved debriefs yet',
+                          style: AppTheme.headingSmallThemed(context)),
+                      const SizedBox(height: AppTheme.spaceXS),
+                      Text(
+                        'Generate a debrief and tap Save to keep it here.',
+                        style: AppTheme.bodySmallThemed(context),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Text('Saved Debriefs',
+                    style: AppTheme.headingMediumThemed(context)),
+                const SizedBox(height: AppTheme.spaceXS),
+                Text('Most recent first (max 3)',
+                    style: AppTheme.bodySmallThemed(context)),
+                const SizedBox(height: AppTheme.spaceMD),
+                ..._savedEntries.map((entry) {
+                  final content = entry['content'] as String? ?? '';
+                  final createdAt = entry['createdAtUtc'] as String? ?? '';
+                  return Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: AppTheme.spaceMD),
+                    child: _buildSavedEntryCard(content, createdAt),
+                  );
+                }),
+              ],
+              const SizedBox(height: AppTheme.spaceXXL),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSavedEntryCard(String content, String createdAt) {
+    String dateLabel = '';
+    if (createdAt.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(createdAt);
+        final diff = DateTime.now().toUtc().difference(dt);
+        if (diff.inDays == 0) {
+          dateLabel = 'Today';
+        } else if (diff.inDays == 1) {
+          dateLabel = 'Yesterday';
+        } else {
+          dateLabel = '${diff.inDays}d ago';
+        }
+      } catch (_) {}
+    }
+
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (dateLabel.isNotEmpty) ...[
+            Text(
+              dateLabel,
+              style: AppTheme.labelThemed(context)
+                  .copyWith(color: AppTheme.textMutedColor(context)),
+            ),
+            const SizedBox(height: AppTheme.spaceSM),
+          ],
+          Text(
+            content,
+            style:
+                AppTheme.bodyMediumThemed(context).copyWith(height: 1.5),
+            maxLines: 12,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 }

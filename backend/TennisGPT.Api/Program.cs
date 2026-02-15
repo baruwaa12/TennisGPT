@@ -22,6 +22,7 @@ builder.Services.AddDbContext<TennisGPTDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<ICheckInRepository, CheckInRepository>();
+builder.Services.AddScoped<ISavedEntryRepository, SavedEntryRepository>();
 
 // External clients
 builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();

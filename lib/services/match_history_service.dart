@@ -46,7 +46,7 @@ class MatchHistoryService extends ChangeNotifier {
     }
   }
   
-  // Get all match performances (user-specific)
+  // Get all match performances (user-specific), newest first
   Future<List<MatchPerformance>> getAllMatches() async {
     final prefs = await SharedPreferences.getInstance();
     final String? matchesJson = prefs.getString(_storageKey);
@@ -55,9 +55,12 @@ class MatchHistoryService extends ChangeNotifier {
     
     try {
     final List<dynamic> matchesList = json.decode(matchesJson);
-    return matchesList
+    final matches = matchesList
         .map((json) => MatchPerformance.fromJson(json))
         .toList();
+    // Sort newest first (descending by date)
+    matches.sort((a, b) => b.date.compareTo(a.date));
+    return matches;
     } catch (e) {
       // If JSON is corrupted, return empty list
       return [];

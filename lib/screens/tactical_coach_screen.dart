@@ -45,6 +45,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   String? _errorMessage;
   bool _isLoading = true;
   bool _isGenerating = false;
+  bool _isSaving = false;
+  bool _showSavedTab = false;
+  List<Map<String, dynamic>> _savedEntries = [];
 
   // Calculated stats
   int _wins = 0;
@@ -350,7 +353,34 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         color: AppTheme.textSecondaryColor(context),
                       ),
                     ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showSavedTab = !_showSavedTab);
+                          if (_showSavedTab) _loadSavedEntries();
+                        },
+                        child: Text(
+                          _showSavedTab ? 'Coach' : 'Saved',
+                          style: AppTheme.labelThemed(context).copyWith(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  if (_showSavedTab)
+                    SliverPadding(
+                      padding: AppTheme.screenPadding,
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          _buildSavedTab(),
+                          const SizedBox(height: AppTheme.spaceXXL),
+                        ]),
+                      ),
+                    )
+                  else
                   SliverPadding(
                     padding: AppTheme.screenPadding,
                     sliver: SliverList(
@@ -1147,12 +1177,34 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        // Save button
+        TextButton.icon(
+          onPressed: _isSaving ? null : () => _saveCurrentAdvice(shareText),
+          icon: _isSaving
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.textSecondaryColor(context),
+                  ),
+                )
+              : Icon(Icons.bookmark_outline_rounded,
+                  size: 18, color: AppTheme.primary),
+          label: Text(
+            _isSaving ? 'Saving...' : 'Save',
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              color: AppTheme.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppTheme.spaceSM),
         ShareButton(
           shareText: shareText,
           subject: 'My Tactical Analysis',
           color: AppTheme.primary,
         ),
-        const SizedBox(width: AppTheme.spaceMD),
+        const SizedBox(width: AppTheme.spaceSM),
         TextButton.icon(
           onPressed: () {
             HapticFeedback.lightImpact();
@@ -1172,6 +1224,140 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // ============ Save + Saved Tab ============
+
+  Future<void> _saveCurrentAdvice(String content) async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    HapticFeedback.lightImpact();
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final success = await apiService.saveTacticalAdvice(content);
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Saved (max 3 stored)' : 'Could not save. Try again.',
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: Colors.white),
+            ),
+            backgroundColor: success ? AppTheme.win : AppTheme.loss,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _loadSavedEntries() async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final entries = await apiService.getSavedTactical();
+    if (mounted) {
+      setState(() => _savedEntries = entries);
+    }
+  }
+
+  Widget _buildSavedTab() {
+    if (_savedEntries.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXL),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.bookmark_border_rounded,
+                  size: 48, color: AppTheme.textMutedColor(context)),
+              const SizedBox(height: AppTheme.spaceMD),
+              Text('No saved advice yet',
+                  style: AppTheme.headingSmallThemed(context)),
+              const SizedBox(height: AppTheme.spaceXS),
+              Text(
+                'Generate tactical advice and tap Save to keep it here.',
+                style: AppTheme.bodySmallThemed(context),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Saved Advice', style: AppTheme.headingMediumThemed(context)),
+        const SizedBox(height: AppTheme.spaceXS),
+        Text(
+          'Most recent first (max 3)',
+          style: AppTheme.bodySmallThemed(context),
+        ),
+        const SizedBox(height: AppTheme.spaceMD),
+        ..._savedEntries.map((entry) {
+          final content = entry['content'] as String? ?? '';
+          final createdAt = entry['createdAtUtc'] as String? ?? '';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+            child: _buildSavedEntryCard(content, createdAt),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildSavedEntryCard(String content, String createdAt) {
+    String dateLabel = '';
+    if (createdAt.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(createdAt);
+        final diff = DateTime.now().toUtc().difference(dt);
+        if (diff.inDays == 0) {
+          dateLabel = 'Today';
+        } else if (diff.inDays == 1) {
+          dateLabel = 'Yesterday';
+        } else {
+          dateLabel = '${diff.inDays}d ago';
+        }
+      } catch (_) {}
+    }
+
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (dateLabel.isNotEmpty) ...[
+            Text(
+              dateLabel,
+              style: AppTheme.labelThemed(context).copyWith(
+                color: AppTheme.textMutedColor(context),
+              ),
+            ),
+            const SizedBox(height: AppTheme.spaceSM),
+          ],
+          Text(
+            content,
+            style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.5),
+            maxLines: 12,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 

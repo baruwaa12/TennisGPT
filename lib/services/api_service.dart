@@ -501,4 +501,75 @@ class ApiService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // ============ Saved Entries ============
+
+  /// Save an entry (tactical / debrief / prematch). Returns true on success.
+  Future<bool> saveEntry({
+    required String endpoint,
+    required String content,
+  }) async {
+    final requestId = _generateRequestId();
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$_baseUrl$endpoint'),
+        headers: headers,
+        body: jsonEncode({'content': content}),
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) return true;
+
+      _log('Save entry failed: ${response.statusCode}', requestId: requestId);
+      return false;
+    } catch (e) {
+      _log('Save entry exception: $e', requestId: requestId);
+      return false;
+    }
+  }
+
+  /// Get saved entries (returns list of maps with id, content, createdAtUtc).
+  Future<List<Map<String, dynamic>>> getSavedEntries(String endpoint) async {
+    final requestId = _generateRequestId();
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$_baseUrl$endpoint'),
+        headers: headers,
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return List<Map<String, dynamic>>.from(decoded);
+        }
+      }
+
+      _log('Get saved entries failed: ${response.statusCode}', requestId: requestId);
+      return [];
+    } catch (e) {
+      _log('Get saved entries exception: $e', requestId: requestId);
+      return [];
+    }
+  }
+
+  // Convenience wrappers
+
+  Future<bool> saveTacticalAdvice(String content) =>
+      saveEntry(endpoint: '/api/tactical/save', content: content);
+
+  Future<bool> saveDebrief(String content) =>
+      saveEntry(endpoint: '/api/debrief/save', content: content);
+
+  Future<bool> savePreMatchPlan(String content) =>
+      saveEntry(endpoint: '/api/prematch/save', content: content);
+
+  Future<List<Map<String, dynamic>>> getSavedTactical() =>
+      getSavedEntries('/api/tactical/saved');
+
+  Future<List<Map<String, dynamic>>> getSavedDebriefs() =>
+      getSavedEntries('/api/debrief/saved');
+
+  Future<List<Map<String, dynamic>>> getSavedPreMatchPlans() =>
+      getSavedEntries('/api/prematch/saved');
 }
