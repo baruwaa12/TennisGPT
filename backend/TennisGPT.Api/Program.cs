@@ -137,4 +137,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Health check endpoint for Railway (no auth required)
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
 app.Run();
