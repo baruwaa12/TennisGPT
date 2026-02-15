@@ -102,7 +102,8 @@ Do NOT include backticks.
 Do NOT include explanations outside JSON.
 Do NOT include extra commentary.
 
-TOTAL OUTPUT: 120–160 words across all fields combined.
+TOTAL OUTPUT: 100–130 words across all fields combined. HARD LIMIT: 130 words.
+If your output exceeds 130 words, shorten every field until the total is under 130.
 
 Return JSON in this exact structure:
 
@@ -137,11 +138,12 @@ FIELD RULES
 - Format: ""If X happens, do Y.""
 
 3) constraintDrill:
-- 2–3 lines.
-- Must force the identified controllable under pressure.
+- 2–3 short lines MAXIMUM. No numbered steps. No equipment lists.
+- One clear constraint-based exercise that forces the identified controllable.
 - Include a restart or scoring constraint.
 - Must fit within 20 minutes.
-- Be specific: targets, reps, or scoring method.
+- Must be immediately usable on court.
+- Do NOT write an essay or long setup. Keep it tight.
 
 4) reminder:
 - 1 line only.
@@ -151,11 +153,13 @@ FIELD RULES
 5) patternDetection:
 - Only populate if 3+ matches exist in the provided history.
 - If fewer than 3 matches, set all patternDetection fields to empty strings.
-- recurringPattern: 1–2 lines identifying a mechanical or tactical trend.
-- frequency: Reference match count (e.g., ""Appeared in 3 of last 5 matches""). Include score context if relevant.
-- trigger: What situation causes it. Be specific.
-- longTermFix: Single controllable adjustment. Never blame confidence alone.
-- Keep concise. Analytical. No fluff.";
+- recurringPattern: 1 line identifying a mechanical or tactical trend.
+- frequency: Short reference (e.g., ""3 of last 5 matches"").
+- trigger: 1 line. What situation causes it.
+- longTermFix: 1 line. Single controllable adjustment. Never blame confidence alone.
+- Keep every field to 1 line. No fluff.
+
+REMEMBER: Total output across ALL fields must be under 130 words. Count carefully.";
 
     private const double TacticalTemperature = 0.5;
 

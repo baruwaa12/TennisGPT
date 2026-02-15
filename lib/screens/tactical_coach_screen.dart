@@ -48,6 +48,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   bool _isSaving = false;
   bool _showSavedTab = false;
   List<Map<String, dynamic>> _savedEntries = [];
+  int? _expandedCardIndex;
 
   // Calculated stats
   int _wins = 0;
@@ -1303,19 +1304,22 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           style: AppTheme.bodySmallThemed(context),
         ),
         const SizedBox(height: AppTheme.spaceMD),
-        ..._savedEntries.map((entry) {
+        ...List.generate(_savedEntries.length, (index) {
+          final entry = _savedEntries[index];
           final content = entry['content'] as String? ?? '';
           final createdAt = entry['createdAtUtc'] as String? ?? '';
           return Padding(
             padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
-            child: _buildSavedEntryCard(content, createdAt),
+            child: _buildExpandableSavedCard(index, content, createdAt),
           );
         }),
       ],
     );
   }
 
-  Widget _buildSavedEntryCard(String content, String createdAt) {
+  Widget _buildExpandableSavedCard(int index, String content, String createdAt) {
+    final isExpanded = _expandedCardIndex == index;
+
     String dateLabel = '';
     if (createdAt.isNotEmpty) {
       try {
@@ -1331,32 +1335,96 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       } catch (_) {}
     }
 
-    return Container(
-      padding: AppTheme.cardPaddingLarge,
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (dateLabel.isNotEmpty) ...[
-            Text(
-              dateLabel,
-              style: AppTheme.labelThemed(context).copyWith(
-                color: AppTheme.textMutedColor(context),
-              ),
-            ),
-            const SizedBox(height: AppTheme.spaceSM),
-          ],
-          Text(
-            content,
-            style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.5),
-            maxLines: 12,
-            overflow: TextOverflow.ellipsis,
+    // Preview: first ~200 characters or full if short
+    final needsExpansion = content.length > 200;
+    final previewText = needsExpansion
+        ? '${content.substring(0, 200).trimRight()}…'
+        : content;
+
+    return GestureDetector(
+      onTap: needsExpansion
+          ? () {
+              HapticFeedback.selectionClick();
+              setState(() {
+                _expandedCardIndex = isExpanded ? null : index;
+              });
+            }
+          : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: AppTheme.cardPaddingLarge,
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground(context),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          border: Border.all(
+            color: isExpanded
+                ? AppTheme.primary.withOpacity(0.4)
+                : AppTheme.borderColor(context),
           ),
-        ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row: date + expand icon
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (dateLabel.isNotEmpty)
+                  Text(
+                    dateLabel,
+                    style: AppTheme.labelThemed(context).copyWith(
+                      color: AppTheme.textMutedColor(context),
+                    ),
+                  ),
+                if (needsExpansion)
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      size: 20,
+                      color: AppTheme.textMutedColor(context),
+                    ),
+                  ),
+              ],
+            ),
+            if (dateLabel.isNotEmpty || needsExpansion)
+              const SizedBox(height: AppTheme.spaceSM),
+
+            // Content with animated expand/collapse
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: isExpanded || !needsExpansion
+                  ? Text(
+                      content,
+                      style: AppTheme.bodyMediumThemed(context)
+                          .copyWith(height: 1.5),
+                    )
+                  : Text(
+                      previewText,
+                      style: AppTheme.bodyMediumThemed(context)
+                          .copyWith(height: 1.5),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+            ),
+
+            // Tap hint when collapsed
+            if (needsExpansion && !isExpanded) ...[
+              const SizedBox(height: AppTheme.spaceXS),
+              Text(
+                'Tap to read more',
+                style: AppTheme.labelThemed(context).copyWith(
+                  color: AppTheme.primary.withOpacity(0.7),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
