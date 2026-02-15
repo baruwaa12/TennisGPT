@@ -14,20 +14,44 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// Database — accepts both Railway URL format (postgresql://...) and Npgsql key-value format
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Database — reads DATABASE_URL (Railway) or falls back to config
+string connectionString;
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-// Convert postgresql:// or postgres:// URL to Npgsql key-value format
-if (connectionString.StartsWith("postgresql://") || connectionString.StartsWith("postgres://"))
+if (!string.IsNullOrEmpty(databaseUrl))
 {
-    var uri = new Uri(connectionString);
-    var userInfo = uri.UserInfo.Split(':');
-    connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    connectionString = ConvertPostgresUrl(databaseUrl);
+    Console.WriteLine($"[DB] Using DATABASE_URL env var -> Host parsed OK");
+}
+else
+{
+    var raw = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("No DATABASE_URL or ConnectionStrings:DefaultConnection found.");
+    
+    if (raw.StartsWith("postgresql://") || raw.StartsWith("postgres://"))
+        connectionString = ConvertPostgresUrl(raw);
+    else
+        connectionString = raw;
+    
+    Console.WriteLine($"[DB] Using ConnectionStrings:DefaultConnection");
 }
 
 builder.Services.AddDbContext<TennisGPTDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Helper: convert postgres:// URL to Npgsql key-value connection string
+static string ConvertPostgresUrl(string url)
+{
+    var uri = new Uri(url);
+    var userInfo = uri.UserInfo.Split(':');
+    var host = uri.Host;
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    var database = uri.AbsolutePath.TrimStart('/');
+    var username = userInfo[0];
+    var password = userInfo.Length > 1 ? userInfo[1] : "";
+    
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};Pooling=true;Minimum Pool Size=0;Maximum Pool Size=20";
+}
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
