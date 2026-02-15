@@ -14,12 +14,17 @@ export function Hero() {
       <Container>
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 lg:items-center">
           <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs text-[var(--muted)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--blueGlow)] shadow-glow-sm" />
+              Elite tennis performance app
+            </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-[var(--text)] leading-tight">
               Clarity Between Matches. Control Under Pressure.
             </h1>
             <p className="mt-6 text-lg text-[var(--muted)] max-w-xl leading-relaxed">
-              Composure turns match outcomes into tactical adjustments and calm,
-              repeatable routines — built for competitive players.
+              Composure is a tennis app that turns match outcomes into tactical
+              adjustments and calm, repeatable routines — built for competitive
+              players.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
               <Button onClick={scrollToFounder} className="w-full sm:w-auto">

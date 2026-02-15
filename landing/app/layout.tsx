@@ -6,7 +6,7 @@ import { Footer } from "@/components/landing/Footer";
 export const metadata: Metadata = {
   title: "Composure — Tennis. Clearer.",
   description:
-    "Composure turns match outcomes into tactical adjustments and calm, repeatable routines — built for competitive players.",
+    "Composure is an elite tennis performance app that turns match outcomes into tactical adjustments and calm, repeatable routines — built for competitive players.",
 };
 
 export default function RootLayout({

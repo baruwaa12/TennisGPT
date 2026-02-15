@@ -4,15 +4,15 @@ export function Pillars() {
   const pillars = [
     {
       title: "Tactical Coach",
-      desc: "Turn match issues into specific drills and adjustments.",
+      desc: "Turn tennis match issues into specific drills and adjustments.",
     },
     {
       title: "Match Debrief",
-      desc: "Reflect on what happened and what to work on next.",
+      desc: "Debrief what happened and what to work on before your next match.",
     },
     {
       title: "Pre-match Prep",
-      desc: "Calm routines that help you show up ready.",
+      desc: "A calm pre-match plan built around your primary weapon.",
     },
   ];
 
