@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using TennisGPT.Application.Interfaces;
 using TennisGPT.Application.Services;
@@ -37,7 +38,11 @@ else
 }
 
 builder.Services.AddDbContext<TennisGPTDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    options.UseNpgsql(connectionString);
+    options.ConfigureWarnings(w =>
+        w.Ignore(RelationalEventId.PendingModelChangesWarning));
+});
 
 // Helper: convert postgres:// URL to Npgsql key-value connection string
 static string ConvertPostgresUrl(string url)
@@ -107,11 +112,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Apply migrations on startup
+// Create database schema on startup (fresh Postgres — no migration history needed)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<TennisGPTDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
+    Console.WriteLine("[DB] Schema ensured/created successfully");
 }
 
 // Configure the HTTP request pipeline.
