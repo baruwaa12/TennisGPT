@@ -61,7 +61,7 @@ public class CoachingController : ControllerBase
             Response.Headers.Append("Retry-After", rateLimitResult.RetryAfterSeconds.ToString());
             return StatusCode(429, new ErrorResponse
             {
-                Error = "Too many requests. Please wait before trying again.",
+                Error = "Too many requests — please slow down",
                 RequestId = rateLimitResult.RequestId,
                 RetryAfterSeconds = rateLimitResult.RetryAfterSeconds
             });

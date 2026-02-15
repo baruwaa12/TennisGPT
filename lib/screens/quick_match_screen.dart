@@ -852,17 +852,34 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
                 textInputAction: TextInputAction.next,
               ),
               Divider(color: AppTheme.borderColor(context), height: 1),
-              TextField(
-                controller: _quickNoteController,
-                style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-                decoration: InputDecoration(
-                  hintText: 'Quick note (e.g., "serve was off today")',
-                  hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
-                  border: InputBorder.none,
-                  contentPadding: AppTheme.cardPadding,
+              const SizedBox(height: AppTheme.spaceSM),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Quick Reflection (1–2 sentences)',
+                  style: AppTheme.labelThemed(context),
                 ),
-                textInputAction: TextInputAction.done,
-                maxLines: 2,
+              ),
+              const SizedBox(height: AppTheme.spaceXS),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 140),
+                child: TextField(
+                  controller: _quickNoteController,
+                  style: AppTheme.bodyMediumThemed(context).copyWith(
+                    color: AppTheme.textPrimaryColor(context),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'What actually happened out there?',
+                    hintStyle: AppTheme.bodyMediumThemed(context).copyWith(
+                      color: AppTheme.textMutedColor(context),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                  ),
+                  textInputAction: TextInputAction.newline,
+                  maxLines: 6,
+                  minLines: 4,
+                ),
               ),
             ],
           ),

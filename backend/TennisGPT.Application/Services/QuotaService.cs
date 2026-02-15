@@ -10,13 +10,16 @@ public class QuotaService : IQuotaService
     private readonly IUserRepository _userRepository;
     private readonly ILogger<QuotaService> _logger;
     
-    // Simple in-memory rate limiter (per user)
-    // In production, use Redis or similar for distributed rate limiting
-    private static readonly ConcurrentDictionary<string, RateLimitEntry> _rateLimits = new();
+    // In-memory rate limiter (per user, NOT per user+IP)
+    // Two windows: per-minute and per-hour for fair use
+    private static readonly ConcurrentDictionary<string, RateLimitEntry> _minuteLimits = new();
+    private static readonly ConcurrentDictionary<string, RateLimitEntry> _hourLimits = new();
     
-    // Rate limit: 10 requests per minute per user
-    private const int RateLimitPerMinute = 10;
-    private const int RateLimitWindowSeconds = 60;
+    // Rate limits — applies to ALL users (including premium)
+    private const int MaxPerMinute = 30;
+    private const int MaxPerHour = 300;
+    private const int MinuteWindowSeconds = 60;
+    private const int HourWindowSeconds = 3600;
 
     public QuotaService(IUserRepository userRepository, ILogger<QuotaService> logger)
     {
@@ -37,32 +40,31 @@ public class QuotaService : IQuotaService
                 return QuotaCheckResult.UserNotFound(requestId);
             }
 
-            // Premium users have unlimited access
-            if (user.Plan == UserPlan.Premium)
+            // Premium and comped users — unlimited, skip quota entirely
+            if (user.Plan == UserPlan.Premium || user.IsComped)
             {
-                _logger.LogInformation("[{RequestId}] User {UserId} is Premium - unlimited access", requestId, userId);
-                return QuotaCheckResult.Success(-1, UserPlan.Premium);
+                _logger.LogInformation("[{RequestId}] User {UserId} is Premium/Comped — unlimited access", requestId, userId);
+                return QuotaCheckResult.Success(-1, user.Plan);
             }
 
-            // Check quota for free users
-            if (!user.CanUseTacticalAnalysis())
+            // Free users — daily quota check
+            if (!user.CanUseAI())
             {
-                _logger.LogInformation("[{RequestId}] User {UserId} quota exceeded (used: {Used})", 
-                    requestId, userId, user.TacticalUsedPeriod);
+                _logger.LogInformation("[{RequestId}] User {UserId} daily limit reached (used: {Used}/{Limit})", 
+                    requestId, userId, user.TacticalUsedPeriod, User.FreeTierDailyLimit);
                 return QuotaCheckResult.QuotaExceeded(requestId);
             }
 
-            // Consume quota atomically
-            var remainingBefore = user.GetRemainingTacticalAnalyses();
-            user.IncrementTacticalUsage();
+            // Consume daily quota
+            user.IncrementUsage();
             await _userRepository.UpdateAsync(user);
             
-            var remainingAfter = user.GetRemainingTacticalAnalyses();
+            var remaining = user.GetRemainingAICalls();
             
-            _logger.LogInformation("[{RequestId}] User {UserId} quota consumed: {Remaining} remaining", 
-                requestId, userId, remainingAfter);
+            _logger.LogInformation("[{RequestId}] User {UserId} quota consumed: {Remaining} remaining today", 
+                requestId, userId, remaining);
 
-            return QuotaCheckResult.Success(remainingAfter, user.Plan);
+            return QuotaCheckResult.Success(remaining, user.Plan);
         }
         catch (Exception ex)
         {
@@ -74,10 +76,38 @@ public class QuotaService : IQuotaService
     public Task<RateLimitResult> CheckRateLimitAsync(Guid userId, string ipAddress)
     {
         var requestId = GenerateRequestId();
-        var key = $"{userId}:{ipAddress}";
+        var key = userId.ToString();
         var now = DateTime.UtcNow;
         
-        var entry = _rateLimits.GetOrAdd(key, _ => new RateLimitEntry
+        // Check per-minute limit (30 req/min)
+        var minuteResult = CheckWindow(_minuteLimits, key, now, MinuteWindowSeconds, MaxPerMinute);
+        if (minuteResult.exceeded)
+        {
+            _logger.LogWarning("[{RequestId}] Rate limit exceeded (minute) for user {UserId}: {Count} requests", 
+                requestId, userId, minuteResult.count);
+            return Task.FromResult(RateLimitResult.Limited(Math.Max(1, minuteResult.retryAfter), requestId));
+        }
+        
+        // Check per-hour limit (300 req/hr)
+        var hourResult = CheckWindow(_hourLimits, key, now, HourWindowSeconds, MaxPerHour);
+        if (hourResult.exceeded)
+        {
+            _logger.LogWarning("[{RequestId}] Rate limit exceeded (hour) for user {UserId}: {Count} requests", 
+                requestId, userId, hourResult.count);
+            return Task.FromResult(RateLimitResult.Limited(Math.Max(1, hourResult.retryAfter), requestId));
+        }
+
+        return Task.FromResult(RateLimitResult.Ok());
+    }
+    
+    private static (bool exceeded, int retryAfter, int count) CheckWindow(
+        ConcurrentDictionary<string, RateLimitEntry> store,
+        string key,
+        DateTime now,
+        int windowSeconds,
+        int maxRequests)
+    {
+        var entry = store.GetOrAdd(key, _ => new RateLimitEntry
         {
             WindowStart = now,
             RequestCount = 0
@@ -85,8 +115,7 @@ public class QuotaService : IQuotaService
 
         lock (entry)
         {
-            // Reset window if expired
-            if ((now - entry.WindowStart).TotalSeconds >= RateLimitWindowSeconds)
+            if ((now - entry.WindowStart).TotalSeconds >= windowSeconds)
             {
                 entry.WindowStart = now;
                 entry.RequestCount = 0;
@@ -94,16 +123,14 @@ public class QuotaService : IQuotaService
 
             entry.RequestCount++;
 
-            if (entry.RequestCount > RateLimitPerMinute)
+            if (entry.RequestCount > maxRequests)
             {
-                var retryAfter = (int)(RateLimitWindowSeconds - (now - entry.WindowStart).TotalSeconds);
-                _logger.LogWarning("[{RequestId}] Rate limit exceeded for {Key}: {Count} requests", 
-                    requestId, key, entry.RequestCount);
-                return Task.FromResult(RateLimitResult.Limited(Math.Max(1, retryAfter), requestId));
+                var retryAfter = (int)(windowSeconds - (now - entry.WindowStart).TotalSeconds);
+                return (true, retryAfter, entry.RequestCount);
             }
         }
 
-        return Task.FromResult(RateLimitResult.Ok());
+        return (false, 0, entry.RequestCount);
     }
 
     private static string GenerateRequestId()
@@ -117,5 +144,4 @@ public class QuotaService : IQuotaService
         public int RequestCount { get; set; }
     }
 }
-
 

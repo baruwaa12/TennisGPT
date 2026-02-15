@@ -352,7 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: Icons.refresh,
           iconColor: Colors.orange,
           title: 'Reset Usage Counters',
-          subtitle: 'Reset AI analysis count (${usageService.aiAnalysesUsed}/${UsageService.freeAIAnalysesLimit} used)',
+          subtitle: 'Reset AI analysis count (${usageService.dailyAIUsed}/${UsageService.freeDailyAILimit} used today)',
           onTap: () => _showResetUsageDialog(usageService),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
           isDark: isDark,
@@ -397,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               Text(
-                'AI Analyses: ${usageService.aiAnalysesUsed}/${UsageService.freeAIAnalysesLimit} (lifetime)',
+                'AI Analyses: ${usageService.dailyAIUsed}/${UsageService.freeDailyAILimit} (today)',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   color: Colors.grey[600],

@@ -2,48 +2,62 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_storage_service.dart';
 
-/// UsageService tracks free tier usage limits.
-/// Now uses user-specific storage keys for multi-account support.
-/// 
-/// Free tier limits (LIFETIME, not monthly):
-/// - 5 total matches logged
-/// - 4 AI analyses total (shared across Tactical/Prep/Debrief)
+/// UsageService tracks free tier usage limits (client-side gate).
+/// Backend is the real source of truth — this is a UX-level pre-check.
+///
+/// Free tier limits:
+/// - 5 total matches logged (lifetime)
+/// - 10 AI calls per day (resets daily UTC)
+///
+/// Premium users: unlimited (bypass all checks)
 class UsageService extends ChangeNotifier {
   // FREE TIER LIMITS
   static const int freeMatchesLimit = 5;
-  static const int freeAIAnalysesLimit = 4; // 4 lifetime total across all AI features
+  static const int freeDailyAILimit = 10;
   
   // Base storage keys (will be prefixed with user ID)
   static const String _baseMatchCountKey = 'usage_match_count';
-  static const String _baseAiAnalysesKey = 'usage_ai_analyses_lifetime'; // Lifetime counter
+  static const String _baseDailyAICountKey = 'usage_daily_ai_count';
+  static const String _baseDailyAIDateKey = 'usage_daily_ai_date';
   
-  // Legacy keys (for migration)
+  // Legacy keys (for cleanup)
   static const String _legacyTacticalKey = 'usage_tactical_analyses';
   static const String _legacyPrepKey = 'usage_prep_sessions';
   static const String _legacyDebriefKey = 'usage_debriefs';
+  static const String _legacyLifetimeKey = 'usage_ai_analyses_lifetime';
 
   int _matchCount = 0;
-  int _aiAnalysesUsed = 0;
+  int _dailyAIUsed = 0;
+  String _dailyAIDate = '';
   bool _isLoaded = false;
   
   // User-specific keys
   String get _matchCountKey => UserStorageService.getUserKey(_baseMatchCountKey);
-  String get _aiAnalysesKey => UserStorageService.getUserKey(_baseAiAnalysesKey);
+  String get _dailyAICountKey => UserStorageService.getUserKey(_baseDailyAICountKey);
+  String get _dailyAIDateKey => UserStorageService.getUserKey(_baseDailyAIDateKey);
 
   // Getters
   int get matchCount => _matchCount;
-  int get aiAnalysesUsed => _aiAnalysesUsed;
+  int get dailyAIUsed => _dailyAIUsed;
   bool get isLoaded => _isLoaded;
 
-  // Limit checkers (all AI features share the same pool)
+  // Today's date as UTC string for comparison
+  static String _todayUTC() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
+
+  // Limit checkers
   bool get canLogMatch => _matchCount < freeMatchesLimit;
-  bool get canUseTacticalAnalysis => _aiAnalysesUsed < freeAIAnalysesLimit;
-  bool get canUsePrepSession => _aiAnalysesUsed < freeAIAnalysesLimit;
-  bool get canUseDebrief => _aiAnalysesUsed < freeAIAnalysesLimit;
+  bool get canUseTacticalAnalysis => _isToday() ? _dailyAIUsed < freeDailyAILimit : true;
+  bool get canUsePrepSession => canUseTacticalAnalysis;
+  bool get canUseDebrief => canUseTacticalAnalysis;
+
+  bool _isToday() => _dailyAIDate == _todayUTC();
 
   // Remaining counts
   int get matchesRemaining => (freeMatchesLimit - _matchCount).clamp(0, freeMatchesLimit);
-  int get aiAnalysesRemaining => (freeAIAnalysesLimit - _aiAnalysesUsed).clamp(0, freeAIAnalysesLimit);
+  int get aiAnalysesRemaining {
+    if (!_isToday()) return freeDailyAILimit;
+    return (freeDailyAILimit - _dailyAIUsed).clamp(0, freeDailyAILimit);
+  }
 
   /// Initialize and load saved usage data
   Future<void> initialize() async {
@@ -51,45 +65,36 @@ class UsageService extends ChangeNotifier {
     
     final prefs = await SharedPreferences.getInstance();
     
-    // Migrate from legacy monthly counters if needed
-    await _migrateFromLegacy(prefs);
+    // Clean up legacy keys
+    await _cleanupLegacy(prefs);
     
     // Load counts
     _matchCount = prefs.getInt(_matchCountKey) ?? 0;
-    _aiAnalysesUsed = prefs.getInt(_aiAnalysesKey) ?? 0;
+    _dailyAIUsed = prefs.getInt(_dailyAICountKey) ?? 0;
+    _dailyAIDate = prefs.getString(_dailyAIDateKey) ?? '';
+    
+    // Auto-reset if it's a new day
+    if (!_isToday()) {
+      _dailyAIUsed = 0;
+      _dailyAIDate = _todayUTC();
+      await prefs.setInt(_dailyAICountKey, 0);
+      await prefs.setString(_dailyAIDateKey, _dailyAIDate);
+    }
     
     _isLoaded = true;
     notifyListeners();
     
     if (kDebugMode) {
-      print('UsageService: Loaded - Matches: $_matchCount, AI Analyses: $_aiAnalysesUsed/$freeAIAnalysesLimit');
+      print('UsageService: Loaded - Matches: $_matchCount, AI today: $_dailyAIUsed/$freeDailyAILimit');
     }
   }
 
-  /// Migrate from legacy monthly counters to new lifetime counter
-  Future<void> _migrateFromLegacy(SharedPreferences prefs) async {
-    // Check if we already have the new key
-    if (prefs.containsKey(_aiAnalysesKey)) return;
-    
-    // Sum up all legacy usage
-    final legacyTactical = prefs.getInt(_legacyTacticalKey) ?? 0;
-    final legacyPrep = prefs.getInt(_legacyPrepKey) ?? 0;
-    final legacyDebrief = prefs.getInt(_legacyDebriefKey) ?? 0;
-    final totalLegacy = legacyTactical + legacyPrep + legacyDebrief;
-    
-    if (totalLegacy > 0) {
-      // Migrate: give them credit for what they've used, but cap at new limit
-      await prefs.setInt(_aiAnalysesKey, totalLegacy.clamp(0, freeAIAnalysesLimit));
-      
-      if (kDebugMode) {
-        print('UsageService: Migrated $totalLegacy legacy uses to lifetime counter');
-      }
-    }
-    
-    // Clean up legacy keys
-    await prefs.remove(_legacyTacticalKey);
-    await prefs.remove(_legacyPrepKey);
-    await prefs.remove(_legacyDebriefKey);
+  /// Clean up legacy storage keys from old quota system
+  Future<void> _cleanupLegacy(SharedPreferences prefs) async {
+    await prefs.remove(UserStorageService.getUserKey(_legacyTacticalKey));
+    await prefs.remove(UserStorageService.getUserKey(_legacyPrepKey));
+    await prefs.remove(UserStorageService.getUserKey(_legacyDebriefKey));
+    await prefs.remove(UserStorageService.getUserKey(_legacyLifetimeKey));
     await prefs.remove('usage_last_reset_month');
   }
 
@@ -105,15 +110,24 @@ class UsageService extends ChangeNotifier {
     }
   }
 
-  /// Record an AI analysis used (shared pool)
+  /// Record an AI analysis used (daily pool)
   Future<void> _recordAIAnalysis() async {
-    _aiAnalysesUsed++;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_aiAnalysesKey, _aiAnalysesUsed);
+    final today = _todayUTC();
+    
+    // Reset if new day
+    if (_dailyAIDate != today) {
+      _dailyAIUsed = 0;
+      _dailyAIDate = today;
+    }
+    
+    _dailyAIUsed++;
+    await prefs.setInt(_dailyAICountKey, _dailyAIUsed);
+    await prefs.setString(_dailyAIDateKey, _dailyAIDate);
     notifyListeners();
     
     if (kDebugMode) {
-      print('UsageService: AI analysis used - Count: $_aiAnalysesUsed/$freeAIAnalysesLimit');
+      print('UsageService: AI used today - Count: $_dailyAIUsed/$freeDailyAILimit');
     }
   }
 
@@ -132,15 +146,16 @@ class UsageService extends ChangeNotifier {
   }
 
   String getAIUsageText() {
-    return '$_aiAnalysesUsed / $freeAIAnalysesLimit free analyses used';
+    final remaining = aiAnalysesRemaining;
+    return '$remaining / $freeDailyAILimit AI calls left today';
   }
 
-  /// Reset in-memory state (for user switch - preserves stored data)
-  /// With user-specific keys, switching users automatically uses different data
+  /// Reset in-memory state (for user switch)
   Future<void> resetAllUsage() async {
     _matchCount = 0;
-    _aiAnalysesUsed = 0;
-    _isLoaded = false; // Allow re-initialization for new user
+    _dailyAIUsed = 0;
+    _dailyAIDate = '';
+    _isLoaded = false;
     
     notifyListeners();
     
@@ -153,10 +168,12 @@ class UsageService extends ChangeNotifier {
   Future<void> deleteUsageData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_matchCountKey);
-    await prefs.remove(_aiAnalysesKey);
+    await prefs.remove(_dailyAICountKey);
+    await prefs.remove(_dailyAIDateKey);
     
     _matchCount = 0;
-    _aiAnalysesUsed = 0;
+    _dailyAIUsed = 0;
+    _dailyAIDate = '';
     
     notifyListeners();
     

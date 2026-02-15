@@ -56,6 +56,8 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   String _weather = 'Sunny';
   
   bool _showRatings = false;
+  bool _showMentalNotes = false;
+  bool _showTacticalNotes = false;
   
   final Map<String, int> _ratings = {
     'Serve': 7,
@@ -265,23 +267,28 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
                   
                   const SizedBox(height: AppTheme.spaceLG),
                   
-                  // Key Moment (optional, single input)
-                  _buildKeyMomentSection(),
-                  
-                  const SizedBox(height: AppTheme.spaceLG),
-                  
                   // Performance Ratings (collapsible, optional)
                   _buildRatingsSection(),
                   
                   const SizedBox(height: AppTheme.spaceLG),
                   
-                  // Notes (optional, de-emphasized)
-                  _buildNotesSection(),
+                  // Match Summary (required, always visible)
+                  _buildMatchSummarySection(),
                   
-                  const SizedBox(height: AppTheme.spaceXL),
+                  const SizedBox(height: AppTheme.spaceLG),
                   
-                  // Detailed notes (optional)
-                  _buildDetailedNotesSection(),
+                  // Mental Notes (collapsible, closed by default)
+                  _buildCollapsibleMentalNotes(),
+                  
+                  const SizedBox(height: AppTheme.spaceLG),
+                  
+                  // Tactical Notes (collapsible, closed by default)
+                  _buildCollapsibleTacticalNotes(),
+                  
+                  const SizedBox(height: AppTheme.spaceLG),
+                  
+                  // Key Moment (optional, single input)
+                  _buildKeyMomentSection(),
                   
                   const SizedBox(height: AppTheme.spaceXL),
                   
@@ -585,86 +592,189 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
     );
   }
 
-  Widget _buildNotesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('Notes', style: AppTheme.labelThemed(context)),
-            const SizedBox(width: AppTheme.spaceSM),
-            Text('optional', style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textMutedColor(context).withOpacity(0.6))),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceSM),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.cardBackground(context),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            border: Border.all(color: AppTheme.borderColor(context)),
-          ),
-          child: TextField(
-            controller: _notesController,
-            maxLines: 2,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            decoration: InputDecoration(
-              hintText: 'Anything else to remember...',
-              hintStyle: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.textMutedColor(context).withOpacity(0.5)),
-              border: InputBorder.none,
-              contentPadding: AppTheme.cardPadding,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailedNotesSection() {
+  Widget _buildMatchSummarySection() {
     return Container(
-      padding: AppTheme.cardPadding,
+      padding: AppTheme.cardPaddingLarge,
       decoration: AppTheme.cardDecorationThemed(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text('Detailed notes', style: AppTheme.headingSmallThemed(context)),
-              const SizedBox(width: AppTheme.spaceSM),
-              Text('optional', style: AppTheme.labelThemed(context)),
-            ],
+          Text('Match Summary', style: AppTheme.headingMediumThemed(context)),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            'Required — what actually happened in this match?',
+            style: AppTheme.bodySmallThemed(context),
           ),
           const SizedBox(height: AppTheme.spaceMD),
-          TextField(
-            controller: _summaryController,
-            maxLines: 2,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            decoration: AppTheme.inputDecorationThemed(
-              context,
-              label: 'Match summary',
-              hint: 'Short recap of the match',
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 120),
+            child: TextField(
+              controller: _summaryController,
+              maxLines: 6,
+              minLines: 4,
+              style: AppTheme.bodyMediumThemed(context).copyWith(
+                color: AppTheme.textPrimaryColor(context),
+              ),
+              decoration: InputDecoration(
+                hintText: 'What actually happened in this match?',
+                hintStyle: AppTheme.bodyMediumThemed(context).copyWith(
+                  color: AppTheme.textMutedColor(context),
+                ),
+                filled: true,
+                fillColor: AppTheme.scaffoldBackground(context),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderSide: BorderSide(color: AppTheme.borderColor(context)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderSide: BorderSide(color: AppTheme.borderColor(context)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderSide: const BorderSide(color: AppTheme.primary),
+                ),
+                contentPadding: const EdgeInsets.all(16),
+              ),
             ),
           ),
-          const SizedBox(height: AppTheme.spaceMD),
-          TextField(
-            controller: _mentalNotesController,
-            maxLines: 2,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            decoration: AppTheme.inputDecorationThemed(
-              context,
-              label: 'Mental notes',
-              hint: 'Mindset, focus, nerves, confidence',
+          // General notes field (compact)
+          if (_notesController.text.isNotEmpty || true) ...[
+            const SizedBox(height: AppTheme.spaceMD),
+            TextField(
+              controller: _notesController,
+              maxLines: 2,
+              style: AppTheme.bodyMediumThemed(context).copyWith(
+                color: AppTheme.textPrimaryColor(context),
+              ),
+              decoration: AppTheme.inputDecorationThemed(
+                context,
+                label: 'Quick notes',
+                hint: 'Anything else to remember...',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildCollapsibleMentalNotes() {
+    return Container(
+      decoration: AppTheme.cardDecorationThemed(context),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _showMentalNotes = !_showMentalNotes);
+            },
+            child: Container(
+              padding: AppTheme.cardPadding,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text('Mental Notes', style: AppTheme.headingSmallThemed(context)),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Text('optional', style: AppTheme.labelThemed(context)),
+                    ],
+                  ),
+                  AnimatedRotation(
+                    turns: _showMentalNotes ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.textMutedColor(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: AppTheme.spaceMD),
-          TextField(
-            controller: _tacticalNotesController,
-            maxLines: 2,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            decoration: AppTheme.inputDecorationThemed(
-              context,
-              label: 'Tactical notes',
-              hint: 'Patterns, tactics, adjustments',
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: TextField(
+                controller: _mentalNotesController,
+                maxLines: 4,
+                minLines: 2,
+                style: AppTheme.bodyMediumThemed(context).copyWith(
+                  color: AppTheme.textPrimaryColor(context),
+                ),
+                decoration: AppTheme.inputDecorationThemed(
+                  context,
+                  hint: 'Mindset, focus, nerves, confidence...',
+                ),
+              ),
             ),
+            crossFadeState: _showMentalNotes 
+                ? CrossFadeState.showSecond 
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildCollapsibleTacticalNotes() {
+    return Container(
+      decoration: AppTheme.cardDecorationThemed(context),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _showTacticalNotes = !_showTacticalNotes);
+            },
+            child: Container(
+              padding: AppTheme.cardPadding,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text('Tactical Notes', style: AppTheme.headingSmallThemed(context)),
+                      const SizedBox(width: AppTheme.spaceSM),
+                      Text('optional', style: AppTheme.labelThemed(context)),
+                    ],
+                  ),
+                  AnimatedRotation(
+                    turns: _showTacticalNotes ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.textMutedColor(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: TextField(
+                controller: _tacticalNotesController,
+                maxLines: 4,
+                minLines: 2,
+                style: AppTheme.bodyMediumThemed(context).copyWith(
+                  color: AppTheme.textPrimaryColor(context),
+                ),
+                decoration: AppTheme.inputDecorationThemed(
+                  context,
+                  hint: 'Patterns, tactics, adjustments...',
+                ),
+              ),
+            ),
+            crossFadeState: _showTacticalNotes 
+                ? CrossFadeState.showSecond 
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
           ),
         ],
       ),

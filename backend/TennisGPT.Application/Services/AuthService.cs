@@ -277,7 +277,7 @@ public class AuthService : IAuthService
             Plan = user.Plan.ToString().ToLower(),
             OnboardingCompleted = user.OnboardingCompleted,
             TacticalUsedThisPeriod = user.TacticalUsedPeriod,
-            TacticalRemaining = user.GetRemainingTacticalAnalyses(),
+            TacticalRemaining = user.GetRemainingAICalls(),
             IsComped = user.IsComped
         };
     }

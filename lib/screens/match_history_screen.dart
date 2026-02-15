@@ -332,10 +332,11 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     );
   }
 
-  /// Match row with clear hierarchy:
-  /// 1. Score (most prominent)
-  /// 2. Opponent name
-  /// 3. Date + surface (tertiary)
+  /// Match row — compact card with clear hierarchy:
+  /// Row 1: Opponent name
+  /// Row 2: Date · Surface · Format (tertiary)
+  /// Row 3: Score (centered, bold)
+  /// Left: win/loss vertical indicator
   Widget _buildMatchRow(MatchPerformance match) {
     final isWin = match.result.toLowerCase() == 'win';
     final opponentName = match.opponent.trim().isNotEmpty 
@@ -347,96 +348,102 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         : '${match.setsWon}–${match.setsLost}';
     final formatLabel = match.matchFormat.isNotEmpty
         ? match.matchFormat
-        : 'Best of 3 sets';
+        : 'BO3';
     
     return GestureDetector(
       onTap: () => _showMatchDetails(match),
       child: Container(
-        padding: AppTheme.cardPadding,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(color: AppTheme.borderColor(context)),
         ),
-        child: Row(
-          children: [
-            // Win/Loss indicator
-            Container(
-              width: 4,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isWin ? AppTheme.win : AppTheme.loss,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: AppTheme.spaceMD),
-            
-            // Main content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Opponent name (secondary)
-                  Text(
-                    opponentName,
-                    style: AppTheme.headingSmallThemed(context),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppTheme.spaceXS),
-                  // Date + surface (tertiary)
-                  Text(
-                    '$dateStr · ${match.surface} · $formatLabel',
-                    style: AppTheme.labelThemed(context),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Score (most prominent)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spaceMD,
-                vertical: AppTheme.spaceSM,
-              ),
-              decoration: BoxDecoration(
-                color: (isWin ? AppTheme.win : AppTheme.loss).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-              ),
-              child: Text(
-                scoreDisplay,
-                style: AppTheme.scoreDisplay.copyWith(
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Win/Loss vertical indicator
+              Container(
+                width: 4,
+                decoration: BoxDecoration(
                   color: isWin ? AppTheme.win : AppTheme.loss,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ),
-            
-            // Menu
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: AppTheme.textMutedColor(context)),
-              color: AppTheme.elevatedBackground(context),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-              ),
-              onSelected: (value) {
-                if (value == 'delete') {
-                  _deleteMatch(match.id);
-                }
-              },
-              itemBuilder: (menuContext) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline_rounded, color: AppTheme.loss, size: 20),
-                      const SizedBox(width: AppTheme.spaceSM),
-                      Text('Delete', style: AppTheme.bodyMediumThemed(menuContext).copyWith(color: AppTheme.loss)),
-                    ],
-                  ),
+              const SizedBox(width: 12),
+              
+              // Main content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Row 1: Opponent + menu
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            opponentName,
+                            style: AppTheme.headingSmallThemed(context),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: Icon(Icons.more_vert_rounded, 
+                                color: AppTheme.textMutedColor(context), size: 18),
+                            color: AppTheme.elevatedBackground(context),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                            ),
+                            onSelected: (value) {
+                              if (value == 'delete') {
+                                _deleteMatch(match.id);
+                              }
+                            },
+                            itemBuilder: (menuContext) => [
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete_outline_rounded, color: AppTheme.loss, size: 20),
+                                    const SizedBox(width: AppTheme.spaceSM),
+                                    Text('Delete', style: AppTheme.bodyMediumThemed(menuContext).copyWith(color: AppTheme.loss)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Row 2: Date · Surface · Format
+                    Text(
+                      '$dateStr · ${match.surface} · $formatLabel',
+                      style: AppTheme.labelThemed(context),
+                    ),
+                    const SizedBox(height: 8),
+                    // Row 3: Score centered
+                    Center(
+                      child: Text(
+                        scoreDisplay,
+                        style: AppTheme.headingMediumThemed(context).copyWith(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          letterSpacing: 0.5,
+                          color: isWin ? AppTheme.win : AppTheme.loss,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

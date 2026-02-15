@@ -29,7 +29,8 @@ public class User
     /// </summary>
     public bool IsComped { get; set; } = false;
     
-    // Quota tracking (monthly rolling window)
+    // Quota tracking (daily reset, UTC-based)
+    // Reuses existing DB columns — no migration needed
     public int TacticalUsedPeriod { get; set; } = 0;
     public DateTime? TacticalPeriodStart { get; set; }
 
@@ -39,53 +40,46 @@ public class User
     public ICollection<SavedEntry> SavedEntries { get; set; } = [];
     
     // Quota constants
-    public const int FreeTierMonthlyLimit = 4;
+    public const int FreeTierDailyLimit = 10;
     
     /// <summary>
-    /// Check if user can use tactical analysis (respects plan, comped status, and quota)
+    /// Check if user can make an AI request.
+    /// Premium/Comped = always true.
+    /// Free = max 10 per day, reset at midnight UTC.
     /// </summary>
-    public bool CanUseTacticalAnalysis()
+    public bool CanUseAI()
     {
-        // Comped users always have access
         if (IsComped) return true;
-        
         if (Plan == UserPlan.Premium) return true;
         
-        // Reset period if more than 30 days have passed
-        if (TacticalPeriodStart == null || DateTime.UtcNow.Subtract(TacticalPeriodStart.Value).TotalDays >= 30)
-        {
-            return true; // Will be reset when used
-        }
+        // If no usage today yet, allow
+        if (!IsToday(TacticalPeriodStart))
+            return true;
         
-        return TacticalUsedPeriod < FreeTierMonthlyLimit;
+        return TacticalUsedPeriod < FreeTierDailyLimit;
     }
     
     /// <summary>
-    /// Get remaining tactical analyses for free tier
+    /// Get remaining AI calls for free tier today.
+    /// Returns -1 for unlimited (Premium/Comped).
     /// </summary>
-    public int GetRemainingTacticalAnalyses()
+    public int GetRemainingAICalls()
     {
-        // Comped users have unlimited
         if (IsComped) return -1;
+        if (Plan == UserPlan.Premium) return -1;
         
-        if (Plan == UserPlan.Premium) return -1; // Unlimited
+        if (!IsToday(TacticalPeriodStart))
+            return FreeTierDailyLimit;
         
-        // If period expired, they have full quota
-        if (TacticalPeriodStart == null || DateTime.UtcNow.Subtract(TacticalPeriodStart.Value).TotalDays >= 30)
-        {
-            return FreeTierMonthlyLimit;
-        }
-        
-        return Math.Max(0, FreeTierMonthlyLimit - TacticalUsedPeriod);
+        return Math.Max(0, FreeTierDailyLimit - TacticalUsedPeriod);
     }
     
     /// <summary>
-    /// Increment usage count atomically
+    /// Increment daily usage count. Resets if new UTC day.
     /// </summary>
-    public void IncrementTacticalUsage()
+    public void IncrementUsage()
     {
-        // Reset period if expired
-        if (TacticalPeriodStart == null || DateTime.UtcNow.Subtract(TacticalPeriodStart.Value).TotalDays >= 30)
+        if (!IsToday(TacticalPeriodStart))
         {
             TacticalPeriodStart = DateTime.UtcNow;
             TacticalUsedPeriod = 1;
@@ -94,5 +88,10 @@ public class User
         {
             TacticalUsedPeriod++;
         }
+    }
+    
+    private static bool IsToday(DateTime? date)
+    {
+        return date.HasValue && date.Value.Date == DateTime.UtcNow.Date;
     }
 }

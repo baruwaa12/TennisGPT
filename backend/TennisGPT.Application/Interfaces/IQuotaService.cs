@@ -34,7 +34,7 @@ public class QuotaCheckResult
     public static QuotaCheckResult QuotaExceeded(string requestId) => new()
     {
         CanProceed = false,
-        ErrorMessage = "You've used all your free analyses this month. Upgrade to Premium for unlimited access.",
+        ErrorMessage = "Daily AI limit reached. Upgrade to Premium for unlimited access.",
         StatusCode = 402, // Payment Required
         RequestId = requestId
     };

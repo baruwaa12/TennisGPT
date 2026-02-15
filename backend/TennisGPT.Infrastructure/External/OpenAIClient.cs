@@ -35,10 +35,10 @@ public class OpenAIClient : IOpenAIClient
         {
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
             _isConfigured = true;
-            _logger.LogInformation("OpenAI client configured successfully with model {Model}", configuration["OpenAI:Model"] ?? "gpt-4o");
+            _logger.LogInformation("OpenAI client configured successfully with model {Model}", configuration["OpenAI:Model"] ?? "gpt-4o-mini");
         }
 
-        _model = configuration["OpenAI:Model"] ?? "gpt-4o";
+        _model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
     }
 
     public async Task<string> SendPromptAsync(string prompt, string? systemPrompt = null, double? temperature = null)
