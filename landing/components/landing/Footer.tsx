@@ -10,12 +10,20 @@ export function Footer() {
           <p className="text-sm text-[var(--muted)]">
             © {year} Composure. All rights reserved.
           </p>
-          <a
-            href="mailto:support@composure.app"
-            className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
-          >
-            Support
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="/blog"
+              className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
+            >
+              Blog
+            </a>
+            <a
+              href="mailto:support@composure.app"
+              className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
+            >
+              Support
+            </a>
+          </div>
         </div>
       </Container>
     </footer>

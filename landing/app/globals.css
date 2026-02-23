@@ -31,3 +31,54 @@ body {
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+.blog-prose {
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.blog-prose p {
+  margin-top: 1rem;
+}
+
+.blog-prose h2 {
+  margin-top: 2.25rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.blog-prose h3 {
+  margin-top: 1.75rem;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+.blog-prose ul,
+.blog-prose ol {
+  margin-top: 1rem;
+  padding-left: 1.25rem;
+}
+
+.blog-prose li {
+  margin-top: 0.5rem;
+  color: var(--text);
+}
+
+.blog-prose hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.blog-prose a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blog-prose a:hover {
+  color: #bfdbfe;
+}
