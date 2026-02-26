@@ -34,8 +34,8 @@ const POSTS = [
     title: "Execution Drift: The 5% That Costs You Matches (And How To Spot It Early)",
     description:
       "The swing rarely starts with a collapse — it starts with tiny drops in standards. Learn how to diagnose execution drift and correct it before momentum flips.",
-    publishedAt: "2026-02-25",
-    status: "comingSoon",
+    publishedAt: "2026-02-24",
+    status: "published",
     order: 2,
     content: ExecutionDriftFivePercent,
   },
