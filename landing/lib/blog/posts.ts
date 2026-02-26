@@ -45,7 +45,7 @@ const POSTS = [
     description:
       "A simple between-games routine that keeps intensity, footwork, and decision-making stable — especially when you’re trying to close a set.",
     publishedAt: "2026-02-26",
-    status: "comingSoon",
+    status: "published",
     order: 3,
     content: NinetySecondReset,
   },
