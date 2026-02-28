@@ -1,32 +1,52 @@
 export function PatternPlayUnderPressure() {
   return (
     <>
-      <p>
-        This post is coming soon. It’s the tactical bridge of the series: how to
-        keep running the patterns that built your lead, instead of drifting into
-        neutral rallies when the set is there to be closed.
-      </p>
+      <h2>The Biggest Mistake Players Make</h2>
 
-      <h2>Step 1: Identify your lead-building patterns</h2>
+      <p>When they feel pressure, they try something new.</p>
+
+      <p>New target. New spin. New idea.</p>
+
+      <p>Closing isn't about invention.</p>
+
+      <p>It's about repetition.</p>
+
+      <hr />
+
+      <h2>Identify Your Lead-Building Pattern</h2>
+
+      <p>Ask yourself: How did I get to 4–2?</p>
+
+      <p>Was it:</p>
       <ul>
-        <li>Serve+1 patterns that produced short replies</li>
-        <li>Return positions that took time away</li>
-        <li>Rally targets that pinned their weaker wing</li>
+        <li>Wide serve + open court forehand?</li>
+        <li>Backhand crosscourt depth?</li>
+        <li>Stepping inside on returns?</li>
       </ul>
 
-      <h2>Step 2: Convert patterns into a “2-point plan”</h2>
-      <ul>
-        <li>Pick one serve target + one first-ball location</li>
-        <li>Or one return position + one default rally target</li>
-        <li>Run it for 2 points before changing anything</li>
-      </ul>
+      <p>That pattern is your anchor.</p>
 
-      <h2>Step 3: Pressure-proof it</h2>
-      <ul>
-        <li>Reduce choices (fewer targets, clearer intent)</li>
-        <li>Increase standards (feet first, then strike)</li>
-        <li>Use the between-games reset to recommit</li>
-      </ul>
+      <hr />
+
+      <h2>Under Pressure</h2>
+
+      <p>Run it again.</p>
+
+      <p>Twice.</p>
+
+      <p>Even if they adjust slightly.</p>
+
+      <p>Patterns break down slower than improvisation.</p>
+
+      <hr />
+
+      <h2>The Rule</h2>
+
+      <p>Under pressure: you are allowed one adjustment.</p>
+
+      <p>Not five.</p>
+
+      <p>Stay disciplined.</p>
 
       <hr />
 
@@ -35,10 +55,15 @@ export function PatternPlayUnderPressure() {
         <a href="/blog/why-you-lose-tennis-matches-after-leading-4-2">
           Why You Lose After Leading 4–2
         </a>
-        . Then build your “big point” plan in{" "}
-        <a href="/blog/break-point-playbook">Break‑Point Playbook</a>.
+        . Then read{" "}
+        <a href="/blog/90-second-reset-between-games">The 90‑Second Reset</a>{" "}
+        to install the between-games routine that keeps your patterns locked in.
+        Next:{" "}
+        <a href="/blog/break-point-playbook">
+          Break‑Point Playbook
+        </a>
+        .
       </p>
     </>
   );
 }
-

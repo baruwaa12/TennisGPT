@@ -54,8 +54,8 @@ const POSTS = [
     title: "Pattern Play Under Pressure: How to Repeat What Built the Lead",
     description:
       "Closing isn’t about inventing — it’s about repeating. Here’s how to identify your lead-building patterns and keep running them under pressure.",
-    publishedAt: "2026-02-27",
-    status: "comingSoon",
+    publishedAt: "2026-02-26",
+    status: "published",
     order: 4,
     content: PatternPlayUnderPressure,
   },
@@ -64,8 +64,8 @@ const POSTS = [
     title: "Break‑Point Playbook: What to Do at 30‑30, Deuce, and Break Points",
     description:
       "The points that decide sets need a plan. Build a simple playbook for serve/return patterns, targets, and cues on the biggest points.",
-    publishedAt: "2026-02-28",
-    status: "comingSoon",
+    publishedAt: "2026-02-26",
+    status: "published",
     order: 5,
     content: BreakPointPlaybook,
   },
