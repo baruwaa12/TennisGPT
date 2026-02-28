@@ -34,7 +34,7 @@ const POSTS = [
     title: "Execution Drift: The 5% That Costs You Matches (And How To Spot It Early)",
     description:
       "The swing rarely starts with a collapse — it starts with tiny drops in standards. Learn how to diagnose execution drift and correct it before momentum flips.",
-    publishedAt: "2026-02-24",
+    publishedAt: "2026-02-25",
     status: "published",
     order: 2,
     content: ExecutionDriftFivePercent,
@@ -54,7 +54,7 @@ const POSTS = [
     title: "Pattern Play Under Pressure: How to Repeat What Built the Lead",
     description:
       "Closing isn’t about inventing — it’s about repeating. Here’s how to identify your lead-building patterns and keep running them under pressure.",
-    publishedAt: "2026-02-26",
+    publishedAt: "2026-02-27",
     status: "published",
     order: 4,
     content: PatternPlayUnderPressure,
@@ -64,7 +64,7 @@ const POSTS = [
     title: "Break‑Point Playbook: What to Do at 30‑30, Deuce, and Break Points",
     description:
       "The points that decide sets need a plan. Build a simple playbook for serve/return patterns, targets, and cues on the biggest points.",
-    publishedAt: "2026-02-26",
+    publishedAt: "2026-02-28",
     status: "published",
     order: 5,
     content: BreakPointPlaybook,
