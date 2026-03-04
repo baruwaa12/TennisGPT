@@ -5,7 +5,7 @@ import { Footer } from "@/components/landing/Footer";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
 // TODO: Replace with your actual GA4 Measurement ID from analytics.google.com
-const GA_MEASUREMENT_ID = "G-XXXXXXXXXX";
+const GA_MEASUREMENT_ID = "G-VXLD9RYPR9";
 
 // TODO: Replace with your actual production domain
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://composuretennis.com";
