@@ -1,13 +1,19 @@
 {
-    "name": "Composure",
+    "name": "Composure — Tennis. Clearer.",
     "short_name": "Composure",
-    "start_url": ".",
+    "id": "/",
+    "scope": "/",
+    "start_url": "/?source=pwa",
     "display": "standalone",
-    "background_color": "#4CAF50",
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+    "background_color": "#0a0a0a",
     "theme_color": "#4CAF50",
-    "description": "Your AI tennis strategist - tactical coaching for focused players",
+    "description": "Your AI tennis strategist — tactical coaching, emotional resets, and match analysis for competitive players.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "categories": ["sports", "health", "productivity"],
+    "lang": "en",
+    "dir": "ltr",
     "icons": [
         {
             "src": "icons/Icon-192.png",
@@ -30,6 +36,22 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Log a Match",
+            "short_name": "Log Match",
+            "description": "Quickly log your latest match result",
+            "url": "/?action=log-match&source=pwa-shortcut",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Mental Reset",
+            "short_name": "Reset",
+            "description": "Start a between-point mental reset",
+            "url": "/?action=mental-reset&source=pwa-shortcut",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
         }
     ]
 }
