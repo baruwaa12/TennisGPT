@@ -22,6 +22,12 @@ export function Navbar() {
           >
             Blog
           </a>
+          <a
+            href="/app/"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-white/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)]"
+          >
+            Open App
+          </a>
           <Button onClick={scrollToFounder}>Join Founder Access</Button>
         </div>
       </Container>

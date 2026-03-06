@@ -18,6 +18,12 @@ export function Footer() {
               Blog
             </a>
             <a
+              href="/app/"
+              className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
+            >
+              Open App
+            </a>
+            <a
               href="mailto:support@composure.app"
               className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
             >

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:pwa": "cd .. && flutter build web --base-href /app/ --release && cd landing && node -e \"const fs=require('fs');const p='public/app';if(fs.existsSync(p))fs.rmSync(p,{recursive:true});fs.cpSync('../build/web',p,{recursive:true});console.log('PWA copied to public/app/')\""
   },
   "dependencies": {
     "@next/third-parties": "^16.1.6",
