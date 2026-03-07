@@ -10,14 +10,15 @@ class AuthService extends ChangeNotifier {
   final String _apiBaseUrl = 'https://tennisgpt-production.up.railway.app';
   final TokenService _tokenService = TokenService();
   
-  // GoogleSignIn setup
+  // GoogleSignIn setup — kIsWeb must be checked first because on iPhone browsers
+  // defaultTargetPlatform reports iOS, which would incorrectly use the native client ID
   late final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
-    // iOS client ID (from Google Cloud Console)
-    clientId: defaultTargetPlatform == TargetPlatform.iOS
-        ? '861799920120-3hb4p4jsm65goguim07qhfm76e6eoktb.apps.googleusercontent.com'
-        : null,
-    // Server client ID for getting ID token to send to backend
+    clientId: kIsWeb
+        ? null
+        : (defaultTargetPlatform == TargetPlatform.iOS
+            ? '861799920120-3hb4p4jsm65goguim07qhfm76e6eoktb.apps.googleusercontent.com'
+            : null),
     serverClientId: kIsWeb 
         ? null 
         : '861799920120-bhlgkr57n4f3ia1ulaiar0f3ss615g70.apps.googleusercontent.com',
