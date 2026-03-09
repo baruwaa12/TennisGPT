@@ -371,6 +371,11 @@ class AuthService extends ChangeNotifier {
 
       await _googleSignIn.signOut();
       await _tokenService.clearTokens();
+
+      // Wipe all SharedPreferences data for this user before clearing the
+      // user pointer — must happen while the email key is still set so
+      // clearCurrentUserData can find the right prefixed keys.
+      await UserStorageService.clearCurrentUserData();
       await UserStorageService.setCurrentUser(null);
 
       if (onSignOut != null) {
