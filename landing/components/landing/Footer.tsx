@@ -24,7 +24,7 @@ export function Footer() {
               Open App
             </a>
             <a
-              href="mailto:support@composure.app"
+              href="/support"
               className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
             >
               Support
