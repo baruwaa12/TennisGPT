@@ -36,6 +36,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   bool _showSavedTab = false;
   List<Map<String, dynamic>> _savedEntries = [];
   int? _expandedCardIndex;
+  String? _debriefResponse;
 
   /// Debrief options - neutral, coach-like framing
   /// Focus on patterns and situations, not blame or identity
@@ -119,8 +120,8 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
           }
 
           // Show response view if we have a response
-          if (apiService.lastResponse != null) {
-            return _buildResponseView(context, apiService);
+          if (_debriefResponse != null) {
+            return _buildResponseView(context);
           }
 
           // Show input view
@@ -581,7 +582,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     );
   }
 
-  Widget _buildResponseView(BuildContext context, ApiService apiService) {
+  Widget _buildResponseView(BuildContext context) {
     return CustomScrollView(
       slivers: [
         // Header
@@ -673,7 +674,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                     const SizedBox(height: AppTheme.spaceMD),
                     
                     Text(
-                      apiService.lastResponse!,
+                      _debriefResponse!,
                       style: AppTheme.bodyLargeThemed(context).copyWith(
                         height: 1.7,
                         color: AppTheme.textSecondaryColor(context),
@@ -689,7 +690,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               GestureDetector(
                 onTap: _isSaving
                     ? null
-                    : () => _saveCurrentDebrief(apiService.lastResponse!),
+                    : () => _saveCurrentDebrief(_debriefResponse!),
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
@@ -737,8 +738,8 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                           _showCustomInput = false;
                           _customController.clear();
                           _localError = null;
+                          _debriefResponse = null;
                         });
-                        apiService.clearResponse();
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -828,7 +829,10 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     try {
       final response = await apiService.emotionalReset(_selectedSituation!);
       
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _debriefResponse = response;
+      });
       
       // Record usage for free users
       if (!purchaseService.isPremium && response != null) {

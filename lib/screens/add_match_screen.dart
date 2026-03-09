@@ -6,6 +6,13 @@ import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../services/api_service.dart';
 import '../utils/match_format_utils.dart';
+import '../widgets/voice_input_button.dart';
+
+class _GuidedSetScore {
+  int? you;
+  int? opp;
+  int? tiebreak;
+}
 
 /// Add Match Screen (Detailed)
 /// 
@@ -50,6 +57,7 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   final TextEditingController _summaryController = TextEditingController();
   final TextEditingController _mentalNotesController = TextEditingController();
   final TextEditingController _tacticalNotesController = TextEditingController();
+  final List<_GuidedSetScore> _guidedSetScores = List.generate(3, (_) => _GuidedSetScore());
   
   String _matchFormat = MatchFormat.bestOf3;
   String _surface = 'Hard';
@@ -368,21 +376,7 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
           
           const SizedBox(height: AppTheme.spaceMD),
           
-          // Score line (set scores)
-          TextFormField(
-            controller: _scoreController,
-            style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-            decoration: AppTheme.inputDecorationThemed(
-              context,
-              label: 'Score',
-              hint: _scoreHintForFormat(),
-            ),
-            validator: (value) {
-              final error = MatchScoreValidator.validate(_matchFormat, value ?? '');
-              if (error != null) return error;
-              return null;
-            },
-          ),
+          _buildGuidedScoreSection(),
           
           const SizedBox(height: AppTheme.spaceMD),
           
@@ -424,6 +418,161 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
         ],
       ),
     );
+  }
+
+  Widget _buildGuidedScoreSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Score', style: AppTheme.labelThemed(context)),
+        const SizedBox(height: AppTheme.spaceXS),
+        Text(
+          'Use guided set entry (like Quick Match). You can still edit manually below.',
+          style: AppTheme.bodySmallThemed(context),
+        ),
+        const SizedBox(height: AppTheme.spaceSM),
+        ...List.generate(3, (index) => _buildGuidedSetRow(index)),
+        const SizedBox(height: AppTheme.spaceSM),
+        TextFormField(
+          controller: _scoreController,
+          style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+          decoration: AppTheme.inputDecorationThemed(
+            context,
+            label: 'Score line',
+            hint: _scoreHintForFormat(),
+          ),
+          onChanged: (_) => setState(() {}),
+          validator: (value) {
+            final error = MatchScoreValidator.validate(_matchFormat, value ?? '');
+            if (error != null) return error;
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGuidedSetRow(int index) {
+    final set = _guidedSetScores[index];
+    final showTiebreak = _shouldShowTiebreak(set.you, set.opp);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+      padding: const EdgeInsets.all(AppTheme.spaceSM),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text('Set ${index + 1}', style: AppTheme.bodySmallThemed(context)),
+          ),
+          const SizedBox(width: AppTheme.spaceSM),
+          Expanded(
+            child: _buildGameDropdown(
+              value: set.you,
+              label: 'You',
+              onChanged: (value) {
+                setState(() {
+                  set.you = value;
+                  if (!_shouldShowTiebreak(set.you, set.opp)) {
+                    set.tiebreak = null;
+                  }
+                  _syncScoreFromGuidedInput();
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceSM),
+          Expanded(
+            child: _buildGameDropdown(
+              value: set.opp,
+              label: 'Opp',
+              onChanged: (value) {
+                setState(() {
+                  set.opp = value;
+                  if (!_shouldShowTiebreak(set.you, set.opp)) {
+                    set.tiebreak = null;
+                  }
+                  _syncScoreFromGuidedInput();
+                });
+              },
+            ),
+          ),
+          if (showTiebreak) ...[
+            const SizedBox(width: AppTheme.spaceSM),
+            SizedBox(
+              width: 86,
+              child: DropdownButtonFormField<int>(
+                value: set.tiebreak,
+                isDense: true,
+                decoration: AppTheme.inputDecorationThemed(
+                  context,
+                  label: 'TB',
+                ),
+                items: List.generate(13, (i) => i).map((value) {
+                  return DropdownMenuItem<int>(
+                    value: value,
+                    child: Text(value.toString()),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    set.tiebreak = value;
+                    _syncScoreFromGuidedInput();
+                  });
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameDropdown({
+    required int? value,
+    required String label,
+    required ValueChanged<int?> onChanged,
+  }) {
+    return DropdownButtonFormField<int>(
+      value: value,
+      isDense: true,
+      decoration: AppTheme.inputDecorationThemed(context, label: label),
+      items: List.generate(8, (i) => i).map((games) {
+        return DropdownMenuItem<int>(
+          value: games,
+          child: Text(games.toString()),
+        );
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  bool _shouldShowTiebreak(int? you, int? opp) {
+    if (you == null || opp == null) return false;
+    if (_matchFormat == MatchFormat.fast4) {
+      return (you == 4 && opp == 3) || (you == 3 && opp == 4);
+    }
+    return (you == 7 && opp == 6) || (you == 6 && opp == 7);
+  }
+
+  void _syncScoreFromGuidedInput() {
+    final parts = <String>[];
+    for (final set in _guidedSetScores) {
+      if (set.you == null || set.opp == null) continue;
+      final hasTiebreak = _shouldShowTiebreak(set.you, set.opp) && set.tiebreak != null;
+      final part = hasTiebreak
+          ? '${set.you}-${set.opp}(${set.tiebreak})'
+          : '${set.you}-${set.opp}';
+      parts.add(part);
+    }
+    if (parts.isNotEmpty) {
+      _scoreController.text = parts.join(' ');
+    }
   }
 
   Widget _buildDropdown<T>({
@@ -606,36 +755,12 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
             style: AppTheme.bodySmallThemed(context),
           ),
           const SizedBox(height: AppTheme.spaceMD),
-          ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 120),
-            child: TextField(
-              controller: _summaryController,
-              maxLines: 6,
-              minLines: 4,
-              style: AppTheme.bodyMediumThemed(context).copyWith(
-                color: AppTheme.textPrimaryColor(context),
-              ),
-              decoration: InputDecoration(
-                hintText: 'What actually happened in this match?',
-                hintStyle: AppTheme.bodyMediumThemed(context).copyWith(
-                  color: AppTheme.textMutedColor(context),
-                ),
-                filled: true,
-                fillColor: AppTheme.scaffoldBackground(context),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  borderSide: BorderSide(color: AppTheme.borderColor(context)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  borderSide: BorderSide(color: AppTheme.borderColor(context)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  borderSide: const BorderSide(color: AppTheme.primary),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
+          VoiceTextField(
+            controller: _summaryController,
+            hintText: 'What actually happened in this match?',
+            maxLines: 6,
+            style: AppTheme.bodyMediumThemed(context).copyWith(
+              color: AppTheme.textPrimaryColor(context),
             ),
           ),
           // General notes field (compact)
