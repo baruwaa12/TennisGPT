@@ -194,7 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Version
             Center(
               child: Text(
-                'Composure v1.0.0 (Build 47)',
+                'Composure v${AppConfig.appVersion} (Build ${AppConfig.buildNumber})',
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: Colors.grey[500],
@@ -270,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          if (isPremium)
+          if (AppConfig.paymentsEnabled && isPremium)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(

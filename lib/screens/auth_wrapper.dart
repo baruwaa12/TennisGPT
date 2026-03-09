@@ -48,8 +48,8 @@ class AuthWrapper extends StatelessWidget {
     }
 
     // Authenticated! Check onboarding status
-    final hasCompletedOnboarding =
-        authService.onboardingCompleted || profileService.hasCompletedOnboarding;
+    // Use backend state only — avoids local SharedPreferences race condition on app restart.
+    final hasCompletedOnboarding = authService.onboardingCompleted;
 
     if (!hasCompletedOnboarding) {
       return const OnboardingScreen();
