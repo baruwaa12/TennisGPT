@@ -29,6 +29,12 @@ export function Footer() {
             >
               Support
             </a>
+            <a
+              href="/privacy"
+              className="text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--blue)] rounded"
+            >
+              Privacy
+            </a>
           </div>
         </div>
       </Container>
