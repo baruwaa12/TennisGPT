@@ -56,8 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authService.isAuthenticated) {
         final profileService = context.read<PlayerProfileService>();
         await profileService.initialize();
-        final hasCompletedOnboarding =
-            authService.onboardingCompleted || profileService.hasCompletedOnboarding;
+        // Use backend-auth onboarding state as the source of truth for
+        // first-login routing to avoid local-state race conditions.
+        final hasCompletedOnboarding = authService.onboardingCompleted;
 
         final nextScreen = hasCompletedOnboarding
             ? const HomeScreen()
@@ -89,8 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (authService.isAuthenticated) {
         final profileService = context.read<PlayerProfileService>();
         await profileService.initialize();
-        final hasCompletedOnboarding =
-            authService.onboardingCompleted || profileService.hasCompletedOnboarding;
+        // Use backend-auth onboarding state as the source of truth for
+        // first-login routing to avoid local-state race conditions.
+        final hasCompletedOnboarding = authService.onboardingCompleted;
 
         final nextScreen = hasCompletedOnboarding
             ? const HomeScreen()

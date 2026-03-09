@@ -12,6 +12,7 @@ import '../services/streak_service.dart';
 import '../services/pattern_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/shareable_card.dart';
+import '../widgets/guided_set_score_editor.dart';
 import 'match_reflection_screen.dart';
 import 'add_match_screen.dart';
 
@@ -80,6 +81,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   bool _showSuccess = false;
   String? _aiInsight;
   MatchPerformance? _savedMatch;
+  String _guidedScoreLine = '';
+  String? _guidedScoreError;
+  MatchScoreParseResult? _guidedScoreParsed;
   
   late AnimationController _successController;
   late Animation<double> _fadeAnimation;
@@ -106,7 +110,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   }
 
   Future<void> _saveMatch() async {
-    final scoreError = _validateAllScores();
+    final scoreError = _guidedScoreError;
     if (scoreError != null) {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,12 +136,15 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           : 'Opponent';
       final quickNote = _quickNoteController.text.trim();
 
-      final setResults = _calculateSetResults();
-      final setsWon = setResults.setsWon;
-      final setsLost = setResults.setsLost;
+      final parsedScore = _guidedScoreParsed;
+      if (parsedScore == null) {
+        throw Exception('Score not parsed');
+      }
+      final setsWon = parsedScore.setsWon;
+      final setsLost = parsedScore.setsLost;
       final result = setsWon > setsLost ? 'Win' : 'Loss';
-      final scoreLine = _buildScoreLine();
-      final setScores = _buildSetScoresList();
+      final scoreLine = _guidedScoreLine;
+      final setScores = parsedScore.setScores;
 
       // Create match description for AI
       final matchDescription = '''
@@ -743,7 +750,9 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
   }
 
   Widget _buildScoreSection() {
-    final setResults = _calculateSetResults();
+    final parsed = _guidedScoreParsed;
+    final setsWon = parsed?.setsWon ?? 0;
+    final setsLost = parsed?.setsLost ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -758,52 +767,36 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
               _buildMainScoreHeaderRow(),
               const SizedBox(height: AppTheme.spaceSM),
               _buildMainScoreRow(
-                youValue: setResults.setsWon,
-                oppValue: setResults.setsLost,
+                youValue: setsWon,
+                oppValue: setsLost,
               ),
               const SizedBox(height: AppTheme.spaceMD),
               Divider(color: AppTheme.borderColor(context)),
               const SizedBox(height: AppTheme.spaceMD),
-              Text('Set scores', style: AppTheme.labelThemed(context)),
+              Text('Set scores (shared editor)', style: AppTheme.labelThemed(context)),
               const SizedBox(height: AppTheme.spaceSM),
-              _buildSetScoreHeaderRow(),
-              const SizedBox(height: AppTheme.spaceSM),
-              ...List.generate(_visibleSetCount, (index) {
-                final score = _setScores[index];
-                final showFast4Tb = !_isNormalSets && _isFast4TiebreakVisible(score);
-                final showNormalTb = _isNormalSets && _isNormalTiebreakVisible(score);
-                return Padding(
-                  padding: EdgeInsets.only(bottom: index == _visibleSetCount - 1 ? 0 : AppTheme.spaceSM),
-                  child: Column(
-                    children: [
-                      _buildSetScoreRow(
-                        label: 'Set ${index + 1}',
-                        youValue: score.you,
-                        oppValue: score.opp,
-                        onYouMinus: () => _updateGameScore(index, true, -1),
-                        onYouPlus: () => _updateGameScore(index, true, 1),
-                        onOppMinus: () => _updateGameScore(index, false, -1),
-                        onOppPlus: () => _updateGameScore(index, false, 1),
-                        compact: true,
-                      ),
-                      if (showFast4Tb || showNormalTb) ...[
-                        const SizedBox(height: AppTheme.spaceXS),
-                        _buildSetScoreRow(
-                          label: 'TB',
-                          youValue: score.tbYou ?? 0,
-                          oppValue: score.tbOpp ?? 0,
-                          onYouMinus: () => _updateTiebreakScore(index, true, -1),
-                          onYouPlus: () => _updateTiebreakScore(index, true, 1),
-                          onOppMinus: () => _updateTiebreakScore(index, false, -1),
-                          onOppPlus: () => _updateTiebreakScore(index, false, 1),
-                          compact: true,
-                          isTiebreak: true,
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }),
+              GuidedSetScoreEditor(
+                key: ValueKey(_matchFormat),
+                matchFormat: _matchFormat,
+                initialScoreLine: _guidedScoreLine,
+                onChanged: (scoreLine, parsedScore, error) {
+                  setState(() {
+                    _guidedScoreLine = scoreLine;
+                    _guidedScoreParsed = parsedScore;
+                    _guidedScoreError = error;
+                    if (parsedScore != null && parsedScore.setsWon != parsedScore.setsLost) {
+                      _selectedResult = parsedScore.setsWon > parsedScore.setsLost ? 'Win' : 'Loss';
+                    }
+                  });
+                },
+              ),
+              if (_guidedScoreError != null) ...[
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  _guidedScoreError!,
+                  style: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.loss),
+                ),
+              ],
             ],
           ),
         ),
@@ -870,7 +863,11 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
   }
 
   Widget _buildSaveButton() {
-    final isValid = _validateAllScores() == null;
+    final parsed = _guidedScoreParsed;
+    final isValid = parsed != null &&
+        _guidedScoreError == null &&
+        parsed.setScores.length >= 2 &&
+        parsed.setsWon != parsed.setsLost;
     
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
@@ -893,7 +890,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
                   MaterialPageRoute(
                     builder: (context) => AddMatchScreen(
                       initialMatchFormat: _matchFormat,
-                      initialScoreLine: _buildScoreLine(),
+                      initialScoreLine: _guidedScoreLine,
                       initialOpponentLevelSeed: '',
                       initialOpponentName: _opponentController.text.trim(),
                       initialNotes: _quickNoteController.text.trim(),
