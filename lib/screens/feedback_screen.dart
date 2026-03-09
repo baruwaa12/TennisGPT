@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 import '../theme/app_theme.dart';
+import '../config/app_config.dart';
 
 /// Send Feedback Screen
 /// 
@@ -20,9 +21,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   String _selectedCategory = 'general';
   bool _isSending = false;
   
-  static const String _supportEmail = 'ademolabaruwa09@gmail.com';
-  static const String _appVersion = '1.0.0';
-  static const String _buildNumber = '47';
+  static const String _supportEmail = AppConfig.supportEmail;
+  static const String _appVersion = AppConfig.appVersion;
+  static const String _buildNumber = AppConfig.buildNumber;
 
   final List<Map<String, String>> _categories = [
     {'id': 'general', 'label': 'General Feedback', 'emoji': '💬'},

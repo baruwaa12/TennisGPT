@@ -330,6 +330,75 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final token = await _tokenService.getAccessToken();
+      if (token == null) {
+        _error = 'You are not signed in.';
+        return false;
+      }
+
+      final response = await http.delete(
+        Uri.parse('$_apiBaseUrl/api/auth/account'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Server request timed out. Please try again.');
+        },
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 404) {
+        String errorMessage = 'Could not delete account (${response.statusCode})';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (_) {
+            errorMessage = response.body;
+          }
+        }
+        _error = errorMessage;
+        return false;
+      }
+
+      await _googleSignIn.signOut();
+      await _tokenService.clearTokens();
+      await UserStorageService.setCurrentUser(null);
+
+      if (onSignOut != null) {
+        await onSignOut!();
+      }
+
+      _isAuthenticated = false;
+      _userDisplayName = null;
+      _userPhotoURL = null;
+      _userEmail = null;
+      _userPlan = 'free';
+      _onboardingCompleted = false;
+      _tacticalRemaining = 4;
+      _error = null;
+
+      return true;
+    } catch (e) {
+      _error = 'Error deleting account: $e';
+      if (kDebugMode) {
+        print('AuthService: Error deleting account - $e');
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> _fetchCurrentUser() async {
     try {
       final token = await _tokenService.getAccessToken();

@@ -214,6 +214,18 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<bool> DeleteAccountAsync(Guid userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        await _userRepository.DeleteAsync(userId);
+        return true;
+    }
+
     public async Task<UserDto?> GetCurrentUserAsync(Guid userId)
     {
         var user = await _userRepository.GetByIdAsync(userId);

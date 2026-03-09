@@ -102,7 +102,7 @@ class ApiService extends ChangeNotifier {
       case ApiErrorCode.invalidResponse:
         return 'We received an unexpected response. Please try again.';
       case ApiErrorCode.quotaExceeded:
-        return 'You\'ve used all your free analyses. Upgrade to Premium for unlimited access!';
+        return 'You\'ve reached today\'s analysis limit. Please try again tomorrow.';
       case ApiErrorCode.unknown:
       case ApiErrorCode.none:
         return 'Something went wrong. Please try again.';

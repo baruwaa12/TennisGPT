@@ -8,6 +8,7 @@ public interface IAuthService
     Task<AuthResponse> AuthenticateWithAppleAsync(string identityToken, string? email, string? displayName);
     Task<AuthResponse> RefreshTokenAsync(string refreshToken);
     Task RevokeRefreshTokenAsync(Guid userId);
+    Task<bool> DeleteAccountAsync(Guid userId);
     Task<UserDto?> GetCurrentUserAsync(Guid userId);
     Task MarkOnboardingCompleteAsync(Guid userId);
 }

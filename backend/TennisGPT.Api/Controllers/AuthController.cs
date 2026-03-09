@@ -101,6 +101,21 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
+    [HttpDelete("account")]
+    public async Task<ActionResult> DeleteAccount()
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        var deleted = await _authService.DeleteAccountAsync(userId.Value);
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
+    }
+
+    [Authorize]
     [HttpPost("onboarding-complete")]
     public async Task<ActionResult> MarkOnboardingComplete()
     {

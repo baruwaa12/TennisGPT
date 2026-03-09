@@ -94,7 +94,7 @@ class ShareableCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TennisGPT',
+                        'Composure',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -157,7 +157,7 @@ class ShareableCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '🎾 Powered by TennisGPT',
+                  '🎾 Powered by Composure',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -195,7 +195,7 @@ class ShareButton extends StatelessWidget {
     
     await Share.share(
       shareText,
-      subject: subject ?? 'My TennisGPT Insight',
+      subject: subject ?? 'My Composure Insight',
     );
     
     onShareComplete?.call();
@@ -227,7 +227,7 @@ class ShareButton extends StatelessWidget {
 /// Helper class to generate share text
 class ShareTextGenerator {
   // Set this when you have a landing page
-  static const String? websiteUrl = null; // e.g., 'tennisgpt.com'
+  static const String? websiteUrl = null; // e.g., 'composure.app'
   
   static String get _websiteText => 
       websiteUrl != null ? '\n\n🎾 $websiteUrl' : '';
@@ -235,7 +235,7 @@ class ShareTextGenerator {
   static String tacticalAnalysis(String analysis) {
     // Extract first meaningful sentence or key insight
     final summary = _extractSummary(analysis, maxLength: 150);
-    return '''🎯 TennisGPT Analysis
+    return '''🎯 Composure Analysis
 
 "$summary"$_websiteText''';
   }
@@ -260,13 +260,13 @@ vs $opponent: $scoreText$insightText$_websiteText''';
 
   static String streak(int days) {
     final emoji = days >= 7 ? '🏆' : '🔥';
-    return '''$emoji $days-day streak on TennisGPT!
+    return '''$emoji $days-day streak on Composure!
 
 Logging matches and getting AI tactical insights every day.$_websiteText''';
   }
 
   static String winRate(double rate, int totalMatches) {
-    return '''📊 My TennisGPT Stats
+    return '''📊 My Composure Stats
 
 Win Rate: ${rate.toStringAsFixed(0)}%
 Matches Logged: $totalMatches$_websiteText''';

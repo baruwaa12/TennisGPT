@@ -6,7 +6,6 @@ import '../../services/player_profile_service.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../home_screen.dart';
-import '../paywall_screen.dart';
 import '../../utils/tennis_validator.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -133,17 +132,6 @@ Please provide a brief tactical insight to show the value of the app.
     }
   }
 
-  void _showPaywall() async {
-    HapticFeedback.mediumImpact();
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const PaywallScreen(trigger: PaywallTrigger.general),
-      ),
-    );
-    _completeOnboarding();
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -210,7 +198,7 @@ Please provide a brief tactical insight to show the value of the app.
           ),
           const SizedBox(height: 24),
           Text(
-            'TennisGPT',
+            'Composure',
             style: GoogleFonts.poppins(
               fontSize: 36,
               fontWeight: FontWeight.bold,
@@ -704,7 +692,7 @@ Please provide a brief tactical insight to show the value of the app.
           const SizedBox(height: 24),
           
           Text(
-            'Want unlimited tactical insights?',
+            'Your account is ready.',
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -713,50 +701,27 @@ Please provide a brief tactical insight to show the value of the app.
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _completeOnboarding,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    side: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  child: Text(
-                    'Start Free',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _completeOnboarding,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Continue to Home',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _showPaywall,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Go Premium ⭐',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),

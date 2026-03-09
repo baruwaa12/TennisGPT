@@ -3,13 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
-import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../utils/tennis_validator.dart';
 import '../widgets/voice_input_button.dart';
-import '../config/app_config.dart';
-import 'paywall_screen.dart';
 
 /// Post-Match Debrief Screen
 /// 
@@ -824,24 +821,6 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     // Check usage limits (respects feature flags)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    // Skip paywall if: payments disabled, user is comped, or user is premium
-    final shouldShowPaywall = AppConfig.shouldShowPaywall(email: authService.userEmail);
-    
-    if (shouldShowPaywall && !purchaseService.isPremium && !usageService.canUseDebrief) {
-      HapticFeedback.mediumImpact();
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const PaywallScreen(
-            trigger: PaywallTrigger.debriefLimit,
-          ),
-        ),
-      );
-      
-      if (result != true) return;
-    }
 
     setState(() => _isLoading = true);
     HapticFeedback.lightImpact();

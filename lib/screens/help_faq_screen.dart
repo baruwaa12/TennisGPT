@@ -201,15 +201,15 @@ class HelpFaqScreen extends StatelessWidget {
     },
     {
       'question': 'Can I edit or delete my match logs?',
-      'answer': 'Currently, matches cannot be edited after logging. If you need to remove your data, you can contact us at support@composuretennis.com and we\'ll help you. We\'re working on adding edit and delete features in a future update.',
+      'answer': 'Match logs cannot be edited individually yet. To permanently remove your account data, open Settings and choose Delete Account.',
     },
     {
-      'question': 'Is the app free during testing?',
-      'answer': 'Yes! During our testing period, you have full access to all features. We\'re gathering feedback to make Composure the best it can be. In the future, some advanced features may require a subscription, but we\'ll always have a free tier available.',
+      'question': 'Do I need a subscription to use the app right now?',
+      'answer': 'No. Composure currently provides full access to all core features in this version.',
     },
     {
       'question': 'What should I do if something isn\'t working?',
-      'answer': 'First, try closing and reopening the app. Make sure you have a stable internet connection for AI features. If the problem continues, please send us feedback through Settings → Send Feedback, or email support@composuretennis.com. Include what happened and we\'ll help you out!',
+      'answer': 'First, try closing and reopening the app. Make sure you have a stable internet connection for AI features. If the problem continues, please send us feedback through Settings -> Send Feedback, or email ademolabaruwa09@gmail.com. Include what happened and we\'ll help you out!',
     },
   ];
 }

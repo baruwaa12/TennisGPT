@@ -5,7 +5,6 @@ import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../services/api_service.dart';
-import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
@@ -13,8 +12,6 @@ import '../services/streak_service.dart';
 import '../services/pattern_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/shareable_card.dart';
-import '../config/app_config.dart';
-import 'paywall_screen.dart';
 import 'match_reflection_screen.dart';
 import 'add_match_screen.dart';
 
@@ -125,22 +122,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     // Check usage limits (respects feature flags)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    // Skip paywall if: payments disabled, user is comped, or user is premium
-    final shouldShowPaywall = AppConfig.shouldShowPaywall(email: authService.userEmail);
-
-    if (shouldShowPaywall && !purchaseService.isPremium && !usageService.canLogMatch) {
-      HapticFeedback.mediumImpact();
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const PaywallScreen(trigger: PaywallTrigger.matchLimit),
-        ),
-      );
-      if (result != true) return;
-    }
-
     setState(() => _isSaving = true);
     HapticFeedback.lightImpact();
 

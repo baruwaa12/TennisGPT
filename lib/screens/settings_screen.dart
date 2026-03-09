@@ -9,11 +9,9 @@ import '../services/purchase_service.dart';
 import '../services/player_profile_service.dart';
 import '../services/usage_service.dart';
 import '../services/streak_service.dart';
-import '../services/match_history_service.dart';
 import '../config/app_config.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
-import 'paywall_screen.dart';
 import 'help_faq_screen.dart';
 import 'feedback_screen.dart';
 import 'legal_screen.dart';
@@ -26,10 +24,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  int _versionTapCount = 0;
-  bool _showDevTools = false;
-  bool _forcePremiumEnabled = false;
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -40,10 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final usageService = Provider.of<UsageService>(context);
     final streakService = Provider.of<StreakService>(context);
 
-    // Dev mode: Force premium override
-    // Also check if payments are disabled (testing mode = everyone is premium)
-    final isPremium = _forcePremiumEnabled || 
-                      purchaseService.isPremium || 
+    // Treat all users as premium while payments are hidden.
+    final isPremium = purchaseService.isPremium || 
                       !AppConfig.paymentsEnabled ||
                       AppConfig.isCompedUser(email: authService.userEmail);
 
@@ -72,64 +64,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildStatsCard(usageService, streakService, isDark),
             
             const SizedBox(height: 24),
-            
-            // Subscription Section (hidden during testing mode)
-            if (AppConfig.paymentsEnabled) ...[
-              _buildSectionTitle('Subscription', isDark),
-              _buildSettingsTile(
-                icon: Icons.workspace_premium,
-                iconColor: Colors.amber,
-                title: isPremium ? 'Premium Active' : 'Upgrade to Premium',
-                subtitle: isPremium 
-                    ? 'Unlimited access to all features'
-                    : 'Get unlimited AI analyses',
-                onTap: isPremium ? null : () => _openPaywall(),
-                trailing: isPremium 
-                    ? Icon(Icons.check_circle, color: AppTheme.win)
-                    : const Icon(Icons.arrow_forward_ios, size: 16),
-                isDark: isDark,
-              ),
-              const SizedBox(height: 24),
-            ] else ...[
-              // Testing mode indicator
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.science_outlined, color: AppTheme.primary, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Testing Mode',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryDark,
-                            ),
-                          ),
-                          Text(
-                            'Full access enabled for testers',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: AppTheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
             
             // Appearance Section
             _buildSectionTitle('Appearance', isDark),
@@ -196,16 +130,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
-            _buildSettingsTile(
-              icon: Icons.star_outline,
-              iconColor: Colors.amber,
-              title: 'Rate the App',
-              subtitle: 'Love Composure? Let us know!',
-              onTap: () => _showComingSoon('Rate App'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            
             const SizedBox(height: 24),
             
             // Legal Section
@@ -243,6 +167,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const SizedBox(height: 24),
             
+            // Account
+            _buildSectionTitle('Account', isDark),
+            _buildSettingsTile(
+              icon: Icons.delete_forever_outlined,
+              iconColor: Colors.red,
+              title: 'Delete Account',
+              subtitle: 'Permanently remove your account and data',
+              onTap: () => _deleteAccount(authService),
+              isDark: isDark,
+            ),
+            
+            const SizedBox(height: 24),
+            
             // Sign Out
             _buildSettingsTile(
               icon: Icons.logout,
@@ -252,24 +189,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               isDark: isDark,
             ),
             
-            // DEV TOOLS (hidden by default, shown after 5 taps on version)
-            if (_showDevTools || kDebugMode) ...[
-              const SizedBox(height: 24),
-              _buildDevToolsSection(usageService, isDark),
-            ],
-            
             const SizedBox(height: 32),
             
-            // Version (tap 5 times to reveal dev tools)
+            // Version
             Center(
-              child: GestureDetector(
-                onTap: _handleVersionTap,
-                child: Text(
-                  'Composure v1.0.0 (Build 47)',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+              child: Text(
+                'Composure v1.0.0 (Build 47)',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey[500],
                 ),
               ),
             ),
@@ -279,225 +207,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  void _handleVersionTap() {
-    _versionTapCount++;
-    if (_versionTapCount >= 5) {
-      HapticFeedback.mediumImpact();
-      setState(() => _showDevTools = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Developer tools unlocked', style: GoogleFonts.poppins()),
-          backgroundColor: Colors.purple,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  Widget _buildDevToolsSection(UsageService usageService, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Developer Tools', isDark),
-        Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.purple.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.purple, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Dev tools - for testing only',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.purple,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        // Force Premium toggle
-        _buildSettingsTile(
-          icon: Icons.star,
-          iconColor: Colors.amber,
-          title: 'Force Premium',
-          subtitle: _forcePremiumEnabled ? 'ON - Treating as premium user' : 'OFF - Normal subscription check',
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            setState(() => _forcePremiumEnabled = !_forcePremiumEnabled);
-          },
-          trailing: Switch(
-            value: _forcePremiumEnabled,
-            onChanged: (value) {
-              HapticFeedback.mediumImpact();
-              setState(() => _forcePremiumEnabled = value);
-            },
-            activeColor: Colors.amber,
-          ),
-          isDark: isDark,
-        ),
-        
-        // Reset Usage Counters
-        _buildSettingsTile(
-          icon: Icons.refresh,
-          iconColor: Colors.orange,
-          title: 'Reset Usage Counters',
-          subtitle: 'Reset AI analysis count (${usageService.dailyAIUsed}/${UsageService.freeDailyAILimit} used today)',
-          onTap: () => _showResetUsageDialog(usageService),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          isDark: isDark,
-        ),
-        
-        // Reset All Data
-        _buildSettingsTile(
-          icon: Icons.delete_forever,
-          iconColor: Colors.red,
-          title: 'Reset All Test Data',
-          subtitle: 'Clear matches, usage, and AI responses',
-          onTap: () => _showFullResetDialog(usageService),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          isDark: isDark,
-        ),
-        
-        // Usage Stats
-        Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceCard : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Current Usage',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Matches: ${usageService.matchCount}/${UsageService.freeMatchesLimit}',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                'AI Analyses: ${usageService.dailyAIUsed}/${UsageService.freeDailyAILimit} (today)',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                'Can use AI: ${usageService.canUseTacticalAnalysis ? "Yes" : "No (paywall)"}',
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: usageService.canUseTacticalAnalysis ? AppTheme.win : AppTheme.loss,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showResetUsageDialog(UsageService usageService) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Reset Usage Counters?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text(
-          'This will reset your AI analysis count to 0, allowing you to test the free tier flow again.\n\nMatch count will also be reset.',
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Reset', style: GoogleFonts.poppins(color: Colors.orange)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      // Use deleteUsageData to actually delete the stored data (not just reset in-memory)
-      await usageService.deleteUsageData();
-      HapticFeedback.mediumImpact();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Usage counters reset - restart screens to see changes', style: GoogleFonts.poppins()),
-            backgroundColor: AppTheme.primary,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _showFullResetDialog(UsageService usageService) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Reset All Test Data?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text(
-          'This will reset:\n\n• Usage counters\n• Match history\n• Saved AI responses\n\nThis action cannot be undone.',
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Reset Everything', style: GoogleFonts.poppins(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      // Delete usage data (not just reset in-memory)
-      await usageService.deleteUsageData();
-      
-      // Delete match history using the provider instance
-      final matchService = Provider.of<MatchHistoryService>(context, listen: false);
-      await matchService.deleteAllMatches();
-      
-      // Reset streak
-      final streakService = Provider.of<StreakService>(context, listen: false);
-      await streakService.resetStreak();
-      
-      HapticFeedback.heavyImpact();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('All test data reset - navigate to other screens to see changes', style: GoogleFonts.poppins()),
-            backgroundColor: AppTheme.primary,
-          ),
-        );
-      }
-    }
   }
 
   Widget _buildProfileCard(
@@ -565,9 +274,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: _forcePremiumEnabled 
-                    ? Colors.purple.shade100 
-                    : Colors.amber.shade100,
+                color: Colors.amber.shade100,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -576,17 +283,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Icon(
                     Icons.workspace_premium, 
                     size: 14, 
-                    color: _forcePremiumEnabled ? Colors.purple : Colors.amber,
+                    color: Colors.amber,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _forcePremiumEnabled ? 'DEV' : 'PRO',
+                    'PRO',
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: _forcePremiumEnabled 
-                          ? Colors.purple.shade800 
-                          : Colors.amber.shade800,
+                      color: Colors.amber.shade800,
                     ),
                   ),
                 ],
@@ -853,24 +558,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _openPaywall() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const PaywallScreen(trigger: PaywallTrigger.general),
-      ),
-    );
-  }
-
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming soon!', style: GoogleFonts.poppins()),
-        backgroundColor: AppTheme.primary,
-      ),
-    );
-  }
-
   Future<void> _signOut(AuthService authService) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -899,5 +586,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  Future<void> _deleteAccount(AuthService authService) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Account?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text(
+          'This permanently deletes your account and all associated app data. This action cannot be undone.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel', style: GoogleFonts.poppins()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete', style: GoogleFonts.poppins(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final success = await authService.deleteAccount();
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account deleted successfully', style: GoogleFonts.poppins()),
+          backgroundColor: AppTheme.primary,
+        ),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          authService.error ?? 'Could not delete account right now.',
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 }

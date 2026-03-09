@@ -8,13 +8,12 @@ class AppConfig {
   // ============================================================
   
   /// Whether payments/subscriptions are enabled.
-  /// Set to FALSE for testing builds (full access for testers).
-  /// Set to TRUE when ready to monetize.
-  static const bool paymentsEnabled = true;
+  /// Disabled for current iOS App Review submission.
+  static const bool paymentsEnabled = false;
   
   /// Whether to show paywall screens.
-  /// When false, all users get premium-like access.
-  static const bool showPaywalls = true;
+  /// Keep false while payments are hidden.
+  static const bool showPaywalls = false;
   
   /// Whether to enforce usage limits.
   /// When false, limits are not enforced (unlimited for testers).

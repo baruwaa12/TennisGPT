@@ -125,7 +125,7 @@ You agree to:
 
 • You are responsible for maintaining the security of your account
 • We may suspend or terminate accounts that violate these Terms
-• You can request deletion of your data by contacting support
+• You can delete your account and data anytime from Settings > Delete Account
 
 8. CHANGES TO THE APP
 
@@ -248,7 +248,7 @@ You have the right to:
 • Export your data
 • Opt out of marketing communications
 
-To exercise these rights, contact ademolabaruwa09@gmail.com
+To exercise these rights, use the in-app controls where available (including Settings > Delete Account) or contact ademolabaruwa09@gmail.com
 
 8. CHILDREN'S PRIVACY
 
