@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "How do I log a match?",
-    a: "Tap "Log Match" on the home screen. Enter the result, score, and any notes. It takes about 30 seconds.",
+    a: 'Tap "Log Match" on the home screen. Enter the result, score, and any notes. It takes about 30 seconds.',
   },
   {
     q: "How do I delete my account?",
-    a: "Open the app, go to Settings, scroll to the Account section and tap "Delete Account". This permanently removes your account and all associated data.",
+    a: 'Open the app, go to Settings, scroll to the Account section and tap "Delete Account". This permanently removes your account and all associated data.',
   },
   {
     q: "Do I need a subscription to use Composure?",
