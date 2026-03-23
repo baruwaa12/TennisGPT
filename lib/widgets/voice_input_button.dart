@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/voice_input_service.dart';
 import '../theme/app_theme.dart';
 
@@ -65,7 +66,6 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     )..repeat(reverse: true);
     
     _voiceService.addListener(_onVoiceStateChanged);
-    _voiceService.initialize();
   }
   
   @override
@@ -122,9 +122,17 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     if (_voiceService.isListening) {
       await _voiceService.stopListening();
     } else {
+      // Initialize on first tap — this is when the OS permission prompt appears
+      if (!_voiceService.isAvailable) {
+        final initialized = await _voiceService.initialize();
+        if (!initialized) {
+          _showPermissionDeniedDialog();
+          return;
+        }
+      }
+      
       await _voiceService.startListening(
         onResult: (recognizedText) {
-          // This is called only with FINAL, accurate results
           if (recognizedText.isNotEmpty) {
             HapticFeedback.lightImpact();
             widget.onResult(recognizedText);
@@ -132,6 +140,34 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         },
       );
     }
+  }
+  
+  void _showPermissionDeniedDialog() {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Microphone Access Required'),
+        content: const Text(
+          'Composure needs microphone and speech recognition access to use voice input.\n\n'
+          'Please enable both in Settings > Composure.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              launchUrl(Uri.parse('app-settings:'));
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
