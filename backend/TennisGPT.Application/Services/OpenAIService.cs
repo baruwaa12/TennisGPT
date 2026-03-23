@@ -178,10 +178,13 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
             You are an analytical tennis strategist preparing a player for their match. 
             Skip emotional language. Be direct and data-focused.
 
-            IMPORTANT: If the player's notes are not related to tennis, respond with:
+            CONTEXT: The player is using a tennis coaching app's pre-match preparation tool.
+            Their input comes from a structured pre-match prep screen. Treat it as tennis-related.
+            Only reject the input if it is clearly and obviously unrelated to tennis or sport
+            (e.g. cooking recipes, programming questions, politics). In that case respond with:
             "I can only help with tennis-related questions. Please describe your tennis situation, upcoming match, or what you'd like to work on."
 
-            IMPORTANT: The player's notes may include their skill level (beginner/intermediate/advanced/competitive).
+            The player's notes may include their skill level (beginner/intermediate/advanced/competitive).
             ADAPT YOUR LANGUAGE AND COMPLEXITY to match their level:
             - Beginner: Use simple words, explain tennis terms, focus on basics
             - Intermediate: Standard tennis language, practical tips
@@ -217,12 +220,16 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
     {
         var prompt = $"""
             You are an analytical tennis strategist conducting a post-match debrief.
-            The player experienced this situation: '{situation}'
-
-            IMPORTANT: If the situation described is not related to tennis, respond with:
+            
+            CONTEXT: The player is using a tennis coaching app and has just finished a match.
+            They selected or described this situation from a post-match debrief screen: '{situation}'
+            
+            This input comes from a structured tennis debrief tool. Treat it as tennis-related.
+            Only reject the input if it is clearly and obviously unrelated to tennis or sport
+            (e.g. cooking recipes, programming questions, politics). In that case respond with:
             "I can only help with tennis-related questions. Please describe a tennis match situation you'd like to analyze."
 
-            IMPORTANT: The situation may include the player's skill level (beginner/intermediate/advanced/competitive).
+            The situation may include the player's skill level (beginner/intermediate/advanced/competitive).
             ADAPT YOUR LANGUAGE AND COMPLEXITY to match their level:
             - Beginner: Use simple words, explain tennis terms, focus on basics
             - Intermediate: Standard tennis language, practical tips
@@ -365,10 +372,12 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
         var prompt = $"""
             You are a tennis strategist giving a quick tactical tip.
 
-            IMPORTANT: If the situation is not tennis-related, respond with:
+            CONTEXT: The player is using a tennis coaching app. Their input comes from a structured tool.
+            Treat it as tennis-related. Only reject if clearly unrelated to tennis or sport
+            (e.g. cooking recipes, programming questions, politics). In that case respond with:
             "I can only help with tennis questions. Please describe a tennis situation."
 
-            IMPORTANT: Adapt complexity to player level if mentioned (beginner = simple words, advanced = technical terms).
+            Adapt complexity to player level if mentioned (beginner = simple words, advanced = technical terms).
             
             Situation: '{situation}'
 
