@@ -42,6 +42,11 @@ class AuthWrapper extends StatelessWidget {
       );
     }
 
+    // Guest mode -> show home directly (no onboarding required)
+    if (authService.isGuest) {
+      return const HomeScreen();
+    }
+
     // Not authenticated -> show login
     if (!authService.isAuthenticated) {
       return const LoginScreen();

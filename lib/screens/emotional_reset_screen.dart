@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../utils/tennis_validator.dart';
+import '../utils/ai_disclosure_consent.dart';
 import '../widgets/voice_input_button.dart';
 
 /// Post-Match Debrief Screen
@@ -817,6 +818,11 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         setState(() => _localError = validationError);
         return;
       }
+    }
+
+    final consented = await AiDisclosureConsent.ensureAccepted(context);
+    if (!consented) {
+      return;
     }
 
     // Check usage limits (respects feature flags)

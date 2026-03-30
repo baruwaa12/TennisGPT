@@ -252,10 +252,10 @@ To exercise these rights, use the in-app controls where available (including Set
 
 8. CHILDREN'S PRIVACY
 
-Composure is suitable for tennis players of all ages. For users under 13:
-• We collect minimal data necessary for the app to function
-• We do not knowingly collect sensitive personal information
-• Parents/guardians can contact us to manage their child's data
+Composure is not directed to children under 13.
+• We do not knowingly collect personal information from children under 13
+• If you believe a child under 13 has provided personal information, contact us
+• We will promptly investigate and delete the data where required
 
 9. THIRD-PARTY SERVICES
 

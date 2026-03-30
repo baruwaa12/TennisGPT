@@ -16,8 +16,8 @@ import 'services/match_history_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Allow google_fonts to fetch from network if assets aren't bundled
-  GoogleFonts.config.allowRuntimeFetching = true;
+  // Keep font loading local-only for predictable offline behavior.
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   if (kDebugMode) {
     print('API_BASE_URL = https://tennisgpt-production.up.railway.app');

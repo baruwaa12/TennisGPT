@@ -13,6 +13,7 @@ import '../widgets/shareable_card.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../widgets/voice_input_button.dart';
+import '../utils/ai_disclosure_consent.dart';
 
 /// Tactical Coach Screen
 ///
@@ -240,6 +241,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     final playerContext = profileService.getPlayerContext();
     if (playerContext.isNotEmpty) {
       query = '$playerContext\n\n$query';
+    }
+
+    final consented = await AiDisclosureConsent.ensureAccepted(context);
+    if (!consented) {
+      return;
     }
 
     setState(() {

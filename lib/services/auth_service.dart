@@ -26,6 +26,7 @@ class AuthService extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _isAuthenticated = false;
+  bool _isGuest = false;
   String? _error;
   String? _userDisplayName;
   String? _userPhotoURL;
@@ -45,6 +46,7 @@ class AuthService extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
+  bool get isGuest => _isGuest;
   String? get error => _error;
   String? get userDisplayName => _userDisplayName;
   String? get userPhotoURL => _userPhotoURL;
@@ -53,6 +55,17 @@ class AuthService extends ChangeNotifier {
   bool get isPremium => _userPlan == 'premium';
   bool get onboardingCompleted => _onboardingCompleted;
   int get tacticalRemaining => _tacticalRemaining;
+
+  void enterGuestMode() {
+    _isGuest = true;
+    _isAuthenticated = false;
+    notifyListeners();
+  }
+
+  void exitGuestMode() {
+    _isGuest = false;
+    notifyListeners();
+  }
 
   Future<void> signInWithApple() async {
     _isLoading = true;

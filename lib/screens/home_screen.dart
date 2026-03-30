@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
@@ -12,6 +13,7 @@ import 'quick_match_screen.dart';
 import 'mental_check_in_screen.dart';
 import 'emotional_reset_screen.dart';
 import 'settings_screen.dart';
+import 'login_screen.dart';
 
 /// Home Screen - Performance Dashboard
 /// 
@@ -86,11 +88,58 @@ class _HomeScreenState extends State<HomeScreen> {
     return isWinStreak ? streak : -streak;
   }
 
+  bool get _isGuest =>
+      Provider.of<AuthService>(context, listen: false).isGuest;
+
+  /// Shows a sign-in prompt when a guest taps a feature that requires auth.
+  /// Returns true if the user signed in, false if they cancelled.
+  Future<bool> _requireSignIn() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Sign in to continue',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text(
+          'Create a free account to log matches, get AI coaching, and track your progress.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Not now', style: GoogleFonts.poppins()),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx, true);
+            },
+            child: Text('Sign in',
+                style: GoogleFonts.poppins(
+                    color: AppTheme.primary, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      final authService =
+          Provider.of<AuthService>(context, listen: false);
+      authService.exitGuestMode();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+      return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final streakService = Provider.of<StreakService>(context);
-    final firstName = authService.userDisplayName?.split(' ').first ?? 'Player';
+    final firstName = authService.isGuest
+        ? 'Player'
+        : (authService.userDisplayName?.split(' ').first ?? 'Player');
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
@@ -354,6 +403,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.mediumImpact();
+        if (_isGuest) {
+          _requireSignIn();
+          return;
+        }
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const QuickMatchScreen()),
@@ -400,6 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
+                if (_isGuest) { _requireSignIn(); return; }
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const MatchHistoryScreen()),
@@ -536,28 +590,37 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: _buildToolItem(
               icon: Icons.analytics_outlined,
               label: 'Tactical\nAnalysis',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TacticalCoachScreen()),
-              ),
+              onTap: () {
+                if (_isGuest) { _requireSignIn(); return; }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TacticalCoachScreen()),
+                );
+              },
             )),
             const SizedBox(width: AppTheme.spaceSM),
             Expanded(child: _buildToolItem(
               icon: Icons.flag_outlined,
               label: 'Pre-Match\nPrep',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MentalCheckInScreen()),
-              ),
+              onTap: () {
+                if (_isGuest) { _requireSignIn(); return; }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MentalCheckInScreen()),
+                );
+              },
             )),
             const SizedBox(width: AppTheme.spaceSM),
             Expanded(child: _buildToolItem(
               icon: Icons.edit_note_outlined,
               label: 'Post-Match\nDebrief',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EmotionalResetScreen()),
-              ),
+              onTap: () {
+                if (_isGuest) { _requireSignIn(); return; }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EmotionalResetScreen()),
+                );
+              },
             )),
           ],
         ),

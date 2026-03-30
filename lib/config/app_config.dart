@@ -68,7 +68,7 @@ class AppConfig {
   
   static const String appName = 'Composure';
   static const String appVersion = '1.0.0';
-  static const String buildNumber = '57';
+  static const String buildNumber = '58';
   static const String supportEmail = 'ademolabaruwa09@gmail.com';
   static const String termsUrl = 'https://composure.app/terms';
   static const String privacyUrl = 'https://composure.app/privacy';

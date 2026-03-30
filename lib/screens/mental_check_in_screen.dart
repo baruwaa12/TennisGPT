@@ -9,6 +9,7 @@ import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
 import '../widgets/voice_input_button.dart';
+import '../utils/ai_disclosure_consent.dart';
 
 /// Pre-Match Prep Screen — Weapon System
 ///
@@ -1121,6 +1122,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
 
   Future<void> _confirmGamePlan() async {
     if (_primaryWeapon == null) return;
+
+    final consented = await AiDisclosureConsent.ensureAccepted(context);
+    if (!consented) {
+      return;
+    }
 
     // Get weapon labels
     final primaryLabel = _weaponOptions.firstWhere(

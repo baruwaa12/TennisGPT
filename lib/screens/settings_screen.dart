@@ -55,15 +55,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Card
-            _buildProfileCard(authService, profileService, isPremium, isDark),
-            
-            const SizedBox(height: 24),
-            
-            // Stats Overview
-            _buildStatsCard(usageService, streakService, isDark),
-            
-            const SizedBox(height: 24),
+            // Profile Card (authenticated only)
+            if (!authService.isGuest) ...[
+              _buildProfileCard(authService, profileService, isPremium, isDark),
+              const SizedBox(height: 24),
+              _buildStatsCard(usageService, streakService, isDark),
+              const SizedBox(height: 24),
+            ],
+
+            // Guest sign-in prompt
+            if (authService.isGuest) ...[
+              _buildSettingsTile(
+                icon: Icons.login_rounded,
+                iconColor: AppTheme.primary,
+                title: 'Sign In',
+                subtitle: 'Create a free account to unlock all features',
+                onTap: () {
+                  authService.exitGuestMode();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 24),
+            ],
             
             // Appearance Section
             _buildSectionTitle('Appearance', isDark),
@@ -81,28 +99,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const SizedBox(height: 24),
             
-            // Player Profile Section
-            _buildSectionTitle('Player Profile', isDark),
-            _buildSettingsTile(
-              icon: Icons.sports_tennis,
-              iconColor: AppTheme.primary,
-              title: 'Skill Level',
-              subtitle: _getLevelLabel(profileService.playerLevel),
-              onTap: () => _showLevelPicker(profileService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            _buildSettingsTile(
-              icon: Icons.flag,
-              iconColor: Colors.purple,
-              title: 'Primary Goal',
-              subtitle: _getGoalLabel(profileService.primaryGoal),
-              onTap: () => _showGoalPicker(profileService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            
-            const SizedBox(height: 24),
+            // Player Profile Section (authenticated only)
+            if (!authService.isGuest) ...[
+              _buildSectionTitle('Player Profile', isDark),
+              _buildSettingsTile(
+                icon: Icons.sports_tennis,
+                iconColor: AppTheme.primary,
+                title: 'Skill Level',
+                subtitle: _getLevelLabel(profileService.playerLevel),
+                onTap: () => _showLevelPicker(profileService),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                isDark: isDark,
+              ),
+              _buildSettingsTile(
+                icon: Icons.flag,
+                iconColor: Colors.purple,
+                title: 'Primary Goal',
+                subtitle: _getGoalLabel(profileService.primaryGoal),
+                onTap: () => _showGoalPicker(profileService),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 24),
+            ],
             
             // Support Section
             _buildSectionTitle('Support', isDark),
@@ -165,29 +184,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               isDark: isDark,
             ),
             
-            const SizedBox(height: 24),
-            
-            // Account
-            _buildSectionTitle('Account', isDark),
-            _buildSettingsTile(
-              icon: Icons.delete_forever_outlined,
-              iconColor: Colors.red,
-              title: 'Delete Account',
-              subtitle: 'Permanently remove your account and data',
-              onTap: () => _deleteAccount(authService),
-              isDark: isDark,
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Sign Out
-            _buildSettingsTile(
-              icon: Icons.logout,
-              iconColor: Colors.red,
-              title: 'Sign Out',
-              onTap: () => _signOut(authService),
-              isDark: isDark,
-            ),
+            // Account section (authenticated only)
+            if (!authService.isGuest) ...[
+              const SizedBox(height: 24),
+              _buildSectionTitle('Account', isDark),
+              _buildSettingsTile(
+                icon: Icons.delete_forever_outlined,
+                iconColor: Colors.red,
+                title: 'Delete Account',
+                subtitle: 'Permanently remove your account and data',
+                onTap: () => _deleteAccount(authService),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 24),
+              _buildSettingsTile(
+                icon: Icons.logout,
+                iconColor: Colors.red,
+                title: 'Sign Out',
+                onTap: () => _signOut(authService),
+                isDark: isDark,
+              ),
+            ],
             
             const SizedBox(height: 32),
             

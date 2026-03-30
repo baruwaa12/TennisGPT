@@ -325,7 +325,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
 
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
+
+                    // Continue without signing in
+                    TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              authService.enterGuestMode();
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (_) => const HomeScreen()),
+                              );
+                            },
+                      child: Text(
+                        'Continue without signing in',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: subtitleColor.withOpacity(0.7),
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
 
                     // Updated Feature bullets — analytical positioning
                     Container(
