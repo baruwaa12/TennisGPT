@@ -529,6 +529,40 @@ class ApiService extends ChangeNotifier {
   }
 
   /// Get saved entries (returns list of maps with id, content, createdAtUtc).
+  /// Calls backend to pull RevenueCat entitlements and update the signed-in user's plan.
+  Future<bool> syncSubscriptionWithBackend() async {
+    final requestId = _generateRequestId();
+    try {
+      final headers = await _getHeaders();
+      final token = await _tokenService.getAccessToken();
+      if (token == null) {
+        _log('syncSubscription: no access token', requestId: requestId);
+        return false;
+      }
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/subscription/sync'),
+        headers: headers,
+      ).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        _log('Subscription sync OK', requestId: requestId);
+        return true;
+      }
+
+      if (response.statusCode == 503) {
+        _log('Subscription sync not configured on server', requestId: requestId);
+        return false;
+      }
+
+      _log('Subscription sync failed: ${response.statusCode}', requestId: requestId);
+      return false;
+    } catch (e) {
+      _log('Subscription sync exception: $e', requestId: requestId);
+      return false;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getSavedEntries(String endpoint) async {
     final requestId = _generateRequestId();
     try {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../config/app_config.dart';
 import '../theme/app_theme.dart';
@@ -618,13 +620,20 @@ class _PaywallScreenState extends State<PaywallScreen> {
     }
     
     if (success && mounted) {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await apiService.syncSubscriptionWithBackend();
+      await authService.refreshProfile();
+
+      if (!mounted) return;
+
       HapticFeedback.heavyImpact();
       Navigator.pop(context, true);
-      
+
       final message = _selectedPlan == _SelectedPlan.founder
           ? 'Welcome, Founder! Unlimited access unlocked.'
           : 'Welcome to Premium! Unlimited access unlocked.';
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message, style: GoogleFonts.poppins()),
@@ -650,6 +659,13 @@ class _PaywallScreenState extends State<PaywallScreen> {
     
     if (mounted) {
       if (success) {
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        final authService = Provider.of<AuthService>(context, listen: false);
+        await apiService.syncSubscriptionWithBackend();
+        await authService.refreshProfile();
+
+        if (!mounted) return;
+
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

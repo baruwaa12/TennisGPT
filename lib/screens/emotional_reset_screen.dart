@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../utils/tennis_validator.dart';
@@ -827,6 +829,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
 
     // Check usage limits (respects feature flags)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
 
     setState(() => _isLoading = true);
@@ -841,7 +844,12 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
       });
       
       // Record usage for free users
-      if (!purchaseService.isPremium && response != null) {
+      if (response != null &&
+          !AppConfig.hasPremiumAccess(
+            revenueCatPremium: purchaseService.isPremium,
+            backendPremium: authService.isPremium,
+            email: authService.userEmail,
+          )) {
         await usageService.recordDebrief();
       }
       

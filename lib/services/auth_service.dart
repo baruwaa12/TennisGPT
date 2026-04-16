@@ -417,6 +417,11 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Refreshes profile from GET /api/auth/me (e.g. after subscription sync).
+  Future<void> refreshProfile() async {
+    await _fetchCurrentUser();
+  }
+
   Future<void> _fetchCurrentUser() async {
     try {
       final token = await _tokenService.getAccessToken();

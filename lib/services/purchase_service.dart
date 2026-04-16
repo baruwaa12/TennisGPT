@@ -10,15 +10,22 @@ import '../config/app_config.dart';
 /// - composure_monthly: £9.99/month
 /// - composure_annual: £59.99/year (best value)
 class PurchaseService extends ChangeNotifier {
-  // RevenueCat API Keys
-  // TODO: Replace with your actual RevenueCat API keys from https://app.revenuecat.com
-  static const String _revenueCatApiKeyApple = 'YOUR_REVENUECAT_APPLE_API_KEY';
-  static const String _revenueCatApiKeyGoogle = 'YOUR_REVENUECAT_GOOGLE_API_KEY';
-  
-  // Check if RevenueCat is configured
-  static bool get isConfigured => 
-      _revenueCatApiKeyApple != 'YOUR_REVENUECAT_APPLE_API_KEY' &&
-      _revenueCatApiKeyGoogle != 'YOUR_REVENUECAT_GOOGLE_API_KEY';
+  static const String _placeholderApple = 'YOUR_REVENUECAT_APPLE_API_KEY';
+  static const String _placeholderGoogle = 'YOUR_REVENUECAT_GOOGLE_API_KEY';
+
+  /// Set via `--dart-define=REVENUECAT_APPLE_KEY=appl_...` (and Google) in CI/release builds.
+  static const String _revenueCatApiKeyApple = String.fromEnvironment(
+    'REVENUECAT_APPLE_KEY',
+    defaultValue: _placeholderApple,
+  );
+  static const String _revenueCatApiKeyGoogle = String.fromEnvironment(
+    'REVENUECAT_GOOGLE_KEY',
+    defaultValue: _placeholderGoogle,
+  );
+
+  static bool get isConfigured =>
+      _revenueCatApiKeyApple != _placeholderApple &&
+      _revenueCatApiKeyGoogle != _placeholderGoogle;
   
   // Product identifiers
   static const String founderMonthlyProductId = 'composure_founder_monthly';

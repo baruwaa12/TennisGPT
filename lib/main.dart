@@ -58,6 +58,7 @@ class MyApp extends StatelessWidget {
         // Wire up sign out callback to clear ALL local data for ALL services
         ProxyProvider6<AuthService, PlayerProfileService, UsageService, StreakService, MatchHistoryService, PurchaseService, void>(
           update: (context, authService, profileService, usageService, streakService, matchHistoryService, purchaseService, _) {
+            final apiService = Provider.of<ApiService>(context, listen: false);
             authService.onSignOut = () async {
               if (kDebugMode) {
                 print('main.dart: Clearing ALL user data from ALL services...');
@@ -101,6 +102,8 @@ class MyApp extends StatelessWidget {
                 if (kDebugMode) {
                   print('main.dart: Identified user with RevenueCat: $email');
                 }
+                await apiService.syncSubscriptionWithBackend();
+                await authService.refreshProfile();
               }
             };
           },

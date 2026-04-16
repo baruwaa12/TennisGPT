@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../config/app_config.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
@@ -1149,6 +1151,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     // Check usage limits
     final purchaseService =
         Provider.of<PurchaseService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
 
     setState(() {
@@ -1194,7 +1197,11 @@ Instructions:
         return;
       }
 
-      if (!purchaseService.isPremium) {
+      if (!AppConfig.hasPremiumAccess(
+        revenueCatPremium: purchaseService.isPremium,
+        backendPremium: authService.isPremium,
+        email: authService.userEmail,
+      )) {
         await usageService.recordPrepSession();
       }
 

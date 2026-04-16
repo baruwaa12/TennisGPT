@@ -8,12 +8,10 @@ class AppConfig {
   // ============================================================
   
   /// Whether payments/subscriptions are enabled.
-  /// Disabled for current iOS App Review submission.
-  static const bool paymentsEnabled = false;
+  static const bool paymentsEnabled = true;
   
   /// Whether to show paywall screens.
-  /// Keep false while payments are hidden.
-  static const bool showPaywalls = false;
+  static const bool showPaywalls = true;
   
   /// Whether to enforce usage limits.
   /// When false, limits are not enforced (unlimited for testers).
@@ -88,6 +86,17 @@ class AppConfig {
     return false;
   }
   
+  /// Combined premium check: RevenueCat, backend plan, comped list, and [paymentsEnabled] bypass.
+  static bool hasPremiumAccess({
+    required bool revenueCatPremium,
+    required bool backendPremium,
+    String? email,
+  }) {
+    if (!paymentsEnabled) return true;
+    if (isCompedUser(email: email)) return true;
+    return revenueCatPremium || backendPremium;
+  }
+
   /// Check if user should see paywalls
   static bool shouldShowPaywall({String? email, String? userId}) {
     // Never show paywall if payments disabled

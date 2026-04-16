@@ -34,6 +34,12 @@ public class UserRepository : IUserRepository
         return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
     }
 
+    public async Task<User?> GetByEmailCaseInsensitiveAsync(string email)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalized);
+    }
+
     public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
     {
         return await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);

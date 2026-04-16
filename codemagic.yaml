@@ -38,8 +38,16 @@ workflows:
       - name: Build iOS IPA
         script: |
           echo "Building with build number: $BUILD_NUMBER"
+          EXTRA_ARGS=""
+          if [ -n "$REVENUECAT_APPLE_KEY" ]; then
+            EXTRA_ARGS="$EXTRA_ARGS --dart-define=REVENUECAT_APPLE_KEY=$REVENUECAT_APPLE_KEY"
+          fi
+          if [ -n "$REVENUECAT_GOOGLE_KEY" ]; then
+            EXTRA_ARGS="$EXTRA_ARGS --dart-define=REVENUECAT_GOOGLE_KEY=$REVENUECAT_GOOGLE_KEY"
+          fi
           flutter build ipa --release \
             --build-number=$BUILD_NUMBER \
+            $EXTRA_ARGS \
             --export-options-plist=/Users/builder/export_options.plist
     
     artifacts:

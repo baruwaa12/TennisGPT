@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../config/app_config.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
@@ -234,6 +236,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
     final purchaseService =
         Provider.of<PurchaseService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
 
     final profileService =
@@ -276,7 +279,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         return;
       }
 
-      if (!purchaseService.isPremium) {
+      if (!AppConfig.hasPremiumAccess(
+        revenueCatPremium: purchaseService.isPremium,
+        backendPremium: authService.isPremium,
+        email: authService.userEmail,
+      )) {
         await usageService.recordTacticalAnalysis();
       }
 

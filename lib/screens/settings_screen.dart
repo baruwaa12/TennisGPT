@@ -34,10 +34,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final usageService = Provider.of<UsageService>(context);
     final streakService = Provider.of<StreakService>(context);
 
-    // Treat all users as premium while payments are hidden.
-    final isPremium = purchaseService.isPremium || 
-                      !AppConfig.paymentsEnabled ||
-                      AppConfig.isCompedUser(email: authService.userEmail);
+    final isPremium = AppConfig.hasPremiumAccess(
+      revenueCatPremium: purchaseService.isPremium,
+      backendPremium: authService.isPremium,
+      email: authService.userEmail,
+    );
 
     return Scaffold(
       backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],

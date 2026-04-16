@@ -8,6 +8,9 @@ public interface IUserRepository
     Task<User?> GetByGoogleIdAsync(string googleId);
     Task<User?> GetByAppleIdAsync(string appleId);
     Task<User?> GetByEmailAsync(string email);
+
+    /// <summary>Case-insensitive match (normalized to lowercase invariant).</summary>
+    Task<User?> GetByEmailCaseInsensitiveAsync(string email);
     Task<User?> GetByRefreshTokenAsync(string refreshToken);
     Task<User> CreateAsync(User user);
     Task<User> UpdateAsync(User user);

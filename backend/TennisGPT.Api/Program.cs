@@ -69,10 +69,17 @@ builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();
 builder.Services.AddHttpClient<IAppleAuthClient, AppleAuthClient>();
 builder.Services.AddHttpClient<IOpenAIClient, OpenAIClient>();
 
+builder.Services.AddHttpClient("RevenueCat", client =>
+{
+    client.BaseAddress = new Uri("https://api.revenuecat.com/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 // Application services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IQuotaService, QuotaService>();
+builder.Services.AddScoped<IRevenueCatSubscriptionSyncService, RevenueCatSubscriptionSyncService>();
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"]

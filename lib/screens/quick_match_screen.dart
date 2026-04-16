@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
+import '../config/app_config.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
@@ -125,6 +127,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
     // Check usage limits (respects feature flags)
     final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
     setState(() => _isSaving = true);
     HapticFeedback.lightImpact();
@@ -190,7 +193,11 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
       await _matchHistoryService.saveMatch(match);
 
       // Record usage
-      if (!purchaseService.isPremium) {
+      if (!AppConfig.hasPremiumAccess(
+        revenueCatPremium: purchaseService.isPremium,
+        backendPremium: authService.isPremium,
+        email: authService.userEmail,
+      )) {
         await usageService.recordMatchLogged();
       }
 
