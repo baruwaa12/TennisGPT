@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/voice_input_button.dart';
 import '../widgets/guided_set_score_editor.dart';
+import '../utils/paywall_navigation.dart';
 
 /// Add Match Screen (Detailed)
 /// 
@@ -155,6 +156,12 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
       final apiService = Provider.of<ApiService>(context, listen: false);
       final recentMatches = await _matchHistoryService.getRecentMatches(3);
       final analysis = await apiService.tacticalAnalysisSummary(matchDescription, recentMatches);
+
+      if (analysis == null && apiService.requiresUpgrade) {
+        if (context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
+      }
       
       // Generate drill recommendations
       final allMatches = await _matchHistoryService.getAllMatches();
@@ -185,6 +192,12 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
       ));
       
       final drills = await apiService.generateDrillsFromHistory(allMatches);
+
+      if (drills == null && apiService.requiresUpgrade) {
+        if (context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
+      }
       
       // Create final match
       final match = MatchPerformance(

@@ -148,6 +148,19 @@ namespace TennisGPT.Infrastructure.Migrations
                     b.ToTable("SavedEntries");
                 });
 
+            modelBuilder.Entity("TennisGPT.Domain.Entities.FounderClaim", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ClaimedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("FounderClaims");
+                });
+
             modelBuilder.Entity("TennisGPT.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -250,6 +263,15 @@ namespace TennisGPT.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TennisGPT.Domain.Entities.FounderClaim", b =>
+                {
+                    b.HasOne("TennisGPT.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TennisGPT.Domain.Entities.User", b =>

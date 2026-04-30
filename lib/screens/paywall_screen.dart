@@ -14,6 +14,7 @@ enum PaywallTrigger {
   tacticalAnalysisLimit,
   prepSessionLimit,
   debriefLimit,
+  serverQuota,
   general,
 }
 
@@ -41,6 +42,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       case PaywallTrigger.tacticalAnalysisLimit:
       case PaywallTrigger.prepSessionLimit:
       case PaywallTrigger.debriefLimit:
+      case PaywallTrigger.serverQuota:
         return "You've used your free analyses";
       case PaywallTrigger.general:
         return 'Become a Founder Member';
@@ -54,6 +56,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       case PaywallTrigger.tacticalAnalysisLimit:
       case PaywallTrigger.prepSessionLimit:
       case PaywallTrigger.debriefLimit:
+      case PaywallTrigger.serverQuota:
         return 'Unlock unlimited tactical analysis after every match.';
       case PaywallTrigger.general:
         return 'Lock in founder pricing before spots run out.';
@@ -623,6 +626,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       final apiService = Provider.of<ApiService>(context, listen: false);
       final authService = Provider.of<AuthService>(context, listen: false);
       await apiService.syncSubscriptionWithBackend();
+      await purchaseService.refreshFounderInventory();
       await authService.refreshProfile();
 
       if (!mounted) return;
@@ -662,6 +666,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         final apiService = Provider.of<ApiService>(context, listen: false);
         final authService = Provider.of<AuthService>(context, listen: false);
         await apiService.syncSubscriptionWithBackend();
+        await purchaseService.refreshFounderInventory();
         await authService.refreshProfile();
 
         if (!mounted) return;

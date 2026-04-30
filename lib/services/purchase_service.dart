@@ -1,10 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 
 /// PurchaseService handles all RevenueCat subscription logic.
-/// 
+///
 /// Subscription Products:
 /// - composure_founder_monthly: £4.99/month (first 200 users, locked forever)
 /// - composure_monthly: £9.99/month
@@ -23,24 +26,32 @@ class PurchaseService extends ChangeNotifier {
     defaultValue: _placeholderGoogle,
   );
 
-  static bool get isConfigured =>
-      _revenueCatApiKeyApple != _placeholderApple &&
-      _revenueCatApiKeyGoogle != _placeholderGoogle;
-  
+  /// True when the API key for the **current** store is set (not both keys).
+  static bool get isConfigured {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return _revenueCatApiKeyApple != _placeholderApple;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return _revenueCatApiKeyGoogle != _placeholderGoogle;
+    }
+    return false;
+  }
+
+  static const String _inventoryUrl =
+      'https://tennisgpt-production.up.railway.app/api/subscription/founder-inventory';
+
   // Product identifiers
   static const String founderMonthlyProductId = 'composure_founder_monthly';
   static const String monthlyProductId = 'composure_monthly';
   static const String annualProductId = 'composure_annual';
-  
+
   // Offering identifiers
   static const String founderOfferingId = 'founder';
   static const String defaultOfferingId = 'default';
-  
+
   // Entitlement identifier
   static const String premiumEntitlement = 'premium';
-  
-  // Founder spots tracking key
-  static const String _founderSpotsTakenKey = 'founder_spots_taken';
 
   bool _isInitialized = false;
   bool _isPremium = false;
@@ -49,6 +60,7 @@ class PurchaseService extends ChangeNotifier {
   Offerings? _offerings;
   CustomerInfo? _customerInfo;
   int _founderSpotsTaken = 0;
+  int _founderSpotsTotal = AppConfig.founderSpotsTotal;
 
   // Getters
   bool get isInitialized => _isInitialized;
@@ -57,11 +69,11 @@ class PurchaseService extends ChangeNotifier {
   String? get error => _error;
   Offerings? get offerings => _offerings;
   CustomerInfo? get customerInfo => _customerInfo;
-  
-  // Founder plan getters
+
+  // Founder plan getters (server-authoritative via [refreshFounderInventory])
   int get founderSpotsTaken => _founderSpotsTaken;
-  int get founderSpotsRemaining => 
-      (AppConfig.founderSpotsTotal - _founderSpotsTaken).clamp(0, AppConfig.founderSpotsTotal);
+  int get founderSpotsRemaining =>
+      (_founderSpotsTotal - _founderSpotsTaken).clamp(0, _founderSpotsTotal);
   bool get isFounderAvailable => founderSpotsRemaining > 0;
 
   /// Initialize RevenueCat SDK
@@ -71,14 +83,15 @@ class PurchaseService extends ChangeNotifier {
     try {
       _isLoading = true;
       notifyListeners();
-      
-      // Load founder spots count from local storage
-      await _loadFounderSpots();
+
+      await refreshFounderInventory();
 
       // Skip if RevenueCat is not configured (placeholder keys)
       if (!isConfigured) {
         if (kDebugMode) {
-          print('PurchaseService: RevenueCat not configured (using placeholder keys)');
+          print(
+            'PurchaseService: RevenueCat not configured for this platform (placeholder key)',
+          );
         }
         _isInitialized = true;
         _isLoading = false;
@@ -88,14 +101,13 @@ class PurchaseService extends ChangeNotifier {
 
       // Configure RevenueCat
       late PurchasesConfiguration configuration;
-      
-      if (defaultTargetPlatform == TargetPlatform.iOS || 
+
+      if (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.macOS) {
         configuration = PurchasesConfiguration(_revenueCatApiKeyApple);
       } else if (defaultTargetPlatform == TargetPlatform.android) {
         configuration = PurchasesConfiguration(_revenueCatApiKeyGoogle);
       } else {
-        // Web or other platforms - skip initialization
         if (kDebugMode) {
           print('PurchaseService: Platform not supported for purchases');
         }
@@ -106,20 +118,16 @@ class PurchaseService extends ChangeNotifier {
       }
 
       await Purchases.configure(configuration);
-      
-      // Listen to customer info updates
+
       Purchases.addCustomerInfoUpdateListener((customerInfo) {
         _updateCustomerInfo(customerInfo);
       });
 
-      // Get initial customer info
       await _fetchCustomerInfo();
-      
-      // Get available offerings
       await _fetchOfferings();
 
       _isInitialized = true;
-      
+
       if (kDebugMode) {
         print('PurchaseService: Initialized successfully');
         print('PurchaseService: Premium status: $_isPremium');
@@ -135,23 +143,37 @@ class PurchaseService extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
-  /// Load founder spots count from local storage
-  /// In production, consider fetching this from your backend for accuracy
-  Future<void> _loadFounderSpots() async {
-    final prefs = await SharedPreferences.getInstance();
-    _founderSpotsTaken = prefs.getInt(_founderSpotsTakenKey) ?? 0;
-  }
-  
-  /// Increment founder spots taken (call after successful founder purchase)
-  Future<void> _recordFounderPurchase() async {
-    _founderSpotsTaken++;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_founderSpotsTakenKey, _founderSpotsTaken);
-    notifyListeners();
-    
-    if (kDebugMode) {
-      print('PurchaseService: Founder spot claimed. Remaining: $founderSpotsRemaining');
+
+  /// Loads founder spot counts from the backend (public endpoint).
+  Future<void> refreshFounderInventory() async {
+    try {
+      final response = await http
+          .get(Uri.parse(_inventoryUrl))
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) return;
+
+      final data = jsonDecode(response.body);
+      if (data is! Map<String, dynamic>) return;
+
+      final claimed = data['spotsClaimed'];
+      final total = data['spotsTotal'];
+      if (claimed is num) {
+        _founderSpotsTaken = claimed.toInt();
+      }
+      if (total is num) {
+        _founderSpotsTotal = total.toInt();
+      }
+      notifyListeners();
+
+      if (kDebugMode) {
+        print(
+          'PurchaseService: Founder inventory $_founderSpotsTaken / $_founderSpotsTotal',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('PurchaseService: Founder inventory fetch failed: $e');
+      }
     }
   }
 
@@ -170,12 +192,13 @@ class PurchaseService extends ChangeNotifier {
   /// Update customer info and premium status
   void _updateCustomerInfo(CustomerInfo customerInfo) {
     _customerInfo = customerInfo;
-    _isPremium = customerInfo.entitlements.active.containsKey(premiumEntitlement);
-    
+    _isPremium =
+        customerInfo.entitlements.active.containsKey(premiumEntitlement);
+
     if (kDebugMode) {
       print('PurchaseService: Premium status updated: $_isPremium');
     }
-    
+
     notifyListeners();
   }
 
@@ -183,13 +206,17 @@ class PurchaseService extends ChangeNotifier {
   Future<void> _fetchOfferings() async {
     try {
       _offerings = await Purchases.getOfferings();
-      
+
       if (kDebugMode) {
         print('PurchaseService: Offerings fetched');
         if (_offerings?.current != null) {
-          print('PurchaseService: Current offering: ${_offerings!.current!.identifier}');
+          print(
+            'PurchaseService: Current offering: ${_offerings!.current!.identifier}',
+          );
           for (var package in _offerings!.current!.availablePackages) {
-            print('PurchaseService: Package: ${package.identifier} - ${package.storeProduct.priceString}');
+            print(
+              'PurchaseService: Package: ${package.identifier} - ${package.storeProduct.priceString}',
+            );
           }
         }
       }
@@ -202,7 +229,6 @@ class PurchaseService extends ChangeNotifier {
 
   /// Get founder monthly subscription package
   Package? get founderMonthlyPackage {
-    // Try to get from 'founder' offering first
     final founderOffering = _offerings?.getOffering(founderOfferingId);
     if (founderOffering != null) {
       for (var package in founderOffering.availablePackages) {
@@ -210,7 +236,6 @@ class PurchaseService extends ChangeNotifier {
           return package;
         }
       }
-      // Fall back to monthly package in founder offering
       return founderOffering.monthly;
     }
     return null;
@@ -228,17 +253,20 @@ class PurchaseService extends ChangeNotifier {
 
   /// Get founder monthly price string
   String get founderMonthlyPriceString {
-    return founderMonthlyPackage?.storeProduct.priceString ?? AppConfig.founderMonthlyPriceDisplay;
+    return founderMonthlyPackage?.storeProduct.priceString ??
+        AppConfig.founderMonthlyPriceDisplay;
   }
 
   /// Get monthly price string
   String get monthlyPriceString {
-    return monthlyPackage?.storeProduct.priceString ?? AppConfig.regularMonthlyPriceDisplay;
+    return monthlyPackage?.storeProduct.priceString ??
+        AppConfig.regularMonthlyPriceDisplay;
   }
 
   /// Get annual price string
   String get annualPriceString {
-    return annualPackage?.storeProduct.priceString ?? AppConfig.annualPriceDisplay;
+    return annualPackage?.storeProduct.priceString ??
+        AppConfig.annualPriceDisplay;
   }
 
   /// Purchase founder monthly subscription
@@ -248,19 +276,15 @@ class PurchaseService extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    
+
     final package = founderMonthlyPackage;
     if (package == null) {
       _error = 'Founder package not available';
       notifyListeners();
       return false;
     }
-    
-    final success = await _purchasePackage(package);
-    if (success) {
-      await _recordFounderPurchase();
-    }
-    return success;
+
+    return await _purchasePackage(package);
   }
 
   /// Purchase monthly subscription
@@ -285,6 +309,37 @@ class PurchaseService extends ChangeNotifier {
     return await _purchasePackage(package);
   }
 
+  static String _messageForPurchasesCode(
+    PurchasesErrorCode code, [
+    String? detail,
+  ]) {
+    switch (code) {
+      case PurchasesErrorCode.purchaseCancelledError:
+        return 'Purchase cancelled';
+      case PurchasesErrorCode.storeProblemError:
+        return 'The store could not complete the purchase. Try again in a moment.';
+      case PurchasesErrorCode.purchaseNotAllowedError:
+        return 'Purchases are not allowed on this device or account.';
+      case PurchasesErrorCode.purchaseInvalidError:
+        return 'This purchase could not be started. Check your store account and try again.';
+      case PurchasesErrorCode.productNotAvailableForPurchaseError:
+        return 'That plan is not available right now.';
+      case PurchasesErrorCode.productAlreadyPurchasedError:
+        return 'You already have an active subscription. Use Restore purchases.';
+      case PurchasesErrorCode.networkError:
+      case PurchasesErrorCode.offlineConnectionError:
+        return 'Check your internet connection and try again.';
+      case PurchasesErrorCode.invalidCredentialsError:
+      case PurchasesErrorCode.configurationError:
+        return 'Subscription service is not configured correctly. Please contact support.';
+      case PurchasesErrorCode.paymentPendingError:
+        return 'Payment is pending. You will get access when the store confirms it.';
+      default:
+        final extra = (detail != null && detail.isNotEmpty) ? ' ($detail)' : '';
+        return 'Could not complete purchase. Please try again.$extra';
+    }
+  }
+
   /// Purchase a specific package
   Future<bool> _purchasePackage(Package package) async {
     _isLoading = true;
@@ -294,31 +349,30 @@ class PurchaseService extends ChangeNotifier {
     try {
       final purchaseResult = await Purchases.purchasePackage(package);
       _updateCustomerInfo(purchaseResult.customerInfo);
-      
+
       if (kDebugMode) {
         print('PurchaseService: Purchase successful');
       }
-      
+
+      await refreshFounderInventory();
+
       return _isPremium;
-    } on PurchasesErrorCode catch (e) {
-      if (e == PurchasesErrorCode.purchaseCancelledError) {
-        _error = 'Purchase cancelled';
-      } else {
-        _error = 'Purchase failed: $e';
-      }
-      
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      _error = _messageForPurchasesCode(code, e.message);
+
       if (kDebugMode) {
-        print('PurchaseService: Purchase error - $e');
+        print('PurchaseService: Purchase error - $code ${e.message}');
       }
-      
+
       return false;
     } catch (e) {
       _error = 'Purchase failed: $e';
-      
+
       if (kDebugMode) {
         print('PurchaseService: Purchase error - $e');
       }
-      
+
       return false;
     } finally {
       _isLoading = false;
@@ -335,19 +389,27 @@ class PurchaseService extends ChangeNotifier {
     try {
       final customerInfo = await Purchases.restorePurchases();
       _updateCustomerInfo(customerInfo);
-      
+      await refreshFounderInventory();
+
       if (kDebugMode) {
         print('PurchaseService: Restore successful, premium: $_isPremium');
       }
-      
+
       return _isPremium;
+    } on PlatformException catch (e) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      _error = _messageForPurchasesCode(code, e.message);
+      if (kDebugMode) {
+        print('PurchaseService: Restore error - $code');
+      }
+      return false;
     } catch (e) {
       _error = 'Restore failed: $e';
-      
+
       if (kDebugMode) {
         print('PurchaseService: Restore error - $e');
       }
-      
+
       return false;
     } finally {
       _isLoading = false;
@@ -360,7 +422,7 @@ class PurchaseService extends ChangeNotifier {
     try {
       final customerInfo = await Purchases.logIn(userId);
       _updateCustomerInfo(customerInfo.customerInfo);
-      
+
       if (kDebugMode) {
         print('PurchaseService: User identified: $userId');
       }
@@ -376,7 +438,7 @@ class PurchaseService extends ChangeNotifier {
     try {
       final customerInfo = await Purchases.logOut();
       _updateCustomerInfo(customerInfo);
-      
+
       if (kDebugMode) {
         print('PurchaseService: User logged out');
       }
@@ -393,14 +455,15 @@ class PurchaseService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Check if user has active subscription (for gating features)
+  /// Prefer [AppConfig.hasPremiumAccess] at feature gates; this is RevenueCat only.
   bool hasActiveSubscription() {
     return _isPremium;
   }
 
   /// Get subscription expiration date (if any)
   DateTime? get expirationDate {
-    final entitlement = _customerInfo?.entitlements.active[premiumEntitlement];
+    final entitlement =
+        _customerInfo?.entitlements.active[premiumEntitlement];
     if (entitlement?.expirationDate != null) {
       return DateTime.parse(entitlement!.expirationDate!);
     }
@@ -409,7 +472,8 @@ class PurchaseService extends ChangeNotifier {
 
   /// Check if subscription will renew
   bool get willRenew {
-    final entitlement = _customerInfo?.entitlements.active[premiumEntitlement];
+    final entitlement =
+        _customerInfo?.entitlements.active[premiumEntitlement];
     return entitlement?.willRenew ?? false;
   }
 }

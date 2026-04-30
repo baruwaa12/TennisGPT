@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TennisGPT.Application.Interfaces;
+using TennisGPT.Application.Options;
 
 namespace TennisGPT.Api.Controllers;
 
@@ -12,17 +13,35 @@ namespace TennisGPT.Api.Controllers;
 public class SubscriptionController : ControllerBase
 {
     private readonly IRevenueCatSubscriptionSyncService _syncService;
+    private readonly IFounderClaimRepository _founderClaimRepository;
     private readonly IConfiguration _configuration;
     private readonly ILogger<SubscriptionController> _logger;
 
     public SubscriptionController(
         IRevenueCatSubscriptionSyncService syncService,
+        IFounderClaimRepository founderClaimRepository,
         IConfiguration configuration,
         ILogger<SubscriptionController> logger)
     {
         _syncService = syncService;
+        _founderClaimRepository = founderClaimRepository;
         _configuration = configuration;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Public founder spot counter for paywall UI (not authenticated).
+    /// </summary>
+    [HttpGet("founder-inventory")]
+    [AllowAnonymous]
+    public async Task<IActionResult> FounderInventory(CancellationToken cancellationToken)
+    {
+        var taken = await _founderClaimRepository.GetClaimCountAsync(cancellationToken);
+        return Ok(new
+        {
+            spotsClaimed = taken,
+            spotsTotal = FounderSubscriptionOptions.MaxFounderSpots,
+        });
     }
 
     /// <summary>

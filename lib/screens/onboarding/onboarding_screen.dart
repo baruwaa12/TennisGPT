@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
 import '../home_screen.dart';
 import '../../utils/tennis_validator.dart';
+import '../../utils/paywall_navigation.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -96,7 +97,13 @@ Please provide a brief tactical insight to show the value of the app.
       '''.trim();
       
       final response = await apiService.tacticalAnalysisSummary(matchDescription, []);
-      
+
+      if (response == null && apiService.requiresUpgrade) {
+        if (context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
+      }
+
       setState(() {
         _aiInsight = response;
         _isLoadingInsight = false;

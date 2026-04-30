@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/match_performance.dart';
 import '../theme/app_theme.dart';
+import '../utils/paywall_navigation.dart';
 
 /// Quick post-match reflection screen with guided options
 class MatchReflectionScreen extends StatefulWidget {
@@ -100,6 +101,12 @@ Based on this post-match reflection, provide specific tactical advice for improv
 ''';
 
       final response = await apiService.tacticalAnalysisSummary(matchContext, null);
+
+      if (response == null && apiService.requiresUpgrade) {
+        if (context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
+      }
       
       setState(() {
         _isGettingAdvice = false;

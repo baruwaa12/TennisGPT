@@ -63,6 +63,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<ICheckInRepository, CheckInRepository>();
 builder.Services.AddScoped<ISavedEntryRepository, SavedEntryRepository>();
+builder.Services.AddScoped<IFounderClaimRepository, FounderClaimRepository>();
 
 // External clients
 builder.Services.AddHttpClient<IGoogleAuthClient, GoogleAuthClient>();

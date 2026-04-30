@@ -13,6 +13,7 @@ public class TennisGPTDbContext : DbContext
     public DbSet<Match> Matches => Set<Match>();
     public DbSet<CheckIn> CheckIns => Set<CheckIn>();
     public DbSet<SavedEntry> SavedEntries => Set<SavedEntry>();
+    public DbSet<FounderClaim> FounderClaims => Set<FounderClaim>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +85,15 @@ public class TennisGPTDbContext : DbContext
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.SavedEntries)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<FounderClaim>(entity =>
+        {
+            entity.HasKey(e => e.UserId);
+            entity.HasOne<User>()
+                .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

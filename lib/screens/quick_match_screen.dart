@@ -13,6 +13,7 @@ import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../services/pattern_service.dart';
 import '../utils/match_format_utils.dart';
+import '../utils/paywall_navigation.dart';
 import '../widgets/shareable_card.dart';
 import '../widgets/guided_set_score_editor.dart';
 import 'match_reflection_screen.dart';
@@ -162,6 +163,12 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
       final apiService = Provider.of<ApiService>(context, listen: false);
       final recentMatches = await _matchHistoryService.getRecentMatches(3);
       final analysis = await apiService.tacticalAnalysisSummary(matchDescription, recentMatches);
+
+      if (analysis == null && apiService.requiresUpgrade) {
+        if (context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
+      }
 
       // Create match
       final match = MatchPerformance(

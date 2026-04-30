@@ -12,6 +12,7 @@ import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
 import '../widgets/voice_input_button.dart';
 import '../utils/ai_disclosure_consent.dart';
+import '../utils/paywall_navigation.dart';
 
 /// Pre-Match Prep Screen — Weapon System
 ///
@@ -1189,9 +1190,12 @@ Instructions:
           await apiService.mentalCheckIn(_readinessLevel, briefingRequest);
 
       if (response == null) {
+        if (apiService.requiresUpgrade && context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
         setState(() {
           _isLoading = false;
-          _errorMessage =
+          _errorMessage = apiService.error ??
               'Couldn\'t generate your briefing. Please try again.';
         });
         return;

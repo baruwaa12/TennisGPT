@@ -9,6 +9,7 @@ import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../utils/tennis_validator.dart';
 import '../utils/ai_disclosure_consent.dart';
+import '../utils/paywall_navigation.dart';
 import '../widgets/voice_input_button.dart';
 
 /// Post-Match Debrief Screen
@@ -842,7 +843,15 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         _isLoading = false;
         _debriefResponse = response;
       });
-      
+
+      if (response == null && context.mounted) {
+        if (apiService.requiresUpgrade) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        } else if (apiService.error != null) {
+          setState(() => _localError = apiService.error);
+        }
+      }
+
       // Record usage for free users
       if (response != null &&
           !AppConfig.hasPremiumAccess(

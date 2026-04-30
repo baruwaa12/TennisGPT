@@ -16,6 +16,7 @@ import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../widgets/voice_input_button.dart';
 import '../utils/ai_disclosure_consent.dart';
+import '../utils/paywall_navigation.dart';
 
 /// Tactical Coach Screen
 ///
@@ -274,6 +275,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       }
 
       if (response == null && mounted) {
+        if (apiService.requiresUpgrade && context.mounted) {
+          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+        }
         final errorMsg = apiService.error ?? 'Unable to generate insight';
         setState(() => _errorMessage = errorMsg);
         return;
