@@ -205,7 +205,7 @@ class HelpFaqScreen extends StatelessWidget {
     },
     {
       'question': 'Do I need a subscription to use the app right now?',
-      'answer': 'No. Composure currently provides full access to all core features in this version.',
+      'answer': 'Composure includes a free tier with daily limits for some AI features. Premium unlocks unlimited analyses, match logging, and advanced coaching features.',
     },
     {
       'question': 'What should I do if something isn\'t working?',

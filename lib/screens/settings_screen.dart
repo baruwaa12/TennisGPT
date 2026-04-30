@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../services/purchase_service.dart';
@@ -184,6 +185,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
+            if (!authService.isGuest && AppConfig.paymentsEnabled)
+              _buildSettingsTile(
+                icon: Icons.manage_accounts_outlined,
+                iconColor: Colors.blueGrey,
+                title: 'Manage Subscription',
+                subtitle: 'View, change, or cancel your plan',
+                onTap: _openSubscriptionManagement,
+                trailing: const Icon(Icons.open_in_new, size: 16),
+                isDark: isDark,
+              ),
             
             // Account section (authenticated only)
             if (!authService.isGuest) ...[
@@ -656,5 +667,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Colors.red,
       ),
     );
+  }
+
+  Future<void> _openSubscriptionManagement() async {
+    final Uri uri;
+    if (kIsWeb) {
+      uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+    } else {
+      uri = Uri.parse('https://support.apple.com/en-us/118428');
+    }
+
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Unable to open subscription settings right now.',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
