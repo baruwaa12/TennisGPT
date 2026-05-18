@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'config/app_config.dart';
 import 'screens/auth_wrapper.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
@@ -20,7 +21,7 @@ Future<void> main() async {
   GoogleFonts.config.allowRuntimeFetching = false;
 
   if (kDebugMode) {
-    print('API_BASE_URL = https://tennisgpt-production.up.railway.app');
+    print('API_BASE_URL = ${AppConfig.apiBaseUrl}');
   }
 
   runApp(const MyApp());

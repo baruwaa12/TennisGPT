@@ -70,6 +70,18 @@ class AppConfig {
   static const String supportEmail = 'ademolabaruwa09@gmail.com';
   static const String termsUrl = 'https://composure.app/terms';
   static const String privacyUrl = 'https://composure.app/privacy';
+
+  // ============================================================
+  // ENVIRONMENT / RUNTIME CONFIG
+  // ============================================================
+
+  /// Backend API base URL. Override per environment with
+  /// `--dart-define=API_BASE_URL=https://staging.example.com` so a single
+  /// build artifact can target dev/staging/prod.
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://tennisgpt-production.up.railway.app',
+  );
   
   // ============================================================
   // HELPER METHODS

@@ -1,13 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import 'token_service.dart';
 import 'user_storage_service.dart';
 
 /// PlayerProfileService stores and retrieves player profile data
 /// Now uses user-specific storage keys for multi-account support.
 class PlayerProfileService extends ChangeNotifier {
-  final String _apiBaseUrl = 'https://tennisgpt-production.up.railway.app';
+  final String _apiBaseUrl = AppConfig.apiBaseUrl;
   final TokenService _tokenService = TokenService();
   
   // Base storage keys (will be prefixed with user ID)

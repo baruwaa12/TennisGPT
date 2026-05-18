@@ -3,11 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import '../config/app_config.dart';
 import 'token_service.dart';
 import 'user_storage_service.dart';
 
 class AuthService extends ChangeNotifier {
-  final String _apiBaseUrl = 'https://tennisgpt-production.up.railway.app';
+  final String _apiBaseUrl = AppConfig.apiBaseUrl;
   final TokenService _tokenService = TokenService();
   
   // GoogleSignIn setup — kIsWeb must be checked first because on iPhone browsers
@@ -94,7 +95,7 @@ class AuthService extends ChangeNotifier {
       final displayName = [
         credential.givenName,
         credential.familyName,
-      ].where((part) => part != null && part!.isNotEmpty).join(' ').trim();
+      ].whereType<String>().where((part) => part.isNotEmpty).join(' ').trim();
 
       final response = await http.post(
         Uri.parse('$_apiBaseUrl/api/auth/apple'),

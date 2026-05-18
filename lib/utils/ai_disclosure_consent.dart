@@ -11,6 +11,8 @@ class AiDisclosureConsent {
     final accepted = prefs.getBool(_acceptedKey) ?? false;
     if (accepted) return true;
 
+    if (!context.mounted) return false;
+
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,

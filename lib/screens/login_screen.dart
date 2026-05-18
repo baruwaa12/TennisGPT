@@ -18,17 +18,22 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  AuthService? _authService;
+  bool _authListenerAttached = false;
+
   @override
-  void initState() {
-    super.initState();
-    final authService = Provider.of<AuthService>(context, listen: false);
-    authService.addListener(_onAuthStateChanged);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_authListenerAttached) {
+      _authService = context.read<AuthService>();
+      _authService!.addListener(_onAuthStateChanged);
+      _authListenerAttached = true;
+    }
   }
 
   @override
   void dispose() {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    authService.removeListener(_onAuthStateChanged);
+    _authService?.removeListener(_onAuthStateChanged);
     super.dispose();
   }
 
@@ -161,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         boxShadow: [
                           BoxShadow(
                             color: AppTheme.primary
-                                .withOpacity(isDark ? 0.3 : 0.25),
+                                .withValues(alpha: isDark ? 0.3 : 0.25),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -343,7 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: subtitleColor.withOpacity(0.7),
+                          color: subtitleColor.withValues(alpha: 0.7),
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -356,7 +361,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: (isDark ? AppTheme.surfaceCard : Colors.white)
-                            .withOpacity(0.9),
+                            .withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
@@ -405,8 +410,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final titleColor = isDark ? Colors.white : Colors.grey[800]!;
     final subtitleColor = isDark ? Colors.grey[400]! : AppTheme.primaryDark;
     final iconBgColor = isDark
-        ? AppTheme.primary.withOpacity(0.15)
-        : AppTheme.primary.withOpacity(0.1);
+        ? AppTheme.primary.withValues(alpha: 0.15)
+        : AppTheme.primary.withValues(alpha: 0.1);
 
     return Row(
       children: [

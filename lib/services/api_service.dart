@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config/app_config.dart';
 import '../models/match_performance.dart';
 import 'token_service.dart';
 
@@ -20,7 +21,7 @@ enum ApiErrorCode {
 }
 
 class ApiService extends ChangeNotifier {
-  final String _baseUrl = 'https://tennisgpt-production.up.railway.app';
+  final String _baseUrl = AppConfig.apiBaseUrl;
   final TokenService _tokenService = TokenService();
   static const Duration _timeout = Duration(seconds: 45);
   static const int _maxRetries = 1;
@@ -85,7 +86,7 @@ class ApiService extends ChangeNotifier {
   }
 
   /// Convert error code to human-readable message (NO HTTP codes exposed)
-  String _humanizeError(ApiErrorCode code, {String? context}) {
+  String _humanizeError(ApiErrorCode code) {
     switch (code) {
       case ApiErrorCode.networkError:
         return 'Please check your connection and try again.';
