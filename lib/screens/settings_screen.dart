@@ -251,7 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -261,7 +261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: AppTheme.primary.withOpacity(0.15),
+            backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
             backgroundImage: authService.userPhotoURL != null
                 ? NetworkImage(authService.userPhotoURL!)
                 : null,
@@ -414,7 +414,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: (iconColor ?? Colors.grey).withOpacity(0.1),
+                color: (iconColor ?? Colors.grey).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: iconColor ?? Colors.grey, size: 20),

@@ -173,7 +173,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.primary.withOpacity(0.1),
+                        color: AppTheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -239,7 +239,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppTheme.primary.withOpacity(0.1)
+                            ? AppTheme.primary.withValues(alpha: 0.1)
                             : (isDark ? AppTheme.surfaceCard : Colors.white),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
@@ -312,7 +312,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
+                  color: AppTheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

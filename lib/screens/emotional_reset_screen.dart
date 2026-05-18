@@ -269,7 +269,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
           Container(
             padding: const EdgeInsets.all(AppTheme.spaceMD),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.1),
+              color: AppTheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -309,7 +309,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         padding: const EdgeInsets.all(AppTheme.spaceMD),
         decoration: BoxDecoration(
           color: isSelected 
-              ? AppTheme.primary.withOpacity(0.1)
+              ? AppTheme.primary.withValues(alpha: 0.1)
               : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
@@ -323,7 +323,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               padding: const EdgeInsets.all(AppTheme.spaceSM),
               decoration: BoxDecoration(
                 color: isSelected 
-                    ? AppTheme.primary.withOpacity(0.2)
+                    ? AppTheme.primary.withValues(alpha: 0.2)
                     : AppTheme.elevatedBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
@@ -381,7 +381,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         padding: const EdgeInsets.all(AppTheme.spaceMD),
         decoration: BoxDecoration(
           color: _showCustomInput 
-              ? AppTheme.primary.withOpacity(0.1)
+              ? AppTheme.primary.withValues(alpha: 0.1)
               : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
@@ -395,7 +395,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               padding: const EdgeInsets.all(AppTheme.spaceSM),
               decoration: BoxDecoration(
                 color: _showCustomInput 
-                    ? AppTheme.primary.withOpacity(0.2)
+                    ? AppTheme.primary.withValues(alpha: 0.2)
                     : AppTheme.elevatedBackground(context),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
@@ -438,14 +438,14 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
             Icon(
               Icons.mic,
               size: 14,
-              color: AppTheme.textMutedColor(context).withOpacity(0.5),
+              color: AppTheme.textMutedColor(context).withValues(alpha: 0.5),
             ),
             const SizedBox(width: 4),
             Text(
               'Voice enabled',
               style: AppTheme.labelThemed(context).copyWith(
                 fontSize: 11,
-                color: AppTheme.textMutedColor(context).withOpacity(0.5),
+                color: AppTheme.textMutedColor(context).withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -479,15 +479,15 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     return Container(
       padding: AppTheme.cardPadding,
       decoration: BoxDecoration(
-        color: AppTheme.loss.withOpacity(0.1),
+        color: AppTheme.loss.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.loss.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.loss.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Icon(
             Icons.info_outline_rounded,
-            color: AppTheme.loss.withOpacity(0.8),
+            color: AppTheme.loss.withValues(alpha: 0.8),
             size: 20,
           ),
           const SizedBox(width: AppTheme.spaceSM),
@@ -615,9 +615,9 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               Container(
                 padding: AppTheme.cardPadding,
                 decoration: BoxDecoration(
-                  color: AppTheme.win.withOpacity(0.1),
+                  color: AppTheme.win.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  border: Border.all(color: AppTheme.win.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.win.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -656,7 +656,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                         Container(
                           padding: const EdgeInsets.all(AppTheme.spaceSM),
                           decoration: BoxDecoration(
-                            color: AppTheme.primary.withOpacity(0.15),
+                            color: AppTheme.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                           ),
                           child: const Icon(
@@ -700,7 +700,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground(context),
                     borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1039,7 +1039,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
           border: Border.all(
             color: isExpanded
-                ? AppTheme.primary.withOpacity(0.4)
+                ? AppTheme.primary.withValues(alpha: 0.4)
                 : AppTheme.borderColor(context),
           ),
         ),
@@ -1093,7 +1093,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
               Text(
                 'Tap to read more',
                 style: AppTheme.labelThemed(context).copyWith(
-                  color: AppTheme.primary.withOpacity(0.7),
+                  color: AppTheme.primary.withValues(alpha: 0.7),
                   fontSize: 11,
                 ),
               ),

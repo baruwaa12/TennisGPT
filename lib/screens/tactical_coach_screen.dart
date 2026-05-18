@@ -466,8 +466,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: _formTrend.contains('up')
-                          ? AppTheme.win.withOpacity(0.15)
-                          : AppTheme.warning.withOpacity(0.15),
+                          ? AppTheme.win.withValues(alpha: 0.15)
+                          : AppTheme.warning.withValues(alpha: 0.15),
                       borderRadius:
                           BorderRadius.circular(AppTheme.radiusSM),
                     ),
@@ -627,7 +627,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 padding: const EdgeInsets.all(AppTheme.spaceMD),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppTheme.primary.withOpacity(0.1)
+                      ? AppTheme.primary.withValues(alpha: 0.1)
                       : AppTheme.cardBackground(context),
                   borderRadius:
                       BorderRadius.circular(AppTheme.radiusMD),
@@ -644,7 +644,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       padding: const EdgeInsets.all(AppTheme.spaceSM),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppTheme.primary.withOpacity(0.2)
+                            ? AppTheme.primary.withValues(alpha: 0.2)
                             : AppTheme.elevatedBackground(context),
                         borderRadius:
                             BorderRadius.circular(AppTheme.radiusSM),
@@ -711,13 +711,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             const Spacer(),
             Icon(Icons.mic,
                 size: 14,
-                color: AppTheme.textMutedColor(context).withOpacity(0.5)),
+                color: AppTheme.textMutedColor(context).withValues(alpha: 0.5)),
             const SizedBox(width: 4),
             Text(
               'Voice enabled',
               style: AppTheme.labelThemed(context).copyWith(
                 fontSize: 11,
-                color: AppTheme.textMutedColor(context).withOpacity(0.5),
+                color: AppTheme.textMutedColor(context).withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -726,7 +726,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           'Optional - type or speak',
           style: AppTheme.labelThemed(context).copyWith(
             fontSize: 11,
-            color: AppTheme.textMutedColor(context).withOpacity(0.6),
+            color: AppTheme.textMutedColor(context).withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: AppTheme.spaceSM),
@@ -821,9 +821,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.loss.withOpacity(0.1),
+        color: AppTheme.loss.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.loss.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.loss.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -909,7 +909,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         // 5) Pattern Detection (separate section)
         if (hasPattern) ...[
           const SizedBox(height: AppTheme.spaceLG),
-          _buildPatternDetectionSection(patternData!),
+          _buildPatternDetectionSection(patternData),
         ],
 
         const SizedBox(height: AppTheme.spaceLG),
@@ -927,7 +927,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       decoration: BoxDecoration(
         color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -937,7 +937,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               Container(
                 padding: const EdgeInsets.all(AppTheme.spaceSM),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.15),
+                  color: AppTheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -978,7 +978,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           Container(
             padding: const EdgeInsets.all(AppTheme.spaceSM),
             decoration: BoxDecoration(
-              color: AppTheme.warning.withOpacity(0.15),
+              color: AppTheme.warning.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
             child: Icon(Icons.lock_rounded,
@@ -1012,9 +1012,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.05),
+        color: AppTheme.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,7 +1024,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               Container(
                 padding: const EdgeInsets.all(AppTheme.spaceSM),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.15),
+                  color: AppTheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: const Icon(
@@ -1090,9 +1090,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.warning.withOpacity(0.06),
+        color: AppTheme.warning.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.warning.withOpacity(0.25)),
+        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1102,7 +1102,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               Container(
                 padding: const EdgeInsets.all(AppTheme.spaceSM),
                 decoration: BoxDecoration(
-                  color: AppTheme.warning.withOpacity(0.15),
+                  color: AppTheme.warning.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Icon(Icons.pattern_rounded,
@@ -1354,7 +1354,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
           border: Border.all(
             color: isExpanded
-                ? AppTheme.primary.withOpacity(0.4)
+                ? AppTheme.primary.withValues(alpha: 0.4)
                 : AppTheme.borderColor(context),
           ),
         ),
@@ -1413,7 +1413,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               Text(
                 'Tap to read more',
                 style: AppTheme.labelThemed(context).copyWith(
-                  color: AppTheme.primary.withOpacity(0.7),
+                  color: AppTheme.primary.withValues(alpha: 0.7),
                   fontSize: 11,
                 ),
               ),

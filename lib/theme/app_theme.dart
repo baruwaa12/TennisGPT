@@ -322,7 +322,7 @@ class AppTheme {
     labelText: label,
     hintText: hint,
     labelStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context)),
-    hintStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context).withOpacity(0.5)),
+    hintStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context).withValues(alpha: 0.5)),
     prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: textMutedColor(context)) : null,
     filled: true,
     fillColor: cardBackground(context),
@@ -348,7 +348,7 @@ class AppTheme {
   
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.25),
+      color: Colors.black.withValues(alpha: 0.25),
       blurRadius: 10,
       offset: const Offset(0, 2),
     ),
@@ -356,7 +356,7 @@ class AppTheme {
   
   static List<BoxShadow> get elevatedShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.35),
+      color: Colors.black.withValues(alpha: 0.35),
       blurRadius: 20,
       offset: const Offset(0, 4),
     ),
@@ -365,13 +365,13 @@ class AppTheme {
   /// Subtle blue glow for primary CTA buttons
   static List<BoxShadow> get ctaGlow => [
     BoxShadow(
-      color: primary.withOpacity(0.4),
+      color: primary.withValues(alpha: 0.4),
       blurRadius: 16,
       spreadRadius: 0,
       offset: const Offset(0, 4),
     ),
     BoxShadow(
-      color: softGlow.withOpacity(0.2),
+      color: softGlow.withValues(alpha: 0.2),
       blurRadius: 32,
       spreadRadius: -4,
       offset: const Offset(0, 8),
@@ -382,7 +382,7 @@ class AppTheme {
   static List<BoxShadow> ctaGlowThemed(BuildContext context) {
     return isDark(context) ? ctaGlow : [
       BoxShadow(
-        color: primary.withOpacity(0.25),
+        color: primary.withValues(alpha: 0.25),
         blurRadius: 12,
         spreadRadius: 0,
         offset: const Offset(0, 4),
@@ -414,7 +414,7 @@ class AppTheme {
     labelText: label,
     hintText: hint,
     labelStyle: bodyMedium.copyWith(color: textMuted),
-    hintStyle: bodyMedium.copyWith(color: textMuted.withOpacity(0.5)),
+    hintStyle: bodyMedium.copyWith(color: textMuted.withValues(alpha: 0.5)),
     prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: textMuted) : null,
     filled: true,
     fillColor: surfaceCard,

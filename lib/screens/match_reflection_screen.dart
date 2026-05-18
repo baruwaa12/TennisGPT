@@ -181,8 +181,8 @@ Based on this post-match reflection, provide specific tactical advice for improv
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isWin 
-                    ? (isDark ? AppTheme.win.withOpacity(0.15) : const Color(0xFFF0FDF4))
-                    : (isDark ? AppTheme.primary.withOpacity(0.15) : const Color(0xFFEFF6FF)),
+                    ? (isDark ? AppTheme.win.withValues(alpha: 0.15) : const Color(0xFFF0FDF4))
+                    : (isDark ? AppTheme.primary.withValues(alpha: 0.15) : const Color(0xFFEFF6FF)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -368,7 +368,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -382,7 +382,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                        color: AppTheme.primary.withOpacity(0.1),
+                        color: AppTheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.psychology, color: AppTheme.primary, size: 24),
@@ -471,7 +471,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? accentColor.withOpacity(isDark ? 0.3 : 0.15)
+                  ? accentColor.withValues(alpha: isDark ? 0.3 : 0.15)
                   : (isDark ? AppTheme.surfaceElevated : Colors.white),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(

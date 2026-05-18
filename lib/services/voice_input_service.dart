@@ -206,18 +206,19 @@ class VoiceInputService extends ChangeNotifier {
         listenFor: listenFor ?? const Duration(seconds: 60),
         // Longer pause tolerance for thinking/natural speech
         pauseFor: pauseFor ?? const Duration(seconds: 4),
-        // IMPORTANT: Set to false to only get final, accurate results
-        // Setting to true gives live feedback but less accurate interim text
-        partialResults: onPartialResult != null,
         onSoundLevelChange: (level) {
           _soundLevel = level;
           // Don't notify for every sound level change - too many rebuilds
         },
-        // Use confirmation mode for better accuracy (waits for confirmation)
-        // dictation mode is faster but less accurate
-        listenMode: ListenMode.confirmation,
-        // Cancel any ongoing listening before starting new
-        cancelOnError: true,
+        listenOptions: SpeechListenOptions(
+          // IMPORTANT: only emit final, accurate results unless caller wants partials.
+          partialResults: onPartialResult != null,
+          // Use confirmation mode for better accuracy (waits for confirmation)
+          // dictation mode is faster but less accurate
+          listenMode: ListenMode.confirmation,
+          // Cancel any ongoing listening before starting new
+          cancelOnError: true,
+        ),
       );
     } catch (e) {
       if (kDebugMode) {

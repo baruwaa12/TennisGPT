@@ -236,9 +236,9 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     return Container(
       padding: AppTheme.cardPadding,
       decoration: BoxDecoration(
-        color: AppTheme.loss.withOpacity(0.1),
+        color: AppTheme.loss.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.loss.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.loss.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -520,7 +520,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   vertical: AppTheme.spaceSM,
                 ),
                 decoration: BoxDecoration(
-                  color: (isWin ? AppTheme.win : AppTheme.loss).withOpacity(0.15),
+                  color: (isWin ? AppTheme.win : AppTheme.loss).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
@@ -643,9 +643,9 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             Container(
               padding: AppTheme.cardPadding,
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
+                color: AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
               ),
               child: Text(
                 match.tacticalAnalysis,

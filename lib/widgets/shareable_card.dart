@@ -65,7 +65,7 @@ class ShareableCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _color.withOpacity(0.2),
+            color: _color.withValues(alpha: 0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -79,7 +79,7 @@ class ShareableCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [_color.withOpacity(0.8), _color],
+                colors: [_color.withValues(alpha: 0.8), _color],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -97,7 +97,7 @@ class ShareableCard extends StatelessWidget {
                         'Composure',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

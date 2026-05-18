@@ -293,7 +293,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
+                color: AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(b.icon, color: AppTheme.primary, size: 20),
@@ -389,7 +389,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected
-              ? accentColor.withOpacity(isDark ? 0.15 : 0.06)
+              ? accentColor.withValues(alpha: isDark ? 0.15 : 0.06)
               : (isDark ? Colors.grey[900] : Colors.white),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -399,7 +399,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: accentColor.withOpacity(0.18),
+                    color: accentColor.withValues(alpha: 0.18),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -526,7 +526,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradient.first.withOpacity(0.3),
+              color: gradient.first.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -562,10 +562,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.primary.withOpacity(0.08) : const Color(0xFFEFF6FF),
+        color: isDark ? AppTheme.primary.withValues(alpha: 0.08) : const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? AppTheme.primary.withOpacity(0.2) : AppTheme.primary.withOpacity(0.3),
+          color: isDark ? AppTheme.primary.withValues(alpha: 0.2) : AppTheme.primary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(

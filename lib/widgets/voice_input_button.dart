@@ -193,7 +193,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
             height: widget.size,
             decoration: BoxDecoration(
               color: isListening 
-                  ? activeColorValue.withOpacity(0.1 + (_pulseController.value * 0.1))
+                  ? activeColorValue.withValues(alpha: 0.1 + (_pulseController.value * 0.1))
                   : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
@@ -215,7 +215,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: activeColorValue.withOpacity(0.3 - (_pulseController.value * 0.2)),
+                            color: activeColorValue.withValues(alpha: 0.3 - (_pulseController.value * 0.2)),
                             width: 2,
                           ),
                         ),
@@ -341,7 +341,7 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
                     hintStyle: AppTheme.bodySmallThemed(context).copyWith(
                       color: _isListening 
                           ? AppTheme.primary
-                          : AppTheme.textMutedColor(context).withOpacity(0.5),
+                          : AppTheme.textMutedColor(context).withValues(alpha: 0.5),
                       fontStyle: _isListening ? FontStyle.italic : FontStyle.normal,
                     ),
                     border: InputBorder.none,
@@ -389,7 +389,7 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
                 vertical: AppTheme.spaceXS,
               ),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
+                color: AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(AppTheme.radiusMD - 1),
                   bottomRight: Radius.circular(AppTheme.radiusMD - 1),

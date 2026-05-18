@@ -236,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Structured Tactical Intelligence',
                   style: AppTheme.labelThemed(context).copyWith(
-                    color: AppTheme.primary.withOpacity(0.7),
+                    color: AppTheme.primary.withValues(alpha: 0.7),
                     fontSize: 11,
                     letterSpacing: 0.3,
                   ),
@@ -364,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: isWin ? AppTheme.win : AppTheme.loss.withOpacity(0.6),
+                        color: isWin ? AppTheme.win : AppTheme.loss.withValues(alpha: 0.6),
                         shape: BoxShape.circle,
                       ),
                     );
@@ -513,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 4,
               height: insight != null ? 48 : 36,
               decoration: BoxDecoration(
-                color: isWin ? AppTheme.win : AppTheme.loss.withOpacity(0.7),
+                color: isWin ? AppTheme.win : AppTheme.loss.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

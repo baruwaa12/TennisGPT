@@ -100,7 +100,7 @@ class ThemeService extends ChangeNotifier {
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: AppTheme.primary,
-        selectionColor: AppTheme.primary.withOpacity(0.3),
+        selectionColor: AppTheme.primary.withValues(alpha: 0.3),
         selectionHandleColor: AppTheme.primary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -173,7 +173,7 @@ class ThemeService extends ChangeNotifier {
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: AppTheme.primary,
-        selectionColor: AppTheme.primary.withOpacity(0.3),
+        selectionColor: AppTheme.primary.withValues(alpha: 0.3),
         selectionHandleColor: AppTheme.primary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

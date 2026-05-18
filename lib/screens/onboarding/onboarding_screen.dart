@@ -296,7 +296,7 @@ Please provide a brief tactical insight to show the value of the app.
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary.withOpacity(0.08) : Colors.grey[100],
+                    color: isSelected ? AppTheme.primary.withValues(alpha: 0.08) : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected ? AppTheme.primary : Colors.transparent,
@@ -403,7 +403,7 @@ Please provide a brief tactical insight to show the value of the app.
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary.withOpacity(0.08) : Colors.grey[100],
+                    color: isSelected ? AppTheme.primary.withValues(alpha: 0.08) : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected ? AppTheme.primary : Colors.transparent,
@@ -624,7 +624,7 @@ Please provide a brief tactical insight to show the value of the app.
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.08),
+              color: AppTheme.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(

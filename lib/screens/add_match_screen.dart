@@ -324,9 +324,9 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
     return Container(
       padding: AppTheme.cardPadding,
       decoration: BoxDecoration(
-        color: AppTheme.loss.withOpacity(0.1),
+        color: AppTheme.loss.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.loss.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.loss.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -562,7 +562,7 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
                             activeTrackColor: AppTheme.primary,
                             inactiveTrackColor: AppTheme.borderColor(context),
                             thumbColor: AppTheme.primary,
-                            overlayColor: AppTheme.primary.withOpacity(0.2),
+                            overlayColor: AppTheme.primary.withValues(alpha: 0.2),
                           ),
                           child: Slider(
                             value: _ratings[skill]!.toDouble(),

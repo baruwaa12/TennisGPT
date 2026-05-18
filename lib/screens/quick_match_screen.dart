@@ -664,7 +664,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withOpacity(0.15) : AppTheme.cardBackground(context),
+          color: isSelected ? AppTheme.primary.withValues(alpha: 0.15) : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
             color: isSelected ? AppTheme.primary : AppTheme.borderColor(context),
@@ -744,7 +744,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withOpacity(0.15) : AppTheme.cardBackground(context),
+          color: isSelected ? AppTheme.primary.withValues(alpha: 0.15) : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
             color: isSelected ? AppTheme.primary : AppTheme.borderColor(context),
@@ -1116,7 +1116,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isEnabled ? AppTheme.cardBackground(context) : AppTheme.cardBackground(context).withOpacity(0.5),
+          color: isEnabled ? AppTheme.cardBackground(context) : AppTheme.cardBackground(context).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           border: Border.all(color: AppTheme.borderColor(context)),
         ),
@@ -1179,7 +1179,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: (isWin ? AppTheme.win : AppTheme.primary).withOpacity(0.15),
+                    color: (isWin ? AppTheme.win : AppTheme.primary).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

@@ -38,8 +38,8 @@ class PurchaseService extends ChangeNotifier {
     return false;
   }
 
-  static const String _inventoryUrl =
-      'https://tennisgpt-production.up.railway.app/api/subscription/founder-inventory';
+  static String get _inventoryUrl =>
+      '${AppConfig.apiBaseUrl}/api/subscription/founder-inventory';
 
   // Product identifiers
   static const String founderMonthlyProductId = 'composure_founder_monthly';
@@ -347,7 +347,9 @@ class PurchaseService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final purchaseResult = await Purchases.purchasePackage(package);
+      final purchaseResult = await Purchases.purchase(
+        PurchaseParams.package(package),
+      );
       _updateCustomerInfo(purchaseResult.customerInfo);
 
       if (kDebugMode) {
