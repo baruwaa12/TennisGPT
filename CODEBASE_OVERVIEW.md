@@ -1,8 +1,12 @@
-# TennisGPT Codebase Overview
+# Composure (TennisGPT) Codebase Overview
 
-## What is TennisGPT?
+## What is Composure?
 
-TennisGPT is a **cross-platform mobile application** that provides AI-powered mental coaching, tactical analysis, and emotional support for tennis players. Built with Flutter, it aims to help players improve their mental resilience, game strategy, and emotional control both on and off the court.
+Composure (Flutter package name `composure`, marketed as **TennisGPT** in older
+materials) is a **cross-platform tennis performance app** that turns match
+outcomes into tactical adjustments and calm, repeatable routines. The product
+is a Flutter mobile app backed by a custom ASP.NET Core API, with a Next.js
+landing page that embeds the Flutter Web PWA.
 
 ---
 
@@ -10,14 +14,16 @@ TennisGPT is a **cross-platform mobile application** that provides AI-powered me
 
 | Category | Technology |
 |----------|------------|
-| **Framework** | Flutter (Dart) |
-| **State Management** | Provider (v6.0.5) |
-| **Authentication** | Supabase with Google OAuth |
-| **AI Backend** | OpenAI API (GPT-4o model) |
-| **Local Storage** | SharedPreferences |
-| **UI** | Material Design 3, Google Fonts, Flutter SVG |
-
-**Dart SDK Requirement:** `>=3.0.0 <4.0.0`
+| **Mobile framework** | Flutter (Dart, SDK `>=3.0.0 <4.0.0`) |
+| **State management** | Provider |
+| **Authentication** | Google Sign-In + Apple Sign-In → custom JWT backend |
+| **Backend API** | ASP.NET Core 9 (`backend/TennisGPT.*`), deployed on Railway |
+| **AI provider** | OpenAI (called only from the backend, model configured per env) |
+| **Database** | PostgreSQL via EF Core migrations |
+| **Subscriptions** | RevenueCat (`purchases_flutter`) + RevenueCat → backend webhook |
+| **Landing / blog** | Next.js 15 (`landing/`) embedding the Flutter Web PWA at `/app/` |
+| **Local storage** | SharedPreferences + `flutter_secure_storage` for tokens |
+| **UI** | Material Design 3, Google Fonts, Flutter SVG, fl_chart |
 
 ---
 
@@ -122,8 +128,11 @@ TennisGPT/
 
 | Service | Purpose | Configuration |
 |---------|---------|---------------|
-| **Supabase** | Authentication (Google OAuth) | `SUPABASE_URL`, `SUPABASE_ANON_KEY` |
-| **OpenAI** | AI coaching responses (GPT-4o) | `OPENAI_API_KEY` |
+| **Google Sign-In** | OAuth identity for Android/iOS/Web | `Google:ClientId` (server) + native client IDs |
+| **Apple Sign-In** | OAuth identity for iOS / Web | `Apple:ClientId` (server) |
+| **OpenAI** | AI coaching responses (server-side only) | `OpenAI:ApiKey`, `OpenAI:Model` |
+| **RevenueCat** | Mobile subscriptions + entitlement webhook | `--dart-define=REVENUECAT_APPLE_KEY/GOOGLE_KEY`, `RevenueCat:WebhookAuthorization` |
+| **Railway Postgres** | Primary database | `DATABASE_URL` (or `ConnectionStrings:DefaultConnection`) |
 
 ---
 
@@ -167,31 +176,28 @@ TennisGPT/
    cd TennisGPT
    ```
 
-2. **Create the `.env` file** in the project root:
-   ```bash
-   touch .env
-   ```
+2. **Choose a backend** (one of):
 
-   Add the following content:
+   - **Use hosted backend (fastest):** no env required. The client defaults to
+     `https://tennisgpt-production.up.railway.app`.
+   - **Run the backend locally:** see `backend/README` / `SETUP_GUIDE.md`. Point
+     the Flutter app at it with
+     `--dart-define=API_BASE_URL=http://localhost:5000`.
+
+3. **Configure the .NET backend** (`backend/TennisGPT.Api/appsettings.json` or
+   environment variables on Railway):
+
    ```env
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your-supabase-anon-key
-   OPENAI_API_KEY=your-openai-api-key
+   DATABASE_URL=postgresql://USER:PASS@HOST:5432/DBNAME
+   Jwt__Key=<long random string>
+   Google__ClientId=<web>;<ios>;<android>
+   Apple__ClientId=com.tennisgpt.app
+   OpenAI__ApiKey=sk-...
+   OpenAI__Model=gpt-4o-mini
+   RevenueCat__SecretApiKey=...
+   RevenueCat__WebhookAuthorization=<shared secret>
+   CORS_ALLOWED_ORIGINS=https://composuretennis.com,https://app.composuretennis.com
    ```
-
-3. **Get your API keys:**
-
-   **Supabase:**
-   - Go to [supabase.com](https://supabase.com) and create an account
-   - Create a new project
-   - Go to Project Settings → API
-   - Copy the `Project URL` and `anon` (public) key
-   - Enable Google OAuth in Authentication → Providers
-
-   **OpenAI:**
-   - Go to [platform.openai.com](https://platform.openai.com)
-   - Create an account and add billing
-   - Go to API Keys → Create new secret key
 
 4. **Install Flutter dependencies**
    ```bash
@@ -239,14 +245,14 @@ flutter run -d chrome
 
 ### Common Issues
 
-1. **"Missing .env file" error**
-   - Make sure you created the `.env` file in the project root
-   - Verify the file contains all required keys
+1. **"Unauthorized" calling the API**
+   - Confirm the device clock is in sync (JWTs are time-sensitive).
+   - Re-run `flutter run --dart-define=API_BASE_URL=...` after switching environments.
 
 2. **Google Sign-In not working**
-   - The app is currently fixing Google authentication (see recent commits)
-   - Ensure Supabase Google OAuth is properly configured
-   - Check iOS URL schemes in `ios/Runner/Info.plist`
+   - Ensure each platform's OAuth client ID is registered in Google Cloud and
+     listed in the backend's `Google:ClientId` (semicolon-separated).
+   - Check iOS URL schemes in `ios/Runner/Info.plist`.
 
 3. **CocoaPods issues on M1/M2 Macs**
    ```bash
@@ -292,17 +298,22 @@ bcf06b2 Currently Fixing google authentication
 | File | Purpose |
 |------|---------|
 | [main.dart](lib/main.dart) | App entry point, providers setup, theme configuration |
-| [auth_service.dart](lib/services/auth_service.dart) | Supabase authentication logic |
-| [openai_service.dart](lib/services/openai_service.dart) | AI coaching API integration |
-| [home_screen.dart](lib/screens/home_screen.dart) | Main navigation and feature cards |
+| [config/app_config.dart](lib/config/app_config.dart) | Feature flags + `API_BASE_URL` (overridable via `--dart-define`) |
+| [services/auth_service.dart](lib/services/auth_service.dart) | Google/Apple sign-in → JWT exchange with the backend |
+| [services/api_service.dart](lib/services/api_service.dart) | Authenticated calls to the .NET API |
+| [services/purchase_service.dart](lib/services/purchase_service.dart) | RevenueCat integration + founder inventory |
+| [screens/home_screen.dart](lib/screens/home_screen.dart) | Main navigation and feature cards |
 | [pubspec.yaml](pubspec.yaml) | Dependencies and project configuration |
+| [backend/TennisGPT.Api/Program.cs](backend/TennisGPT.Api/Program.cs) | API host, EF Core migrations, CORS, JWT, RevenueCat wiring |
 
 ---
 
 ## Notes for Development
 
-- The app uses **Provider** for state management - all services are registered in `main.dart`
-- Local data is stored via **SharedPreferences** (check-ins, match history)
-- The **OpenAI service** uses GPT-4o with temperature 0.7
-- Authentication uses **Supabase PKCE flow** for mobile OAuth security
-- The app supports **Material 3** theming with both light and dark modes
+- The app uses **Provider** for state management - all services are registered in `main.dart`.
+- Local data is cached via **SharedPreferences** and the canonical store is the **Postgres backend**.
+- OpenAI is called **only from the .NET backend**, never directly from the app.
+- Authentication is **Google / Apple Sign-In → JWT** issued by `TennisGPT.Api`.
+- The app supports **Material 3** theming with both light and dark modes.
+- Subscriptions flow through **RevenueCat**, and entitlement changes are mirrored to
+  the backend via the `api/webhooks/revenuecat` endpoint (Authorization-secret protected).

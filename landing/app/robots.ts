@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
-
-// TODO: Replace with your actual production domain (same as in sitemap.ts)
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://composuretennis.com";
+import { SITE_URL } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {

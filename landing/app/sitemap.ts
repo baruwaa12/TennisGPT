@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/blog/posts";
-
-// TODO: Replace with your actual production domain
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://composuretennis.com";
+import { SITE_URL } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [

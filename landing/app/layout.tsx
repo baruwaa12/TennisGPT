@@ -3,12 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { GoogleAnalytics } from "@next/third-parties/google";
-
-// TODO: Replace with your actual GA4 Measurement ID from analytics.google.com
-const GA_MEASUREMENT_ID = "G-VXLD9RYPR9";
-
-// TODO: Replace with your actual production domain
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://composuretennis.com";
+import { GA_MEASUREMENT_ID, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
