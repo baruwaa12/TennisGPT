@@ -13,14 +13,18 @@ public class RevenueCatWebhookController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly ILogger<RevenueCatWebhookController> _logger;
 
+    private readonly IWebHostEnvironment _environment;
+
     public RevenueCatWebhookController(
         IRevenueCatSubscriptionSyncService syncService,
         IConfiguration configuration,
-        ILogger<RevenueCatWebhookController> logger)
+        ILogger<RevenueCatWebhookController> logger,
+        IWebHostEnvironment environment)
     {
         _syncService = syncService;
         _configuration = configuration;
         _logger = logger;
+        _environment = environment;
     }
 
     [HttpPost]
@@ -28,7 +32,20 @@ public class RevenueCatWebhookController : ControllerBase
     public async Task<IActionResult> Post([FromBody] RevenueCatWebhookEnvelope? envelope, CancellationToken cancellationToken)
     {
         var expectedAuth = _configuration["RevenueCat:WebhookAuthorization"];
-        if (!string.IsNullOrEmpty(expectedAuth))
+
+        // Require a shared secret outside Development. Anonymous webhooks would let any caller
+        // mutate subscription state for known/guessed app user IDs.
+        if (string.IsNullOrEmpty(expectedAuth))
+        {
+            if (!_environment.IsDevelopment())
+            {
+                _logger.LogError("RevenueCat webhook rejected: RevenueCat:WebhookAuthorization is not configured in {Env}", _environment.EnvironmentName);
+                return Unauthorized();
+            }
+
+            _logger.LogWarning("RevenueCat webhook: no Authorization secret configured (allowed in Development only)");
+        }
+        else
         {
             var sent = Request.Headers.Authorization.ToString();
             if (string.IsNullOrEmpty(sent) || sent != expectedAuth)
