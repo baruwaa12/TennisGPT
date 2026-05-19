@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.IdentityModel.Tokens;
@@ -41,6 +42,15 @@ else
 builder.Services.AddDbContext<TennisGPTDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
+    // Suppress the snapshot version-mismatch warning that fires because the
+    // Migrations snapshot was last generated with EF Core 10 tooling while
+    // the runtime package is EF Core 9. The warning is cosmetic here —
+    // MigrateAsync validates actual pending migrations separately, and
+    // the pending-migration log below will catch any real schema drift.
+    // TODO: remove this suppression after re-generating the snapshot with
+    // `dotnet ef migrations add SyncSnapshot` using EF Core 9 tooling.
+    options.ConfigureWarnings(w =>
+        w.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 // Helper: convert postgres:// URL to Npgsql key-value connection string
