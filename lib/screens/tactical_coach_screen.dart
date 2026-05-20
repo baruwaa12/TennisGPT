@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 import '../theme/app_theme.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
@@ -39,6 +40,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   final ScrollController _scrollController = ScrollController();
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   final GlobalKey _insightCardKey = GlobalKey();
+  final Random _random = Random();
 
   List<MatchPerformance> _recentMatches = [];
   String? _selectedFocus;
@@ -217,6 +219,26 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     String query = focusArea['prompt'];
 
     final additionalContext = _contextController.text.trim();
+    if (additionalContext.isEmpty) {
+      final question = _buildReflectiveQuestion(_selectedFocus);
+      await _showSelfAnalysisPrompt(
+        message:
+            'To get useful tactical feedback, add a short self-analysis of what happened in your match.',
+        question: question,
+      );
+      return;
+    }
+
+    if (_isLikelyScoreOnlyInput(additionalContext)) {
+      final question = _buildReflectiveQuestion(_selectedFocus);
+      await _showSelfAnalysisPrompt(
+        message:
+            'A score alone is not enough for quality coaching. Add what actually broke down in your match.',
+        question: question,
+      );
+      return;
+    }
+
     if (additionalContext.isNotEmpty) {
       final validationError = TennisValidator.validate(additionalContext);
       if (validationError != null) {
@@ -315,6 +337,84 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         _errorMessage = 'Something went wrong. Please try again.';
       });
     }
+  }
+
+  bool _isLikelyScoreOnlyInput(String input) {
+    final cleaned = input.trim().toLowerCase();
+    if (cleaned.isEmpty) return false;
+
+    final hasScorePattern =
+        RegExp(r'\b\d{1,2}\s*-\s*\d{1,2}\b').hasMatch(cleaned);
+    if (!hasScorePattern) return false;
+
+    final tacticalSignal = RegExp(
+      r'\b(serve|return|forehand|backhand|volley|rally|tactic|pattern|pressure|net|footwork|position|opponent)\b',
+    ).hasMatch(cleaned);
+    if (tacticalSignal) return false;
+
+    final wordCount = cleaned.split(RegExp(r'\s+')).length;
+    return wordCount <= 10;
+  }
+
+  String _buildReflectiveQuestion(String? focusId) {
+    final prompts = <String, List<String>>{
+      'opponent': [
+        'What pattern did your opponent win with most often?',
+        'Which of your shots did your opponent target repeatedly?',
+        'At what score did your opponent take control of rallies?',
+      ],
+      'patterns': [
+        'In which score situations did your errors spike most?',
+        'What repeated mistake cost you the most points?',
+        'What changed when you went from winning points to losing them?',
+      ],
+      'upcoming': [
+        'Which one situation do you want a clear plan for next match?',
+        'What matchup problem are you most worried about next match?',
+        'What point pattern do you want to improve before next match?',
+      ],
+      'drills': [
+        'Which specific shot or movement broke down under pressure?',
+        'What mistake happened often enough that it needs a drill?',
+        'Which game phase needs work most: serve, return, or rally?',
+      ],
+    };
+
+    final options = prompts[focusId] ??
+        const [
+          'What exactly broke down in your match and when?',
+          'What was the turning point where momentum shifted against you?',
+          'Which tactical mistake did you repeat most?',
+        ];
+
+    return options[_random.nextInt(options.length)];
+  }
+
+  Future<void> _showSelfAnalysisPrompt({
+    required String message,
+    required String question,
+  }) async {
+    HapticFeedback.mediumImpact();
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Add More Match Detail'),
+          content: Text(
+            '$message\n\nStart with this question:\n$question',
+            style: AppTheme.bodyMediumThemed(context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Got it'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

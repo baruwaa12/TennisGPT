@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TennisGPT.Application.DTOs.Coaching;
@@ -91,6 +92,38 @@ public class CoachingController : ControllerBase
     
     private static string GenerateRequestId() => Guid.NewGuid().ToString("N")[..8];
 
+    private static bool IsLowDetailTacticalInput(string input)
+    {
+        var normalized = input.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalized))
+            return true;
+
+        // Likely score-only input, such as "6-4 6-3" or "lost 7-5 6-2".
+        var hasScorePattern = Regex.IsMatch(normalized, @"\b\d{1,2}\s*-\s*\d{1,2}\b");
+        var hasTacticalSignal = Regex.IsMatch(
+            normalized,
+            @"\b(serve|return|forehand|backhand|volley|rally|tactic|pattern|pressure|footwork|position|opponent|strategy)\b");
+
+        var wordCount = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        if (hasScorePattern && !hasTacticalSignal && wordCount <= 10)
+            return true;
+
+        // Very short tactical requests typically produce generic output.
+        return wordCount < 5;
+    }
+
+    private static string GetReflectiveQuestion()
+    {
+        var questions = new[]
+        {
+            "What exactly broke down when the score got tight?",
+            "Which repeated pattern cost you the most points?",
+            "What shot or movement felt least reliable under pressure?"
+        };
+
+        return questions[Random.Shared.Next(questions.Length)];
+    }
+
     [HttpPost("mental-check-in")]
     public async Task<ActionResult<CoachingResponse>> MentalCheckIn([FromBody] MentalCheckInRequest request)
     {
@@ -175,6 +208,16 @@ public class CoachingController : ControllerBase
             return BadRequest(new ErrorResponse 
             { 
                 Error = "Please describe your match or question",
+                RequestId = requestId
+            });
+        }
+
+        if (IsLowDetailTacticalInput(request.MatchDescription))
+        {
+            var reflectiveQuestion = GetReflectiveQuestion();
+            return BadRequest(new ErrorResponse
+            {
+                Error = $"To get useful tactical feedback, add a short self-analysis (what happened, when it happened, and what pattern you noticed). Start with this: {reflectiveQuestion}",
                 RequestId = requestId
             });
         }

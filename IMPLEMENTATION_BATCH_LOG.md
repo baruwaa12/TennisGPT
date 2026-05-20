@@ -33,3 +33,29 @@ Tracks work completed in 3-task batches.
 ### Notes
 - No production code changed in Batch 1.
 - This batch intentionally captures tactical current state first, per request, before implementing tactical behavior changes.
+
+---
+
+## Batch 2 (Tactical Input Quality Guardrails)
+
+### Task 1 - Add self-analysis gate in Tactical Coach UI
+- Updated `lib/screens/tactical_coach_screen.dart` to require meaningful self-analysis before generating insight.
+- Added validation behavior:
+  - If no self-analysis is provided, generation is blocked.
+  - If input looks like score-only text (for example, "6-4 6-3") without tactical detail, generation is blocked.
+- Added reflective question prompts so users know exactly what detail to add.
+
+### Task 2 - Ensure backend also rejects low-detail tactical requests
+- Updated `backend/TennisGPT.Api/Controllers/CoachingController.cs` with low-detail tactical input checks.
+- Added a backend reflective prompt message when tactical input is too short or score-only.
+- This protects quality for all clients, not only the Flutter app.
+
+### Task 3 - Surface backend guidance to users (not generic errors)
+- Updated `lib/services/api_service.dart` so HTTP 400 responses show the backend's user-facing `error` message directly.
+- This ensures users see actionable coaching guidance instead of a generic "Something went wrong."
+
+### Files Changed
+- `lib/screens/tactical_coach_screen.dart`
+- `backend/TennisGPT.Api/Controllers/CoachingController.cs`
+- `lib/services/api_service.dart`
+- `IMPLEMENTATION_BATCH_LOG.md`

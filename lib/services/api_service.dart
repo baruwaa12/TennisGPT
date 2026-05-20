@@ -121,6 +121,15 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set a custom user-facing error message when backend provides guidance.
+  void _setCustomError(ApiErrorCode code, String message,
+      {String? debugMessage, String? requestId}) {
+    _lastErrorCode = code;
+    _error = message;
+    _log('Error: $code - ${debugMessage ?? message}', requestId: requestId);
+    notifyListeners();
+  }
+
   Future<Map<String, String>> _getHeaders() async {
     final token = await _tokenService.getAccessToken();
     return {
@@ -214,9 +223,20 @@ class ApiService extends ChangeNotifier {
     // Handle specific status codes
     switch (response.statusCode) {
       case 400:
-        _setError(ApiErrorCode.invalidPayload, 
-          debugMessage: 'Bad request: ${response.body}',
-          requestId: requestId);
+        final data = _safeJsonDecode(response.body);
+        final backendMessage = data?['error']?.toString().trim();
+        if (backendMessage != null && backendMessage.isNotEmpty) {
+          _setCustomError(
+            ApiErrorCode.invalidPayload,
+            backendMessage,
+            debugMessage: 'Bad request (backend message)',
+            requestId: requestId,
+          );
+        } else {
+          _setError(ApiErrorCode.invalidPayload,
+              debugMessage: 'Bad request: ${response.body}',
+              requestId: requestId);
+        }
         break;
       case 401:
         _setError(ApiErrorCode.unauthorized, requestId: requestId);
