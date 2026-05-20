@@ -4,9 +4,9 @@ namespace TennisGPT.Application.DTOs.Coaching;
 
 /// <summary>
 /// Structured tactical analysis response — Control Mode format.
-/// 4 sections: What To Control, Next Match Rule, Constraint Drill, Reminder.
+/// Core sections: What To Control, Next Match Rule, Constraint Drill, Why Advice Changed, Reminder.
 /// Plus Pattern Detection when match history is available.
-/// Total output: 120–160 words.
+/// Total output target: 110–145 words.
 /// </summary>
 public class TacticalAnalysisResponse
 {
@@ -18,6 +18,9 @@ public class TacticalAnalysisResponse
 
     [JsonPropertyName("constraintDrill")]
     public string ConstraintDrill { get; set; } = string.Empty;
+
+    [JsonPropertyName("whyAdviceChanged")]
+    public string WhyAdviceChanged { get; set; } = string.Empty;
 
     [JsonPropertyName("reminder")]
     public string Reminder { get; set; } = string.Empty;

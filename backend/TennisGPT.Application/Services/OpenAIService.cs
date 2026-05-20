@@ -103,8 +103,8 @@ Do NOT include backticks.
 Do NOT include explanations outside JSON.
 Do NOT include extra commentary.
 
-TOTAL OUTPUT: 100–130 words across all fields combined. HARD LIMIT: 130 words.
-If your output exceeds 130 words, shorten every field until the total is under 130.
+TOTAL OUTPUT: 110–145 words across all fields combined. HARD LIMIT: 145 words.
+If your output exceeds 145 words, shorten every field until the total is under 145.
 
 Return JSON in this exact structure:
 
@@ -112,6 +112,7 @@ Return JSON in this exact structure:
   ""whatToControl"": ""string"",
   ""nextMatchRule"": ""string"",
   ""constraintDrill"": ""string"",
+  ""whyAdviceChanged"": ""string"",
   ""reminder"": ""string"",
   ""patternDetection"": {
     ""recurringPattern"": ""string"",
@@ -146,12 +147,17 @@ FIELD RULES
 - Must be immediately usable on court.
 - Do NOT write an essay or long setup. Keep it tight.
 
-4) reminder:
+4) whyAdviceChanged:
+- 1 line only.
+- Explain why this advice differs from recent guidance (or why it remains similar if issue persists).
+- Must reference a concrete trigger from current context or match history.
+
+5) reminder:
 - 1 line only.
 - Reinforce: stick to what you practiced, control the controllables.
 - No motivational fluff.
 
-5) patternDetection:
+6) patternDetection:
 - Only populate if 3+ matches exist in the provided history.
 - If fewer than 3 matches, set all patternDetection fields to empty strings.
 - recurringPattern: 1 line identifying a mechanical or tactical trend.
@@ -160,7 +166,7 @@ FIELD RULES
 - longTermFix: 1 line. Single controllable adjustment. Never blame confidence alone.
 - Keep every field to 1 line. No fluff.
 
-REMEMBER: Total output across ALL fields must be under 130 words. Count carefully.";
+REMEMBER: Total output across ALL fields must be under 145 words. Count carefully.";
 
     private const string TacticalNoveltyRules = """
 
@@ -327,6 +333,7 @@ NOVELTY RULES
                 WhatToControl = rawResponse,
                 NextMatchRule = "",
                 ConstraintDrill = "",
+                WhyAdviceChanged = "",
                 Reminder = ""
             };
         }
@@ -343,6 +350,9 @@ NOVELTY RULES
 
             RECENT MATCH HISTORY:
             {matchesContext}
+
+            RECENT TACTICAL ADVICE:
+            {recentAdviceContext}
             """;
 
         var retryResponse = await _openAIClient.SendPromptAsync(
@@ -368,6 +378,7 @@ NOVELTY RULES
             WhatToControl = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
             NextMatchRule = "If uncertainty rises, return to your strongest fundamental.",
             ConstraintDrill = "Unable to generate — please retry with more match detail.",
+            WhyAdviceChanged = "Insufficient structured output from model; no variation rationale available.",
             Reminder = "Stick to what you practiced. Control the controllables."
         };
     }
@@ -748,6 +759,7 @@ NOVELTY RULES
             response.WhatToControl,
             response.NextMatchRule,
             response.ConstraintDrill,
+            response.WhyAdviceChanged,
             response.Reminder,
             response.PatternDetection?.RecurringPattern ?? string.Empty,
             response.PatternDetection?.Trigger ?? string.Empty,

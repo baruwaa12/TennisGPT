@@ -7,7 +7,9 @@ public enum SavedEntryCategory
 {
     TacticalAdvice = 0,
     PostMatchDebrief = 1,
-    PreMatchPlan = 2
+    PreMatchPlan = 2,
+    // Internal tactical memory snapshots used for anti-repetition context.
+    TacticalHistory = 3
 }
 
 /// <summary>

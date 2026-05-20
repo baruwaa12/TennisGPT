@@ -963,6 +963,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     final whatToControl = data['whatToControl'] as String? ?? '';
     final nextMatchRule = data['nextMatchRule'] as String? ?? '';
     final constraintDrill = data['constraintDrill'] as String? ?? '';
+    final whyAdviceChanged = data['whyAdviceChanged'] as String? ?? '';
     final reminder = data['reminder'] as String? ??
         'Stick to what you practiced. Control the controllables.';
 
@@ -976,6 +977,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       whatToControl,
       nextMatchRule,
       constraintDrill,
+      whyAdviceChanged,
       reminder,
       patternData,
     );
@@ -1003,10 +1005,17 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         if (constraintDrill.isNotEmpty)
           const SizedBox(height: AppTheme.spaceMD),
 
-        // 4) Reminder
+        // 4) Why advice changed
+        if (whyAdviceChanged.isNotEmpty)
+          _buildWhyAdviceChangedCard(whyAdviceChanged),
+
+        if (whyAdviceChanged.isNotEmpty)
+          const SizedBox(height: AppTheme.spaceMD),
+
+        // 5) Reminder
         _buildReminderBanner(reminder),
 
-        // 5) Pattern Detection (separate section)
+        // 6) Pattern Detection (separate section)
         if (hasPattern) ...[
           const SizedBox(height: AppTheme.spaceLG),
           _buildPatternDetectionSection(patternData),
@@ -1172,6 +1181,49 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 fontStyle: FontStyle.italic,
                 color: AppTheme.textSecondaryColor(context),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWhyAdviceChangedCard(String whyAdviceChanged) {
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.elevatedBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppTheme.spaceSM),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            ),
+            child: const Icon(
+              Icons.compare_arrows_rounded,
+              color: AppTheme.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Why this advice changed',
+                    style: AppTheme.headingSmallThemed(context)),
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  whyAdviceChanged,
+                  style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.5),
+                ),
+              ],
             ),
           ),
         ],
@@ -1528,6 +1580,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     String whatToControl,
     String nextMatchRule,
     String constraintDrill,
+    String whyAdviceChanged,
     String reminder,
     Map<String, dynamic>? patternData,
   ) {
@@ -1542,6 +1595,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     if (constraintDrill.isNotEmpty) {
       buffer.writeln();
       buffer.writeln('20-Min Drill: $constraintDrill');
+    }
+    if (whyAdviceChanged.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Why changed: $whyAdviceChanged');
     }
     buffer.writeln();
     buffer.writeln(reminder);

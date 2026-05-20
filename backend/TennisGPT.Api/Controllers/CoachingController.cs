@@ -128,6 +128,18 @@ public class CoachingController : ControllerBase
         return questions[Random.Shared.Next(questions.Length)];
     }
 
+    private static string BuildTacticalHistorySnapshot(TacticalAnalysisResponse response)
+    {
+        return string.Join("\n", new[]
+        {
+            $"WhatToControl: {response.WhatToControl}",
+            $"NextMatchRule: {response.NextMatchRule}",
+            $"ConstraintDrill: {response.ConstraintDrill}",
+            $"WhyAdviceChanged: {response.WhyAdviceChanged}",
+            $"Reminder: {response.Reminder}"
+        });
+    }
+
     [HttpPost("mental-check-in")]
     public async Task<ActionResult<CoachingResponse>> MentalCheckIn([FromBody] MentalCheckInRequest request)
     {
@@ -235,20 +247,44 @@ public class CoachingController : ControllerBase
             var recentAdviceHistory = new List<string>();
             if (userId.HasValue)
             {
-                var savedAdvice = await _savedEntryRepository.GetByUserAndCategoryAsync(
+                var recentHistoryEntries = await _savedEntryRepository.GetByUserAndCategoryAsync(
                     userId.Value,
-                    SavedEntryCategory.TacticalAdvice);
-                recentAdviceHistory = savedAdvice
+                    SavedEntryCategory.TacticalHistory);
+
+                recentAdviceHistory = recentHistoryEntries
                     .Select(e => e.Content)
                     .Where(c => !string.IsNullOrWhiteSpace(c))
                     .Take(3)
                     .ToList();
+
+                if (recentAdviceHistory.Count == 0)
+                {
+                    // Backward-compatible bootstrap from manually saved tactical advice.
+                    var savedAdvice = await _savedEntryRepository.GetByUserAndCategoryAsync(
+                        userId.Value,
+                        SavedEntryCategory.TacticalAdvice);
+                    recentAdviceHistory = savedAdvice
+                        .Select(e => e.Content)
+                        .Where(c => !string.IsNullOrWhiteSpace(c))
+                        .Take(3)
+                        .ToList();
+                }
             }
 
             var response = await _openAIService.TacticalAnalysisAsync(
                 request.MatchDescription,
                 matchesJson,
                 recentAdviceHistory);
+
+            if (userId.HasValue && !string.IsNullOrWhiteSpace(response.WhatToControl))
+            {
+                // Auto-capture tactical outputs so future requests can adapt and avoid repetition.
+                var snapshot = BuildTacticalHistorySnapshot(response);
+                await _savedEntryRepository.SaveAndTrimAsync(
+                    userId.Value,
+                    SavedEntryCategory.TacticalHistory,
+                    snapshot);
+            }
             
             _logger.LogInformation("[{RequestId}] TacticalAnalysis success", requestId);
             

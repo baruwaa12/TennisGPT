@@ -84,3 +84,35 @@ Tracks work completed in 3-task batches.
 - `backend/TennisGPT.Api/Controllers/CoachingController.cs`
 - `backend/TennisGPT.Application/Services/OpenAIService.cs`
 - `IMPLEMENTATION_BATCH_LOG.md`
+
+---
+
+## Batch 4 (Auto-Capture + Advice Change Transparency)
+
+### Task 1 - Auto-capture tactical outputs for memory context
+- Added internal `SavedEntryCategory.TacticalHistory`.
+- Updated `backend/TennisGPT.Api/Controllers/CoachingController.cs` to:
+  - read recent tactical memory from `TacticalHistory` (fallback to `TacticalAdvice`),
+  - auto-save each generated tactical output snapshot to `TacticalHistory`.
+- Result: anti-repetition memory no longer depends on users manually pressing save.
+
+### Task 2 - Add "why advice changed" to tactical response
+- Updated tactical response contract in `backend/TennisGPT.Application/DTOs/Coaching/TacticalAnalysisResponse.cs` with `whyAdviceChanged`.
+- Updated tactical system prompt and field rules in `backend/TennisGPT.Application/Services/OpenAIService.cs` to require this field.
+- Updated `lib/screens/tactical_coach_screen.dart` to render a "Why this advice changed" card and include it in share text.
+
+### Task 3 - Add internal evaluation report with before/after samples
+- Added `TACTICAL_COACH_BATCH4_EVAL.md` documenting:
+  - before/after prompt and response behavior,
+  - sample payload scenarios,
+  - manual QA checklist,
+  - recommended production metrics.
+
+### Files Changed
+- `backend/TennisGPT.Domain/Entities/SavedEntry.cs`
+- `backend/TennisGPT.Api/Controllers/CoachingController.cs`
+- `backend/TennisGPT.Application/DTOs/Coaching/TacticalAnalysisResponse.cs`
+- `backend/TennisGPT.Application/Services/OpenAIService.cs`
+- `lib/screens/tactical_coach_screen.dart`
+- `TACTICAL_COACH_BATCH4_EVAL.md`
+- `IMPLEMENTATION_BATCH_LOG.md`
