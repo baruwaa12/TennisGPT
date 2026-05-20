@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TennisGPT.Application.DTOs.Coaching;
 using TennisGPT.Application.Interfaces;
+using TennisGPT.Domain.Entities;
 
 namespace TennisGPT.Api.Controllers;
 
@@ -15,15 +16,18 @@ public class CoachingController : ControllerBase
 {
     private readonly IOpenAIService _openAIService;
     private readonly IQuotaService _quotaService;
+    private readonly ISavedEntryRepository _savedEntryRepository;
     private readonly ILogger<CoachingController> _logger;
 
     public CoachingController(
         IOpenAIService openAIService, 
         IQuotaService quotaService,
+        ISavedEntryRepository savedEntryRepository,
         ILogger<CoachingController> logger)
     {
         _openAIService = openAIService;
         _quotaService = quotaService;
+        _savedEntryRepository = savedEntryRepository;
         _logger = logger;
     }
     
@@ -199,10 +203,6 @@ public class CoachingController : ControllerBase
         _logger.LogInformation("[{RequestId}] TacticalAnalysis User={UserId}, Description length={Length}", 
             requestId, userId, request.MatchDescription?.Length ?? 0);
         
-        // Check quota and rate limit
-        var blockResult = await CheckQuotaAndRateLimitAsync("tactical-analysis");
-        if (blockResult != null) return blockResult;
-        
         if (string.IsNullOrWhiteSpace(request.MatchDescription))
         {
             return BadRequest(new ErrorResponse 
@@ -221,6 +221,10 @@ public class CoachingController : ControllerBase
                 RequestId = requestId
             });
         }
+
+        // Check quota and rate limit after validating request quality.
+        var blockResult = await CheckQuotaAndRateLimitAsync("tactical-analysis");
+        if (blockResult != null) return blockResult;
         
         try
         {
@@ -228,7 +232,23 @@ public class CoachingController : ControllerBase
                 ? JsonSerializer.Serialize(request.RecentMatches)
                 : null;
 
-            var response = await _openAIService.TacticalAnalysisAsync(request.MatchDescription, matchesJson);
+            var recentAdviceHistory = new List<string>();
+            if (userId.HasValue)
+            {
+                var savedAdvice = await _savedEntryRepository.GetByUserAndCategoryAsync(
+                    userId.Value,
+                    SavedEntryCategory.TacticalAdvice);
+                recentAdviceHistory = savedAdvice
+                    .Select(e => e.Content)
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Take(3)
+                    .ToList();
+            }
+
+            var response = await _openAIService.TacticalAnalysisAsync(
+                request.MatchDescription,
+                matchesJson,
+                recentAdviceHistory);
             
             _logger.LogInformation("[{RequestId}] TacticalAnalysis success", requestId);
             

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using TennisGPT.Application.DTOs.Coaching;
 using TennisGPT.Application.Interfaces;
@@ -161,6 +162,18 @@ FIELD RULES
 
 REMEMBER: Total output across ALL fields must be under 130 words. Count carefully.";
 
+    private const string TacticalNoveltyRules = """
+
+====================================================
+NOVELTY RULES
+====================================================
+
+- Avoid repeating the same tactical anchor from recent advice unless the issue clearly persists.
+- If overlap with prior advice is necessary, change the execution detail, trigger, and drill constraint.
+- Prioritize a fresh, high-leverage adjustment from the available context.
+- Do not reuse phrasing from recent advice.
+""";
+
     private const double TacticalTemperature = 0.5;
 
     public OpenAIService(IOpenAIClient openAIClient, ILogger<OpenAIService> logger)
@@ -260,9 +273,13 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
     /// Uses locked system prompt + structured JSON output.
     /// Parses response into TacticalAnalysisResponse; retries once on parse failure.
     /// </summary>
-    public async Task<TacticalAnalysisResponse> TacticalAnalysisAsync(string matchDescription, string? recentMatchesJson)
+    public async Task<TacticalAnalysisResponse> TacticalAnalysisAsync(
+        string matchDescription,
+        string? recentMatchesJson,
+        IReadOnlyList<string>? recentAdviceHistory)
     {
         var matchesContext = BuildMatchContext(recentMatchesJson);
+        var recentAdviceContext = BuildRecentAdviceContext(recentAdviceHistory);
 
         var userPrompt = $"""
             MATCH DATA:
@@ -271,14 +288,28 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
             RECENT MATCH HISTORY:
             {matchesContext}
 
+            RECENT TACTICAL ADVICE:
+            {recentAdviceContext}
+
             Analyze the data and return your response as valid JSON.
             """;
 
         // First attempt
-        var rawResponse = await _openAIClient.SendPromptAsync(userPrompt, TacticalSystemPrompt, TacticalTemperature);
+        var rawResponse = await _openAIClient.SendPromptAsync(
+            userPrompt,
+            TacticalSystemPrompt + TacticalNoveltyRules,
+            TacticalTemperature);
         
         var parsed = TryParseTacticalResponse(rawResponse);
-        if (parsed != null) return parsed;
+        if (parsed != null)
+        {
+            return await EnsureNoveltyIfNeededAsync(
+                parsed,
+                matchDescription,
+                matchesContext,
+                recentAdviceContext,
+                recentAdviceHistory);
+        }
 
         // Don't retry if the response is a known error/fallback (not AI content)
         if (rawResponse.StartsWith("No response") ||
@@ -314,10 +345,21 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
             {matchesContext}
             """;
 
-        var retryResponse = await _openAIClient.SendPromptAsync(retryPrompt, TacticalSystemPrompt, TacticalTemperature);
+        var retryResponse = await _openAIClient.SendPromptAsync(
+            retryPrompt,
+            TacticalSystemPrompt + TacticalNoveltyRules,
+            TacticalTemperature);
         
         parsed = TryParseTacticalResponse(retryResponse);
-        if (parsed != null) return parsed;
+        if (parsed != null)
+        {
+            return await EnsureNoveltyIfNeededAsync(
+                parsed,
+                matchDescription,
+                matchesContext,
+                recentAdviceContext,
+                recentAdviceHistory);
+        }
 
         // Fallback — wrap raw text in structured response
         _logger.LogError("Tactical analysis JSON parse failed after retry. Returning fallback.");
@@ -606,5 +648,133 @@ REMEMBER: Total output across ALL fields must be under 130 words. Count carefull
         }
 
         return null;
+    }
+
+    private async Task<TacticalAnalysisResponse> EnsureNoveltyIfNeededAsync(
+        TacticalAnalysisResponse candidate,
+        string matchDescription,
+        string matchesContext,
+        string recentAdviceContext,
+        IReadOnlyList<string>? recentAdviceHistory)
+    {
+        if (recentAdviceHistory == null || recentAdviceHistory.Count == 0)
+            return candidate;
+
+        if (!IsTooSimilarToHistory(candidate, recentAdviceHistory))
+            return candidate;
+
+        _logger.LogInformation(
+            "Tactical analysis too similar to recent advice. Triggering one novelty regeneration pass.");
+
+        var noveltyPrompt = $"""
+            MATCH DATA:
+            Current situation: {matchDescription}
+
+            RECENT MATCH HISTORY:
+            {matchesContext}
+
+            RECENT TACTICAL ADVICE:
+            {recentAdviceContext}
+
+            Your previous answer was too similar to recent advice.
+            Return a materially different tactical anchor and drill while staying truthful to the data.
+            Return valid JSON only.
+            """;
+
+        var regeneratedRaw = await _openAIClient.SendPromptAsync(
+            noveltyPrompt,
+            TacticalSystemPrompt + TacticalNoveltyRules,
+            TacticalTemperature);
+
+        var regenerated = TryParseTacticalResponse(regeneratedRaw);
+        if (regenerated == null)
+            return candidate;
+
+        if (IsTooSimilarToHistory(regenerated, recentAdviceHistory))
+        {
+            _logger.LogInformation(
+                "Novelty regeneration still too similar. Returning original parsed candidate.");
+            return candidate;
+        }
+
+        return regenerated;
+    }
+
+    private static string BuildRecentAdviceContext(IReadOnlyList<string>? recentAdviceHistory)
+    {
+        if (recentAdviceHistory == null || recentAdviceHistory.Count == 0)
+        {
+            return "No recent tactical advice history available.";
+        }
+
+        var trimmed = recentAdviceHistory
+            .Where(a => !string.IsNullOrWhiteSpace(a))
+            .Select((a, i) =>
+                $"Advice {i + 1}: {(a.Length > 260 ? a[..260] + "..." : a)}")
+            .ToList();
+
+        return trimmed.Count == 0
+            ? "No recent tactical advice history available."
+            : string.Join(Environment.NewLine, trimmed);
+    }
+
+    private static bool IsTooSimilarToHistory(
+        TacticalAnalysisResponse response,
+        IReadOnlyList<string> recentAdviceHistory)
+    {
+        var candidate = NormalizeForSimilarity(FlattenForSimilarity(response));
+        if (string.IsNullOrWhiteSpace(candidate))
+            return false;
+
+        const double similarityThreshold = 0.72;
+        foreach (var history in recentAdviceHistory)
+        {
+            var normalizedHistory = NormalizeForSimilarity(history);
+            if (string.IsNullOrWhiteSpace(normalizedHistory))
+                continue;
+
+            var similarity = JaccardSimilarity(candidate, normalizedHistory);
+            if (similarity >= similarityThreshold)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string FlattenForSimilarity(TacticalAnalysisResponse response)
+    {
+        return string.Join(" ", new[]
+        {
+            response.WhatToControl,
+            response.NextMatchRule,
+            response.ConstraintDrill,
+            response.Reminder,
+            response.PatternDetection?.RecurringPattern ?? string.Empty,
+            response.PatternDetection?.Trigger ?? string.Empty,
+            response.PatternDetection?.LongTermFix ?? string.Empty
+        });
+    }
+
+    private static string NormalizeForSimilarity(string input)
+    {
+        var lowered = input.ToLowerInvariant();
+        lowered = Regex.Replace(lowered, @"[^a-z0-9\s]", " ");
+        lowered = Regex.Replace(lowered, @"\s+", " ").Trim();
+        return lowered;
+    }
+
+    private static double JaccardSimilarity(string a, string b)
+    {
+        var setA = a.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        var setB = b.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        if (setA.Count == 0 || setB.Count == 0)
+            return 0;
+
+        var intersectionCount = setA.Intersect(setB).Count();
+        var unionCount = setA.Union(setB).Count();
+        if (unionCount == 0)
+            return 0;
+
+        return (double)intersectionCount / unionCount;
     }
 }

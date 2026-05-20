@@ -59,3 +59,28 @@ Tracks work completed in 3-task batches.
 - `backend/TennisGPT.Api/Controllers/CoachingController.cs`
 - `lib/services/api_service.dart`
 - `IMPLEMENTATION_BATCH_LOG.md`
+
+---
+
+## Batch 3 (Anti-Repetition and Tactical Memory)
+
+### Task 1 - Inject recent tactical advice history into generation
+- Updated `backend/TennisGPT.Api/Controllers/CoachingController.cs` to fetch up to 3 recent saved tactical advice entries per user.
+- Passed that history into `IOpenAIService.TacticalAnalysisAsync(...)`.
+- Updated `backend/TennisGPT.Application/Interfaces/IOpenAIService.cs` signature to accept `recentAdviceHistory`.
+
+### Task 2 - Add anti-repetition/novelty rules to tactical prompting
+- Updated `backend/TennisGPT.Application/Services/OpenAIService.cs` to append a dedicated novelty rule block to the tactical system prompt.
+- Prompt now explicitly instructs the model to avoid reusing tactical anchors and phrasing from recent advice unless justified.
+- Added recent advice context section into tactical user prompt payload.
+
+### Task 3 - Add similarity gate with one regeneration pass
+- Implemented response similarity scoring in `OpenAIService` (Jaccard-based lexical overlap).
+- If generated tactical output is too similar to recent advice history, backend triggers one regeneration pass with stronger novelty instruction.
+- If regeneration remains too similar or fails parse, service safely falls back to original valid candidate.
+
+### Files Changed
+- `backend/TennisGPT.Application/Interfaces/IOpenAIService.cs`
+- `backend/TennisGPT.Api/Controllers/CoachingController.cs`
+- `backend/TennisGPT.Application/Services/OpenAIService.cs`
+- `IMPLEMENTATION_BATCH_LOG.md`

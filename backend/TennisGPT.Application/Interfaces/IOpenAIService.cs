@@ -6,7 +6,10 @@ public interface IOpenAIService
 {
     Task<string> MentalCheckInAsync(int mood, string journalEntry);
     Task<string> EmotionalResetAsync(string situation);
-    Task<TacticalAnalysisResponse> TacticalAnalysisAsync(string matchDescription, string? recentMatchesJson);
+    Task<TacticalAnalysisResponse> TacticalAnalysisAsync(
+        string matchDescription,
+        string? recentMatchesJson,
+        IReadOnlyList<string>? recentAdviceHistory);
     Task<string> GenerateDrillsAsync(string matchesJson);
     Task<string> QuickTacticalTipAsync(string situation);
     Task<string> AnalyzeTechniqueAsync(string description);
