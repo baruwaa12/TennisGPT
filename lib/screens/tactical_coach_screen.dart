@@ -19,7 +19,7 @@ import '../widgets/voice_input_button.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
-/// Tactical Coach Screen
+/// Coach Screen
 ///
 /// Redesigned to display structured analytical output:
 /// - Summary Card
@@ -134,7 +134,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final matches = await _matchHistoryService.getRecentMatches(10);
+      final matches = await _matchHistoryService.getRecentMatches(35);
 
       final wins =
           matches.where((m) => m.result.toLowerCase() == 'win').length;
@@ -444,7 +444,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       onPressed: () => Navigator.pop(context),
                     ),
                     title: Text(
-                      'Tactical Coach',
+                      'Coach',
                       style: AppTheme.headingSmallThemed(context).copyWith(
                         color: AppTheme.textSecondaryColor(context),
                       ),
@@ -535,7 +535,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             children: [
               Icon(Icons.show_chart_rounded, color: AppTheme.primary, size: 20),
               const SizedBox(width: AppTheme.spaceSM),
-              Text('Current Form', style: AppTheme.headingSmallThemed(context)),
+              Text('Recent Match Trends', style: AppTheme.headingSmallThemed(context)),
             ],
           ),
           const SizedBox(height: AppTheme.spaceMD),
@@ -643,7 +643,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               padding:
                   const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               child: Text(
-                'Log matches to see your form analysis',
+                'Log matches to see coaching trends',
                 style: AppTheme.bodyMediumThemed(context),
               ),
             ),

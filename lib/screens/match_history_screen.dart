@@ -553,64 +553,6 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           Divider(color: AppTheme.borderColor(context)),
           const SizedBox(height: AppTheme.spaceLG),
           
-          // Strengths & Weaknesses
-          if (match.strengths.isNotEmpty || match.weaknesses.isNotEmpty) ...[
-            Text('Performance ratings', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceMD),
-            ...match.strengths.entries.map((entry) => Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Text(entry.key, style: AppTheme.bodyMediumThemed(context)),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: _buildRatingBar(entry.value, AppTheme.win),
-                  ),
-                ],
-              ),
-            )),
-            const SizedBox(height: AppTheme.spaceMD),
-          ],
-          
-          // Key Moments
-          if (match.keyMoments.isNotEmpty) ...[
-            Text('Key moments', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceSM),
-            ...match.keyMoments.map((moment) => Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spaceMD),
-                  Expanded(
-                    child: Text(moment, style: AppTheme.bodyMediumThemed(context)),
-                  ),
-                ],
-              ),
-            )),
-            const SizedBox(height: AppTheme.spaceMD),
-          ],
-          
-          // Notes
-          if (match.notes.isNotEmpty) ...[
-            Text('Notes', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceSM),
-            Text(match.notes, style: AppTheme.bodyMediumThemed(context)),
-            const SizedBox(height: AppTheme.spaceMD),
-          ],
-          
           // Match summary
           if (match.matchSummary.isNotEmpty) ...[
             Text('Match summary', style: AppTheme.headingSmallThemed(context)),
@@ -619,95 +561,10 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             const SizedBox(height: AppTheme.spaceMD),
           ],
           
-          // Mental notes
-          if (match.mentalNotes.isNotEmpty) ...[
-            Text('Mental notes', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceSM),
-            Text(match.mentalNotes, style: AppTheme.bodyMediumThemed(context)),
-            const SizedBox(height: AppTheme.spaceMD),
-          ],
-          
-          // Tactical notes
-          if (match.tacticalNotes.isNotEmpty) ...[
-            Text('Tactical notes', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceSM),
-            Text(match.tacticalNotes, style: AppTheme.bodyMediumThemed(context)),
-            const SizedBox(height: AppTheme.spaceMD),
-          ],
-          
-          // Tactical Analysis
-          if (match.tacticalAnalysis.isNotEmpty && 
-              match.tacticalAnalysis != 'Analysis pending') ...[
-            Text('Coach feedback', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceSM),
-            Container(
-              padding: AppTheme.cardPadding,
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                match.tacticalAnalysis,
-                style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
-              ),
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-          ],
-          
-          // Recommended Drills
-          if (match.recommendedDrills.isNotEmpty) ...[
-            Text('Recommended practice', style: AppTheme.headingSmallThemed(context)),
-            const SizedBox(height: AppTheme.spaceSM),
-            ...match.recommendedDrills.map((drill) => Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.fitness_center_rounded, size: 16, color: AppTheme.textMutedColor(context)),
-                  const SizedBox(width: AppTheme.spaceSM),
-                  Expanded(
-                    child: Text(drill, style: AppTheme.bodyMediumThemed(context)),
-                  ),
-                ],
-              ),
-            )),
-          ],
-          
           const SizedBox(height: AppTheme.spaceXXL),
         ],
       ),
     );
   }
 
-  Widget _buildRatingBar(int value, Color color) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 6,
-            decoration: BoxDecoration(
-              color: AppTheme.borderColor(context),
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: value / 10,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppTheme.spaceSM),
-        Text(
-          '$value',
-          style: AppTheme.labelThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
-        ),
-      ],
-    );
-  }
 }

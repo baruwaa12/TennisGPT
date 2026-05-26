@@ -5,7 +5,6 @@ import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../config/app_config.dart';
-import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
@@ -13,7 +12,6 @@ import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../services/pattern_service.dart';
 import '../utils/match_format_utils.dart';
-import '../utils/paywall_navigation.dart';
 import '../widgets/shareable_card.dart';
 import '../widgets/guided_set_score_editor.dart';
 import 'match_reflection_screen.dart';
@@ -82,7 +80,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   ];
   bool _isSaving = false;
   bool _showSuccess = false;
-  String? _aiInsight;
   MatchPerformance? _savedMatch;
   String _guidedScoreLine = '';
   String? _guidedScoreError;
@@ -150,26 +147,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       final scoreLine = _guidedScoreLine;
       final setScores = parsedScore.setScores;
 
-      // Create match description for AI
-      final matchDescription = '''
-Match Format: ${_formatLabel()}
-Score: $scoreLine
-Result: $result
-Opponent: $opponent
-${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
-      '''.trim();
-
-      // Get AI analysis (background, non-blocking feel)
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      final recentMatches = await _matchHistoryService.getRecentMatches(3);
-      final analysis = await apiService.tacticalAnalysisSummary(matchDescription, recentMatches);
-
-      if (analysis == null && apiService.requiresUpgrade) {
-        if (context.mounted) {
-          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
-        }
-      }
-
       // Create match
       final match = MatchPerformance(
         id: matchId,
@@ -193,7 +170,7 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
         strengths: {},
         weaknesses: {},
         keyMoments: [],
-        tacticalAnalysis: analysis ?? '',
+        tacticalAnalysis: '',
         recommendedDrills: [],
       );
 
@@ -211,7 +188,6 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
       setState(() {
         _isSaving = false;
         _showSuccess = true;
-        _aiInsight = analysis;
         _savedMatch = match;
       });
 
@@ -1204,41 +1180,6 @@ ${quickNote.isNotEmpty ? 'Quick note: $quickNote' : ''}
                 ),
                 
                 const SizedBox(height: AppTheme.spaceXL),
-                
-                // AI Insight card (if available)
-                if (_aiInsight != null && _aiInsight!.isNotEmpty)
-                  Expanded(
-                    child: TGCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.lightbulb_outline,
-                                size: 18,
-                                color: AppTheme.warning,
-                              ),
-                              const SizedBox(width: AppTheme.spaceSM),
-                              Text('Quick Insight', style: AppTheme.headingSmallThemed(context)),
-                            ],
-                          ),
-                          const SizedBox(height: AppTheme.spaceMD),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: Text(
-                                _aiInsight!,
-                                style: AppTheme.bodyMediumThemed(context).copyWith(
-                                  color: AppTheme.textPrimaryColor(context),
-                                  height: 1.6,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 
                 const SizedBox(height: AppTheme.spaceMD),
                 

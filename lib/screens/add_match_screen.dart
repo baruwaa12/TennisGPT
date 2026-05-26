@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
-import '../services/api_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/voice_input_button.dart';
 import '../widgets/guided_set_score_editor.dart';
-import '../utils/paywall_navigation.dart';
 
 /// Add Match Screen (Detailed)
 /// 
@@ -135,70 +132,6 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
       final parsedScore = MatchScoreValidator.parse(_matchFormat, _scoreController.text);
       final result = parsedScore.setsWon > parsedScore.setsLost ? 'Win' : 'Loss';
 
-      // Build match description for analysis
-      final String matchDescription = '''
-Opponent: ${_opponentController.text}
-Match Format: $_matchFormat
-Score: ${parsedScore.displayScore}
-Result: $result
-${_opponentLevelSeedController.text.isNotEmpty ? 'Opponent level/seed: ${_opponentLevelSeedController.text}' : ''}
-Surface: $_surface
-Weather: $_weather
-${_showRatings ? 'Ratings: ${_ratings.entries.map((e) => '${e.key}(${e.value}/10)').join(', ')}' : ''}
-${keyMoments.isNotEmpty ? 'Key moment: ${keyMoments.first}' : ''}
-${_notesController.text.isNotEmpty ? 'Notes: ${_notesController.text}' : ''}
-${_summaryController.text.isNotEmpty ? 'Match summary: ${_summaryController.text}' : ''}
-${_mentalNotesController.text.isNotEmpty ? 'Mental notes: ${_mentalNotesController.text}' : ''}
-${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesController.text}' : ''}
-      '''.trim();
-
-      // Get AI analysis
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      final recentMatches = await _matchHistoryService.getRecentMatches(3);
-      final analysis = await apiService.tacticalAnalysisSummary(matchDescription, recentMatches);
-
-      if (analysis == null && apiService.requiresUpgrade) {
-        if (context.mounted) {
-          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
-        }
-      }
-      
-      // Generate drill recommendations
-      final allMatches = await _matchHistoryService.getAllMatches();
-      allMatches.add(MatchPerformance(
-        id: matchId,
-        date: DateTime.now(),
-        opponent: _opponentController.text,
-        result: result,
-        setsWon: parsedScore.setsWon,
-        setsLost: parsedScore.setsLost,
-        matchFormat: _matchFormat,
-        scoreLine: parsedScore.displayScore,
-        setScores: parsedScore.setScores,
-        opponentLevelSeed: _opponentLevelSeedController.text.trim(),
-        surface: _surface,
-        weather: _weather,
-        notes: _notesController.text,
-        matchSummary: _summaryController.text,
-        mentalNotes: _mentalNotesController.text,
-        tacticalNotes: _tacticalNotesController.text,
-        strengthNotes: '',
-        weaknessNotes: '',
-        strengths: _showRatings ? Map.from(_ratings) : {},
-        weaknesses: {},
-        keyMoments: keyMoments,
-        tacticalAnalysis: analysis ?? '',
-        recommendedDrills: [],
-      ));
-      
-      final drills = await apiService.generateDrillsFromHistory(allMatches);
-
-      if (drills == null && apiService.requiresUpgrade) {
-        if (context.mounted) {
-          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
-        }
-      }
-      
       // Create final match
       final match = MatchPerformance(
         id: matchId,
@@ -222,8 +155,8 @@ ${_tacticalNotesController.text.isNotEmpty ? 'Tactical notes: ${_tacticalNotesCo
         strengths: _showRatings ? Map.from(_ratings) : {},
         weaknesses: {},
         keyMoments: keyMoments,
-        tacticalAnalysis: analysis ?? '',
-        recommendedDrills: drills?.split('\n').where((line) => line.trim().isNotEmpty).toList() ?? [],
+        tacticalAnalysis: '',
+        recommendedDrills: [],
       );
 
       await _matchHistoryService.saveMatch(match);

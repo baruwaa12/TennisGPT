@@ -440,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Recent Activity - Context with subtle insights
+  /// Recent Activity - lightweight match records
   Widget _buildRecentActivity() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,19 +481,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Match item - Clean with optional insight
+  /// Match item - clean match record
   Widget _buildMatchItem(MatchPerformance match) {
     final isWin = match.result.toLowerCase() == 'win';
-    
-    // Extract a brief insight if available
-    String? insight;
-    if (match.notes.isNotEmpty) {
-      // Take first sentence or first 60 chars
-      final firstSentence = match.notes.split('.').first;
-      insight = firstSentence.length > 60 
-          ? '${firstSentence.substring(0, 57)}...' 
-          : firstSentence;
-    }
     
     return GestureDetector(
       onTap: () {
@@ -511,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Result indicator - subtle
             Container(
               width: 4,
-              height: insight != null ? 48 : 36,
+              height: 36,
               decoration: BoxDecoration(
                 color: isWin ? AppTheme.win : AppTheme.loss.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(2),
@@ -545,22 +535,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _formatDate(match.date),
+                    '${_formatDate(match.date)} - ${match.surface} - ${match.matchFormat}',
                     style: AppTheme.labelThemed(context),
                   ),
-                  // Subtle insight line
-                  if (insight != null) ...[
-                    const SizedBox(height: AppTheme.spaceSM),
-                    Text(
-                      insight,
-                      style: AppTheme.bodySmallThemed(context).copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: AppTheme.textMutedColor(context),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -581,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Analysis Tools', style: AppTheme.headingSmallThemed(context)),
+        Text('Coach', style: AppTheme.headingSmallThemed(context)),
         
         const SizedBox(height: AppTheme.spaceMD),
         
@@ -589,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(child: _buildToolItem(
               icon: Icons.analytics_outlined,
-              label: 'Tactical\nAnalysis',
+              label: 'Tactical\nCoach',
               onTap: () {
                 if (_isGuest) { _requireSignIn(); return; }
                 Navigator.push(
