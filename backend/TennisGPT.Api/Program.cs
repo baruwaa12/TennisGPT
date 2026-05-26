@@ -87,6 +87,7 @@ builder.Services.AddHttpClient("RevenueCat", client =>
 
 // Application services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<IPromptComposer, PromptComposer>();
 builder.Services.AddScoped<IOpenAIService, OpenAIService>();
 builder.Services.AddScoped<IQuotaService, QuotaService>();
 builder.Services.AddScoped<IRevenueCatSubscriptionSyncService, RevenueCatSubscriptionSyncService>();
