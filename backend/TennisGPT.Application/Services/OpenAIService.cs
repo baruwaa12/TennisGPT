@@ -108,11 +108,9 @@ public class OpenAIService : IOpenAIService
             _logger.LogWarning("Tactical analysis received error response, skipping retry: {Msg}", rawResponse);
             return new TacticalAnalysisResponse
             {
-                WhatToControl = rawResponse,
-                NextMatchRule = "",
-                ConstraintDrill = "",
-                WhyAdviceChanged = "",
-                Reminder = ""
+                WhatYoureSeeing = rawResponse,
+                WhyItMatters = "",
+                NextFocus = ""
             };
         }
 
@@ -144,11 +142,9 @@ public class OpenAIService : IOpenAIService
         _logger.LogError("Tactical analysis JSON parse failed after retry. Returning fallback.");
         return new TacticalAnalysisResponse
         {
-            WhatToControl = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
-            NextMatchRule = "If uncertainty rises, return to your strongest fundamental.",
-            ConstraintDrill = "Unable to generate — please retry with more match detail.",
-            WhyAdviceChanged = "Insufficient structured output from model; no variation rationale available.",
-            Reminder = "Stick to what you practiced. Control the controllables."
+            WhatYoureSeeing = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
+            WhyItMatters = "The available response was not structured enough to turn into a reliable tactical read.",
+            NextFocus = "Add one clear match pattern or pressure moment and run the coach again."
         };
     }
 
@@ -311,7 +307,7 @@ public class OpenAIService : IOpenAIService
     }
 
     /// <summary>
-    /// Attempts to parse an AI response string into TacticalAnalysisResponse (Control Mode format).
+    /// Attempts to parse an AI response string into TacticalAnalysisResponse.
     /// Returns null on failure.
     /// </summary>
     private TacticalAnalysisResponse? TryParseTacticalResponse(string rawResponse)
@@ -324,23 +320,17 @@ public class OpenAIService : IOpenAIService
             };
             var result = JsonSerializer.Deserialize<TacticalAnalysisResponse>(rawResponse, options);
             
-            // Validate: must have whatToControl and nextMatchRule at minimum
+            // Validate: must have the three required coach sections.
             if (result != null && 
-                !string.IsNullOrWhiteSpace(result.WhatToControl) && 
-                !string.IsNullOrWhiteSpace(result.NextMatchRule))
+                !string.IsNullOrWhiteSpace(result.WhatYoureSeeing) && 
+                !string.IsNullOrWhiteSpace(result.WhyItMatters) &&
+                !string.IsNullOrWhiteSpace(result.NextFocus))
             {
-                // Ensure reminder has a value (fallback)
-                if (string.IsNullOrWhiteSpace(result.Reminder))
+                if (result.OptionalPracticePlan != null &&
+                    string.IsNullOrWhiteSpace(result.OptionalPracticePlan.DrillName) &&
+                    string.IsNullOrWhiteSpace(result.OptionalPracticePlan.Objective))
                 {
-                    result.Reminder = "Stick to what you practiced. Control the controllables.";
-                }
-
-                // Nullify empty pattern detection blocks
-                if (result.PatternDetection != null &&
-                    string.IsNullOrWhiteSpace(result.PatternDetection.RecurringPattern) &&
-                    string.IsNullOrWhiteSpace(result.PatternDetection.Frequency))
-                {
-                    result.PatternDetection = null;
+                    result.OptionalPracticePlan = null;
                 }
 
                 return result;
@@ -461,14 +451,11 @@ public class OpenAIService : IOpenAIService
     {
         return string.Join(" ", new[]
         {
-            response.WhatToControl,
-            response.NextMatchRule,
-            response.ConstraintDrill,
-            response.WhyAdviceChanged,
-            response.Reminder,
-            response.PatternDetection?.RecurringPattern ?? string.Empty,
-            response.PatternDetection?.Trigger ?? string.Empty,
-            response.PatternDetection?.LongTermFix ?? string.Empty
+            response.WhatYoureSeeing,
+            response.WhyItMatters,
+            response.NextFocus,
+            response.OptionalPracticePlan?.DrillName ?? string.Empty,
+            response.OptionalPracticePlan?.Objective ?? string.Empty
         });
     }
 

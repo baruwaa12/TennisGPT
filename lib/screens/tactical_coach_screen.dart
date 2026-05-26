@@ -956,239 +956,106 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  // ============ Structured Analysis Output — Control Mode ============
+  // ============ Structured Coach Output ============
 
   Widget _buildStructuredAnalysis() {
     final data = _analysisResult!;
-    final whatToControl = data['whatToControl'] as String? ?? '';
-    final nextMatchRule = data['nextMatchRule'] as String? ?? '';
-    final constraintDrill = data['constraintDrill'] as String? ?? '';
-    final whyAdviceChanged = data['whyAdviceChanged'] as String? ?? '';
-    final reminder = data['reminder'] as String? ??
-        'Stick to what you practiced. Control the controllables.';
-
-    // Pattern Detection (separate block, only if populated)
-    final patternData =
-        data['patternDetection'] as Map<String, dynamic>?;
-    final hasPattern = patternData != null &&
-        (patternData['recurringPattern'] as String? ?? '').isNotEmpty;
+    final whatYoureSeeing = data['whatYoureSeeing'] as String? ?? '';
+    final whyItMatters = data['whyItMatters'] as String? ?? '';
+    final nextFocus = data['nextFocus'] as String? ?? '';
+    final practicePlan = data['optionalPracticePlan'] as Map<String, dynamic>?;
+    final hasPracticePlan = practicePlan != null &&
+        ((practicePlan['drillName'] as String? ?? '').isNotEmpty ||
+            (practicePlan['objective'] as String? ?? '').isNotEmpty);
 
     final shareText = _buildShareText(
-      whatToControl,
-      nextMatchRule,
-      constraintDrill,
-      whyAdviceChanged,
-      reminder,
-      patternData,
+      whatYoureSeeing,
+      whyItMatters,
+      nextFocus,
+      practicePlan,
     );
 
     return Column(
       key: _insightCardKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1) What To Control
-        _buildControlCard(whatToControl),
-
+        _buildCoachSectionCard(
+          title: 'WHAT YOURE SEEING',
+          text: whatYoureSeeing,
+          icon: Icons.visibility_outlined,
+          highlighted: true,
+        ),
         const SizedBox(height: AppTheme.spaceMD),
-
-        // 2) Next Match Rule
-        if (nextMatchRule.isNotEmpty)
-          _buildNextMatchRuleCard(nextMatchRule),
-
-        if (nextMatchRule.isNotEmpty)
+        _buildCoachSectionCard(
+          title: 'WHY IT MATTERS',
+          text: whyItMatters,
+          icon: Icons.trending_up_rounded,
+        ),
+        const SizedBox(height: AppTheme.spaceMD),
+        _buildCoachSectionCard(
+          title: 'NEXT FOCUS',
+          text: nextFocus,
+          icon: Icons.center_focus_strong_rounded,
+        ),
+        if (hasPracticePlan) ...[
           const SizedBox(height: AppTheme.spaceMD),
-
-        // 3) 20-Min Constraint Drill
-        if (constraintDrill.isNotEmpty)
-          _buildConstraintDrillCard(constraintDrill),
-
-        if (constraintDrill.isNotEmpty)
-          const SizedBox(height: AppTheme.spaceMD),
-
-        // 4) Why advice changed
-        if (whyAdviceChanged.isNotEmpty)
-          _buildWhyAdviceChangedCard(whyAdviceChanged),
-
-        if (whyAdviceChanged.isNotEmpty)
-          const SizedBox(height: AppTheme.spaceMD),
-
-        // 5) Reminder
-        _buildReminderBanner(reminder),
-
-        // 6) Pattern Detection (separate section)
-        if (hasPattern) ...[
-          const SizedBox(height: AppTheme.spaceLG),
-          _buildPatternDetectionSection(patternData),
+          _buildPracticePlanCard(practicePlan),
         ],
-
         const SizedBox(height: AppTheme.spaceLG),
-
-        // Actions row
         _buildActionsRow(shareText),
       ],
     );
   }
 
-  /// What To Control — the single controllable stabilizer
-  Widget _buildControlCard(String whatToControl) {
+  Widget _buildCoachSectionCard({
+    required String title,
+    required String text,
+    required IconData icon,
+    bool highlighted = false,
+  }) {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
+        color: highlighted
+            ? AppTheme.primary.withValues(alpha: 0.05)
+            : AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: highlighted
+              ? AppTheme.primary.withValues(alpha: 0.25)
+              : AppTheme.borderColor(context),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spaceSM),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                ),
-                child: const Icon(
-                  Icons.center_focus_strong_rounded,
-                  color: AppTheme.primary,
-                  size: 20,
+              Icon(icon, color: AppTheme.primary, size: 18),
+              const SizedBox(width: AppTheme.spaceSM),
+              Text(
+                title,
+                style: AppTheme.labelThemed(context).copyWith(
+                  color: AppTheme.textSecondaryColor(context),
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: AppTheme.spaceSM),
-              Text('What To Control',
-                  style: AppTheme.headingMediumThemed(context)),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceMD),
-          Divider(color: AppTheme.borderColor(context), height: 1),
-          const SizedBox(height: AppTheme.spaceMD),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
-            whatToControl,
-            style: AppTheme.bodyLargeThemed(context).copyWith(height: 1.6),
+            text,
+            style: AppTheme.bodyLargeThemed(context).copyWith(height: 1.45),
           ),
         ],
       ),
     );
   }
 
-  /// Next Match Rule — "If X happens, do Y"
-  Widget _buildNextMatchRuleCard(String rule) {
-    return Container(
-      padding: AppTheme.cardPaddingLarge,
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceSM),
-            decoration: BoxDecoration(
-              color: AppTheme.warning.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            ),
-            child: Icon(Icons.lock_rounded,
-                color: AppTheme.warning, size: 20),
-          ),
-          const SizedBox(width: AppTheme.spaceMD),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Next Match Rule',
-                    style: AppTheme.headingSmallThemed(context)),
-                const SizedBox(height: AppTheme.spaceXS),
-                Text(
-                  rule,
-                  style: AppTheme.bodyMediumThemed(context).copyWith(
-                    height: 1.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildPracticePlanCard(Map<String, dynamic> practicePlan) {
+    final drillName = practicePlan['drillName'] as String? ?? '';
+    final objective = practicePlan['objective'] as String? ?? '';
 
-  /// 20-Min Constraint Drill
-  Widget _buildConstraintDrillCard(String drill) {
-    return Container(
-      padding: AppTheme.cardPaddingLarge,
-      decoration: BoxDecoration(
-        color: AppTheme.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spaceSM),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                ),
-                child: const Icon(
-                  Icons.fitness_center_rounded,
-                  color: AppTheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceSM),
-              Text('20-Min Constraint Drill',
-                  style: AppTheme.headingSmallThemed(context)),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceMD),
-          Text(
-            drill,
-            style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.6),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Reminder banner — reinforcement line
-  Widget _buildReminderBanner(String reminder) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spaceLG,
-        vertical: AppTheme.spaceMD,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.elevatedBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.replay_rounded,
-              color: AppTheme.textSecondaryColor(context), size: 20),
-          const SizedBox(width: AppTheme.spaceMD),
-          Expanded(
-            child: Text(
-              reminder,
-              style: AppTheme.bodyMediumThemed(context).copyWith(
-                fontStyle: FontStyle.italic,
-                color: AppTheme.textSecondaryColor(context),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWhyAdviceChangedCard(String whyAdviceChanged) {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
@@ -1196,130 +1063,38 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(color: AppTheme.borderColor(context)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spaceSM),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            ),
-            child: const Icon(
-              Icons.compare_arrows_rounded,
-              color: AppTheme.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: AppTheme.spaceMD),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Why this advice changed',
-                    style: AppTheme.headingSmallThemed(context)),
-                const SizedBox(height: AppTheme.spaceXS),
-                Text(
-                  whyAdviceChanged,
-                  style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.5),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Pattern Detection — separate analytical section
-  Widget _buildPatternDetectionSection(Map<String, dynamic> pattern) {
-    final recurringPattern =
-        pattern['recurringPattern'] as String? ?? '';
-    final frequency = pattern['frequency'] as String? ?? '';
-    final trigger = pattern['trigger'] as String? ?? '';
-    final longTermFix = pattern['longTermFix'] as String? ?? '';
-
-    return Container(
-      padding: AppTheme.cardPaddingLarge,
-      decoration: BoxDecoration(
-        color: AppTheme.warning.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.25)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spaceSM),
-                decoration: BoxDecoration(
-                  color: AppTheme.warning.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                ),
-                child: Icon(Icons.pattern_rounded,
-                    color: AppTheme.warning, size: 20),
-              ),
+              Icon(Icons.fitness_center_rounded,
+                  color: AppTheme.textSecondaryColor(context), size: 18),
               const SizedBox(width: AppTheme.spaceSM),
-              Text('Pattern Detection',
-                  style: AppTheme.headingSmallThemed(context)
-                      .copyWith(color: AppTheme.warning)),
+              Text(
+                'OPTIONAL PRACTICE PLAN',
+                style: AppTheme.labelThemed(context).copyWith(
+                  color: AppTheme.textSecondaryColor(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceMD),
-
-          // Recurring Pattern
-          if (recurringPattern.isNotEmpty) ...[
-            _buildPatternRow('Recurring Pattern', recurringPattern),
+          if (drillName.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceSM),
+            Text(drillName, style: AppTheme.headingSmallThemed(context)),
           ],
-
-          // Frequency
-          if (frequency.isNotEmpty) ...[
-            _buildPatternRow('Frequency', frequency),
-            const SizedBox(height: AppTheme.spaceSM),
+          if (objective.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spaceXS),
+            Text(
+              objective,
+              style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.45),
+            ),
           ],
-
-          // Trigger
-          if (trigger.isNotEmpty) ...[
-            _buildPatternRow('Trigger', trigger),
-            const SizedBox(height: AppTheme.spaceSM),
-          ],
-
-          // Long-Term Fix
-          if (longTermFix.isNotEmpty)
-            _buildPatternRow('Long-Term Fix', longTermFix),
         ],
       ),
     );
   }
-
-  /// Helper — a labeled row inside Pattern Detection
-  Widget _buildPatternRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            label,
-            style: AppTheme.labelThemed(context).copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondaryColor(context),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppTheme.spaceSM),
-        Expanded(
-          child: Text(
-            value,
-            style: AppTheme.bodySmallThemed(context).copyWith(height: 1.4),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Actions row (share + new focus)
   Widget _buildActionsRow(String shareText) {
     return Row(
@@ -1577,40 +1352,29 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   String _buildShareText(
-    String whatToControl,
-    String nextMatchRule,
-    String constraintDrill,
-    String whyAdviceChanged,
-    String reminder,
-    Map<String, dynamic>? patternData,
+    String whatYoureSeeing,
+    String whyItMatters,
+    String nextFocus,
+    Map<String, dynamic>? practicePlan,
   ) {
     final buffer = StringBuffer();
-    buffer.writeln('Tactical Analysis — Composure');
+    buffer.writeln('Tactical Analysis - Composure');
     buffer.writeln();
-    buffer.writeln('What To Control: $whatToControl');
-    if (nextMatchRule.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('Next Match Rule: $nextMatchRule');
-    }
-    if (constraintDrill.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('20-Min Drill: $constraintDrill');
-    }
-    if (whyAdviceChanged.isNotEmpty) {
-      buffer.writeln();
-      buffer.writeln('Why changed: $whyAdviceChanged');
-    }
+    buffer.writeln('What youre seeing: $whatYoureSeeing');
     buffer.writeln();
-    buffer.writeln(reminder);
-    if (patternData != null) {
-      final rp = patternData['recurringPattern'] as String? ?? '';
-      if (rp.isNotEmpty) {
+    buffer.writeln('Why it matters: $whyItMatters');
+    buffer.writeln();
+    buffer.writeln('Next focus: $nextFocus');
+
+    if (practicePlan != null) {
+      final drillName = practicePlan['drillName'] as String? ?? '';
+      final objective = practicePlan['objective'] as String? ?? '';
+      if (drillName.isNotEmpty || objective.isNotEmpty) {
         buffer.writeln();
-        buffer.writeln('Pattern: $rp');
-        final fix = patternData['longTermFix'] as String? ?? '';
-        if (fix.isNotEmpty) buffer.writeln('Fix: $fix');
+        buffer.writeln('Practice: $drillName');
+        if (objective.isNotEmpty) buffer.writeln(objective);
       }
     }
+
     return buffer.toString();
-  }
-}
+  }}
