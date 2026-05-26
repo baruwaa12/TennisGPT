@@ -134,6 +134,8 @@ lerna-debug.log*
 
 node_modules
 prompts
+!backend/TennisGPT.Application/Prompts/
+!backend/TennisGPT.Application/Prompts/**
 dist
 dist-ssr
 *.local
@@ -197,4 +199,3 @@ appsettings.Development.json
 
 # Next.js build output (landing)
 landing/.next/
-
