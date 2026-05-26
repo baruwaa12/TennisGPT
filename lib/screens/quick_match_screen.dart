@@ -10,11 +10,9 @@ import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
-import '../services/pattern_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/shareable_card.dart';
 import '../widgets/guided_set_score_editor.dart';
-import 'match_reflection_screen.dart';
 import 'add_match_screen.dart';
 
 class _SetScore {
@@ -232,10 +230,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   bool get _isNormalSets => _matchFormat == MatchFormat.bestOf3;
 
   int get _visibleSetCount => _isNormalSets ? 3 : 2;
-
-  String _formatLabel() {
-    return _isNormalSets ? 'Normal sets (Best of 3 sets)' : MatchFormat.fast4;
-  }
 
   bool _isSetUnused(_SetScore score) {
     return score.you == 0 && score.opp == 0 && score.tbYou == null && score.tbOpp == null;
@@ -1206,49 +1200,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: AppTheme.spaceSM),
-                
-                // Reflect option (Stage 2 entry)
-                if (_savedMatch != null)
-                  GestureDetector(
-                    onTap: () async {
-                      HapticFeedback.lightImpact();
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MatchReflectionScreen(match: _savedMatch!),
-                        ),
-                      );
-                      if (result != null && result is Map) {
-                        final patternService = PatternService();
-                        await patternService.saveReflection(
-                          matchId: _savedMatch!.id,
-                          strengths: List<String>.from(result['strengths'] ?? []),
-                          weaknesses: List<String>.from(result['weaknesses'] ?? []),
-                          result: _savedMatch!.result,
-                          date: _savedMatch!.date,
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardBackground(context),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        border: Border.all(color: AppTheme.borderColor(context)),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Add Reflection',
-                          style: AppTheme.headingSmallThemed(context).copyWith(
-                            color: AppTheme.textSecondaryColor(context),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 
                 const SizedBox(height: AppTheme.spaceSM),
                 

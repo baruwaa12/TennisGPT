@@ -484,6 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Match item - clean match record
   Widget _buildMatchItem(MatchPerformance match) {
     final isWin = match.result.toLowerCase() == 'win';
+    final resultLabel = isWin ? 'Win' : 'Loss';
     
     return GestureDetector(
       onTap: () {
@@ -535,7 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_formatDate(match.date)} - ${match.surface} - ${match.matchFormat}',
+                    '$resultLabel - ${_formatDate(match.date)} - ${match.surface} - ${match.matchFormat}',
                     style: AppTheme.labelThemed(context),
                   ),
                 ],

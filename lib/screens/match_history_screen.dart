@@ -349,6 +349,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     final formatLabel = match.matchFormat.isNotEmpty
         ? match.matchFormat
         : 'BO3';
+    final resultLabel = isWin ? 'Win' : 'Loss';
     
     return GestureDetector(
       onTap: () => _showMatchDetails(match),
@@ -430,7 +431,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                     // Row 3: Score centered
                     Center(
                       child: Text(
-                        scoreDisplay,
+                        '$resultLabel $scoreDisplay',
                         style: AppTheme.headingMediumThemed(context).copyWith(
                           fontWeight: FontWeight.w800,
                           fontSize: 20,
@@ -491,6 +492,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     final formatLabel = match.matchFormat.isNotEmpty
         ? match.matchFormat
         : 'Best of 3 sets';
+    final resultLabel = isWin ? 'Win' : 'Loss';
     
     return SingleChildScrollView(
       controller: scrollController,
@@ -540,7 +542,13 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                       style: AppTheme.headingMediumThemed(context),
                     ),
                     Text(
-                      '${_formatDate(match.date)} · ${match.surface} · ${match.weather} · $formatLabel',
+                      resultLabel,
+                      style: AppTheme.labelThemed(context).copyWith(
+                        color: isWin ? AppTheme.win : AppTheme.loss,
+                      ),
+                    ),
+                    Text(
+                      '${_formatDate(match.date)} · ${match.surface} · $formatLabel',
                       style: AppTheme.labelThemed(context),
                     ),
                   ],

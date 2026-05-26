@@ -324,7 +324,7 @@ class ApiService extends ChangeNotifier {
 
     try {
       final matchesJson = recentMatches != null && recentMatches.isNotEmpty
-          ? recentMatches.take(10).map((match) => match.toJson()).toList()
+          ? recentMatches.take(35).map((match) => match.toJson()).toList()
           : null;
 
       final response = await _makeRequest(
