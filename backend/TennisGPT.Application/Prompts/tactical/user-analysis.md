@@ -1,6 +1,12 @@
 MATCH DATA:
 Current situation: {{matchDescription}}
 
+FOCUS TYPE:
+{{focusType}}
+
+FOCUS INSTRUCTIONS:
+{{focusInstructions}}
+
 RECENT MATCH HISTORY:
 {{matchesContext}}
 

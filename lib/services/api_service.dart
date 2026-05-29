@@ -16,7 +16,7 @@ enum ApiErrorCode {
   serverError,
   rateLimited,
   invalidResponse,
-  quotaExceeded,  // 402 - Quota exceeded, upgrade required
+  quotaExceeded, // 402 - Quota exceeded, upgrade required
   unknown,
 }
 
@@ -109,7 +109,7 @@ class ApiService extends ChangeNotifier {
         return 'Something went wrong. Please try again.';
     }
   }
-  
+
   /// Check if the last error requires an upgrade (quota exceeded)
   bool get requiresUpgrade => _lastErrorCode == ApiErrorCode.quotaExceeded;
 
@@ -147,19 +147,23 @@ class ApiService extends ChangeNotifier {
   }) async {
     try {
       final headers = await _getHeaders();
-      
-      _log('Request attempt $attempt to $endpoint', 
+
+      _log(
+        'Request attempt $attempt to $endpoint',
         requestId: requestId,
         data: {'payloadSize': jsonEncode(body).length},
       );
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl$endpoint'),
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl$endpoint'),
+            headers: headers,
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
-      _log('Response: ${response.statusCode}', 
+      _log(
+        'Response: ${response.statusCode}',
         requestId: requestId,
         data: {'bodyLength': response.body.length},
       );
@@ -167,11 +171,12 @@ class ApiService extends ChangeNotifier {
       return response;
     } on TimeoutException {
       _log('Timeout on attempt $attempt', requestId: requestId);
-      
+
       // Retry once for timeouts
       if (attempt < _maxRetries + 1) {
         _log('Retrying after timeout...', requestId: requestId);
-        await Future.delayed(Duration(seconds: attempt * 2)); // Exponential backoff
+        await Future.delayed(
+            Duration(seconds: attempt * 2)); // Exponential backoff
         return _makeRequest(
           endpoint: endpoint,
           body: body,
@@ -182,11 +187,11 @@ class ApiService extends ChangeNotifier {
       return null;
     } catch (e) {
       _log('Exception on attempt $attempt: $e', requestId: requestId);
-      
+
       // Retry once for network errors
-      if (attempt < _maxRetries + 1 && 
-          (e.toString().contains('SocketException') || 
-           e.toString().contains('Connection'))) {
+      if (attempt < _maxRetries + 1 &&
+          (e.toString().contains('SocketException') ||
+              e.toString().contains('Connection'))) {
         _log('Retrying after network error...', requestId: requestId);
         await Future.delayed(Duration(seconds: attempt * 2));
         return _makeRequest(
@@ -253,13 +258,14 @@ class ApiService extends ChangeNotifier {
       case 503:
       case 504:
         _setError(ApiErrorCode.serverError,
-          debugMessage: 'Server ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}',
-          requestId: requestId);
+            debugMessage:
+                'Server ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}',
+            requestId: requestId);
         break;
       default:
         _setError(ApiErrorCode.unknown,
-          debugMessage: 'Status ${response.statusCode}',
-          requestId: requestId);
+            debugMessage: 'Status ${response.statusCode}',
+            requestId: requestId);
     }
     return null;
   }
@@ -280,9 +286,8 @@ class ApiService extends ChangeNotifier {
       );
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
-      _setError(ApiErrorCode.networkError, 
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+      _setError(ApiErrorCode.networkError,
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -305,8 +310,7 @@ class ApiService extends ChangeNotifier {
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -316,7 +320,11 @@ class ApiService extends ChangeNotifier {
 
   /// Tactical analysis returns structured coach JSON from the backend.
   /// Returns keys: whatYoureSeeing, whyItMatters, nextFocus, optionalPracticePlan.
-  Future<Map<String, dynamic>?> tacticalAnalysis(String matchDescription, List<MatchPerformance>? recentMatches) async {
+  Future<Map<String, dynamic>?> tacticalAnalysis(
+    String matchDescription,
+    List<MatchPerformance>? recentMatches, {
+    String? focusType,
+  }) async {
     _isLoading = true;
     _error = null;
     _lastRequestId = _generateRequestId();
@@ -332,6 +340,7 @@ class ApiService extends ChangeNotifier {
         body: {
           'matchDescription': matchDescription,
           'recentMatches': matchesJson,
+          'focusType': focusType,
         },
         requestId: _lastRequestId!,
       );
@@ -380,8 +389,7 @@ class ApiService extends ChangeNotifier {
       return null;
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -391,13 +399,15 @@ class ApiService extends ChangeNotifier {
 
   /// Returns just the main observation text from tactical analysis.
   /// Use this for screens that store/display a plain string.
-  Future<String?> tacticalAnalysisSummary(String matchDescription, List<MatchPerformance>? recentMatches) async {
+  Future<String?> tacticalAnalysisSummary(
+      String matchDescription, List<MatchPerformance>? recentMatches) async {
     final result = await tacticalAnalysis(matchDescription, recentMatches);
     if (result == null) return null;
     return result['whatYoureSeeing'] as String? ?? result.toString();
   }
 
-  Future<String?> generateDrillsFromHistory(List<MatchPerformance> matches) async {
+  Future<String?> generateDrillsFromHistory(
+      List<MatchPerformance> matches) async {
     _isLoading = true;
     _error = null;
     _lastRequestId = _generateRequestId();
@@ -413,8 +423,7 @@ class ApiService extends ChangeNotifier {
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -437,8 +446,7 @@ class ApiService extends ChangeNotifier {
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -462,8 +470,7 @@ class ApiService extends ChangeNotifier {
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -486,8 +493,7 @@ class ApiService extends ChangeNotifier {
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -510,8 +516,7 @@ class ApiService extends ChangeNotifier {
       return _processResponse(response, _lastRequestId!);
     } catch (e) {
       _setError(ApiErrorCode.networkError,
-        debugMessage: e.toString(),
-        requestId: _lastRequestId);
+          debugMessage: e.toString(), requestId: _lastRequestId);
       return null;
     } finally {
       _isLoading = false;
@@ -529,11 +534,13 @@ class ApiService extends ChangeNotifier {
     final requestId = _generateRequestId();
     try {
       final headers = await _getHeaders();
-      final response = await http.post(
-        Uri.parse('$_baseUrl$endpoint'),
-        headers: headers,
-        body: jsonEncode({'content': content}),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl$endpoint'),
+            headers: headers,
+            body: jsonEncode({'content': content}),
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) return true;
 
@@ -557,10 +564,12 @@ class ApiService extends ChangeNotifier {
         return false;
       }
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl/api/subscription/sync'),
-        headers: headers,
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/api/subscription/sync'),
+            headers: headers,
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
         _log('Subscription sync OK', requestId: requestId);
@@ -568,11 +577,13 @@ class ApiService extends ChangeNotifier {
       }
 
       if (response.statusCode == 503) {
-        _log('Subscription sync not configured on server', requestId: requestId);
+        _log('Subscription sync not configured on server',
+            requestId: requestId);
         return false;
       }
 
-      _log('Subscription sync failed: ${response.statusCode}', requestId: requestId);
+      _log('Subscription sync failed: ${response.statusCode}',
+          requestId: requestId);
       return false;
     } catch (e) {
       _log('Subscription sync exception: $e', requestId: requestId);
@@ -584,10 +595,12 @@ class ApiService extends ChangeNotifier {
     final requestId = _generateRequestId();
     try {
       final headers = await _getHeaders();
-      final response = await http.get(
-        Uri.parse('$_baseUrl$endpoint'),
-        headers: headers,
-      ).timeout(_timeout);
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl$endpoint'),
+            headers: headers,
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -596,7 +609,8 @@ class ApiService extends ChangeNotifier {
         }
       }
 
-      _log('Get saved entries failed: ${response.statusCode}', requestId: requestId);
+      _log('Get saved entries failed: ${response.statusCode}',
+          requestId: requestId);
       return [];
     } catch (e) {
       _log('Get saved entries exception: $e', requestId: requestId);

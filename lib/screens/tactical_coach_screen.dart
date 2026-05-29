@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
 import '../theme/app_theme.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
@@ -40,7 +39,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   final ScrollController _scrollController = ScrollController();
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   final GlobalKey _insightCardKey = GlobalKey();
-  final Random _random = Random();
 
   List<MatchPerformance> _recentMatches = [];
   String? _selectedFocus;
@@ -63,36 +61,36 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   /// Focus areas - framed as coach lenses, not AI tools
   final List<Map<String, dynamic>> _focusAreas = [
     {
-      'id': 'opponent',
-      'title': 'Break down your opponent',
-      'subtitle': 'Patterns to exploit',
-      'icon': Icons.person_search_rounded,
-      'prompt':
-          'Analyze my recent opponents and identify tactical patterns I can exploit in future matches',
-    },
-    {
-      'id': 'patterns',
-      'title': 'Fix recurring mistakes',
-      'subtitle': 'Address weak patterns',
+      'id': 'what_keeps_showing_up',
+      'title': 'What keeps showing up',
+      'subtitle': 'Recurring patterns from recent matches',
       'icon': Icons.repeat_rounded,
       'prompt':
-          'Identify recurring patterns in my losses and provide actionable fixes',
+          'Analyze recurring themes across recent matches. Look for repeated strengths, weaknesses, momentum shifts, score patterns, and tactical habits.',
     },
     {
-      'id': 'upcoming',
-      'title': 'Prepare for next match',
-      'subtitle': 'Tactical game plan',
-      'icon': Icons.calendar_today_rounded,
+      'id': 'whats_helping_you_win',
+      'title': 'What\'s helping you win',
+      'subtitle': 'Patterns from your best tennis',
+      'icon': Icons.trending_up_rounded,
       'prompt':
-          'Help me prepare a tactical game plan for my next match based on my recent form',
+          'Focus only on wins or strong performances where possible. Identify what is working well and what the player should keep trusting.',
     },
     {
-      'id': 'drills',
-      'title': 'Practice with purpose',
-      'subtitle': 'Targeted drill plan',
-      'icon': Icons.fitness_center_rounded,
+      'id': 'what_breaks_under_pressure',
+      'title': 'What breaks under pressure',
+      'subtitle': 'Where your level drops in big moments',
+      'icon': Icons.warning_amber_rounded,
       'prompt':
-          'Create a focused practice drill plan targeting my specific weaknesses',
+          'Focus on losses, close sets, missed leads, deciding sets, and pressure moments. Identify where execution, decision-making, or composure drops.',
+    },
+    {
+      'id': 'next_match_focus',
+      'title': 'Next match focus',
+      'subtitle': 'Your clearest tactical priority going forward',
+      'icon': Icons.center_focus_strong_rounded,
+      'prompt':
+          'Use recent match history to give one clear tactical priority for the next match. Keep it practical and easy to remember.',
     },
   ];
 
@@ -136,8 +134,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     try {
       final matches = await _matchHistoryService.getRecentMatches(35);
 
-      final wins =
-          matches.where((m) => m.result.toLowerCase() == 'win').length;
+      final wins = matches.where((m) => m.result.toLowerCase() == 'win').length;
       final total = matches.length;
 
       String trend = '';
@@ -214,30 +211,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       return;
     }
 
-    final focusArea =
-        _focusAreas.firstWhere((f) => f['id'] == _selectedFocus);
+    final focusArea = _focusAreas.firstWhere((f) => f['id'] == _selectedFocus);
     String query = focusArea['prompt'];
 
     final additionalContext = _contextController.text.trim();
-    if (additionalContext.isEmpty) {
-      final question = _buildReflectiveQuestion(_selectedFocus);
-      await _showSelfAnalysisPrompt(
-        message:
-            'To get useful tactical feedback, add a short self-analysis of what happened in your match.',
-        question: question,
-      );
-      return;
-    }
-
-    if (_isLikelyScoreOnlyInput(additionalContext)) {
-      final question = _buildReflectiveQuestion(_selectedFocus);
-      await _showSelfAnalysisPrompt(
-        message:
-            'A score alone is not enough for quality coaching. Add what actually broke down in your match.',
-        question: question,
-      );
-      return;
-    }
 
     if (additionalContext.isNotEmpty) {
       final validationError = TennisValidator.validate(additionalContext);
@@ -284,8 +261,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response =
-          await apiService.tacticalAnalysis(query, _recentMatches);
+      final response = await apiService.tacticalAnalysis(
+        query,
+        _recentMatches,
+        focusType: _selectedFocus,
+      );
 
       setState(() {
         _isGenerating = false;
@@ -337,84 +317,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         _errorMessage = 'Something went wrong. Please try again.';
       });
     }
-  }
-
-  bool _isLikelyScoreOnlyInput(String input) {
-    final cleaned = input.trim().toLowerCase();
-    if (cleaned.isEmpty) return false;
-
-    final hasScorePattern =
-        RegExp(r'\b\d{1,2}\s*-\s*\d{1,2}\b').hasMatch(cleaned);
-    if (!hasScorePattern) return false;
-
-    final tacticalSignal = RegExp(
-      r'\b(serve|return|forehand|backhand|volley|rally|tactic|pattern|pressure|net|footwork|position|opponent)\b',
-    ).hasMatch(cleaned);
-    if (tacticalSignal) return false;
-
-    final wordCount = cleaned.split(RegExp(r'\s+')).length;
-    return wordCount <= 10;
-  }
-
-  String _buildReflectiveQuestion(String? focusId) {
-    final prompts = <String, List<String>>{
-      'opponent': [
-        'What pattern did your opponent win with most often?',
-        'Which of your shots did your opponent target repeatedly?',
-        'At what score did your opponent take control of rallies?',
-      ],
-      'patterns': [
-        'In which score situations did your errors spike most?',
-        'What repeated mistake cost you the most points?',
-        'What changed when you went from winning points to losing them?',
-      ],
-      'upcoming': [
-        'Which one situation do you want a clear plan for next match?',
-        'What matchup problem are you most worried about next match?',
-        'What point pattern do you want to improve before next match?',
-      ],
-      'drills': [
-        'Which specific shot or movement broke down under pressure?',
-        'What mistake happened often enough that it needs a drill?',
-        'Which game phase needs work most: serve, return, or rally?',
-      ],
-    };
-
-    final options = prompts[focusId] ??
-        const [
-          'What exactly broke down in your match and when?',
-          'What was the turning point where momentum shifted against you?',
-          'Which tactical mistake did you repeat most?',
-        ];
-
-    return options[_random.nextInt(options.length)];
-  }
-
-  Future<void> _showSelfAnalysisPrompt({
-    required String message,
-    required String question,
-  }) async {
-    HapticFeedback.mediumImpact();
-    if (!mounted) return;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Add More Match Detail'),
-          content: Text(
-            '$message\n\nStart with this question:\n$question',
-            style: AppTheme.bodyMediumThemed(context),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Got it'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -477,38 +379,38 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       ),
                     )
                   else
-                  SliverPadding(
-                    padding: AppTheme.screenPadding,
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        _buildCurrentFormCard(),
-                        const SizedBox(height: AppTheme.spaceLG),
-                        _buildFocusAreasSection(),
-                        const SizedBox(height: AppTheme.spaceLG),
-                        _buildOptionalContextInput(),
-                        const SizedBox(height: AppTheme.spaceLG),
-                        _buildPrimaryCTA(),
-
-                        if (_isGenerating) ...[
+                    SliverPadding(
+                      padding: AppTheme.screenPadding,
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          _buildCurrentFormCard(),
                           const SizedBox(height: AppTheme.spaceLG),
-                          _buildLoadingState(),
-                        ],
-
-                        if (_errorMessage != null && !_isGenerating) ...[
+                          _buildFocusAreasSection(),
                           const SizedBox(height: AppTheme.spaceLG),
-                          _buildErrorState(),
-                        ],
-
-                        // Structured analysis output
-                        if (_analysisResult != null && !_isGenerating) ...[
+                          _buildOptionalContextInput(),
                           const SizedBox(height: AppTheme.spaceLG),
-                          _buildStructuredAnalysis(),
-                        ],
+                          _buildPrimaryCTA(),
 
-                        const SizedBox(height: AppTheme.spaceXXL),
-                      ]),
+                          if (_isGenerating) ...[
+                            const SizedBox(height: AppTheme.spaceLG),
+                            _buildLoadingState(),
+                          ],
+
+                          if (_errorMessage != null && !_isGenerating) ...[
+                            const SizedBox(height: AppTheme.spaceLG),
+                            _buildErrorState(),
+                          ],
+
+                          // Structured analysis output
+                          if (_analysisResult != null && !_isGenerating) ...[
+                            const SizedBox(height: AppTheme.spaceLG),
+                            _buildStructuredAnalysis(),
+                          ],
+
+                          const SizedBox(height: AppTheme.spaceXXL),
+                        ]),
+                      ),
                     ),
-                  ),
                 ],
               ),
       ),
@@ -535,7 +437,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             children: [
               Icon(Icons.show_chart_rounded, color: AppTheme.primary, size: 20),
               const SizedBox(width: AppTheme.spaceSM),
-              Text('Recent Match Trends', style: AppTheme.headingSmallThemed(context)),
+              Text('Recent Match Trends',
+                  style: AppTheme.headingSmallThemed(context)),
             ],
           ),
           const SizedBox(height: AppTheme.spaceMD),
@@ -568,8 +471,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       color: _formTrend.contains('up')
                           ? AppTheme.win.withValues(alpha: 0.15)
                           : AppTheme.warning.withValues(alpha: 0.15),
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusSM),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -640,8 +542,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             ),
           ] else
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
               child: Text(
                 'Log matches to see coaching trends',
                 style: AppTheme.bodyMediumThemed(context),
@@ -679,8 +580,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: AppTheme.labelThemed(context)
-                        .copyWith(fontSize: 11)),
+                    style:
+                        AppTheme.labelThemed(context).copyWith(fontSize: 11)),
                 Text(
                   value,
                   style: AppTheme.headingSmallThemed(context)
@@ -701,9 +602,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Choose a focus', style: AppTheme.headingMediumThemed(context)),
+        Text('Review your recent patterns',
+            style: AppTheme.headingMediumThemed(context)),
         const SizedBox(height: AppTheme.spaceXS),
-        Text('What would you like to work on?',
+        Text('Insights based on your logged matches',
             style: AppTheme.bodySmallThemed(context)),
         const SizedBox(height: AppTheme.spaceMD),
         ...List.generate(_focusAreas.length, (index) {
@@ -712,8 +614,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
           return Padding(
             padding: EdgeInsets.only(
-              bottom:
-                  index < _focusAreas.length - 1 ? AppTheme.spaceSM : 0,
+              bottom: index < _focusAreas.length - 1 ? AppTheme.spaceSM : 0,
             ),
             child: GestureDetector(
               onTap: () {
@@ -729,8 +630,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   color: isSelected
                       ? AppTheme.primary.withValues(alpha: 0.1)
                       : AppTheme.cardBackground(context),
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusMD),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.primary
@@ -746,8 +646,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         color: isSelected
                             ? AppTheme.primary.withValues(alpha: 0.2)
                             : AppTheme.elevatedBackground(context),
-                        borderRadius:
-                            BorderRadius.circular(AppTheme.radiusSM),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                       child: Icon(
                         focus['icon'] as IconData,
@@ -764,8 +663,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         children: [
                           Text(
                             focus['title'] as String,
-                            style: AppTheme.headingSmallThemed(context)
-                                .copyWith(
+                            style:
+                                AppTheme.headingSmallThemed(context).copyWith(
                               color: isSelected
                                   ? AppTheme.textPrimaryColor(context)
                                   : AppTheme.textSecondaryColor(context),
@@ -1095,6 +994,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       ),
     );
   }
+
   /// Actions row (share + new focus)
   Widget _buildActionsRow(String shareText) {
     return Row(
@@ -1239,7 +1139,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _buildExpandableSavedCard(int index, String content, String createdAt) {
+  Widget _buildExpandableSavedCard(
+      int index, String content, String createdAt) {
     final isExpanded = _expandedCardIndex == index;
 
     String dateLabel = '';
@@ -1259,9 +1160,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
     // Preview: first ~200 characters or full if short
     final needsExpansion = content.length > 200;
-    final previewText = needsExpansion
-        ? '${content.substring(0, 200).trimRight()}…'
-        : content;
+    final previewText =
+        needsExpansion ? '${content.substring(0, 200).trimRight()}…' : content;
 
     return GestureDetector(
       onTap: needsExpansion
@@ -1377,4 +1277,5 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     }
 
     return buffer.toString();
-  }}
+  }
+}

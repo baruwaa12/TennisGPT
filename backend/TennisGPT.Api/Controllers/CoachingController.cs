@@ -273,6 +273,7 @@ public class CoachingController : ControllerBase
             var response = await _openAIService.TacticalAnalysisAsync(
                 request.MatchDescription,
                 matchesJson,
+                request.FocusType,
                 recentAdviceHistory);
 
             if (userId.HasValue && !string.IsNullOrWhiteSpace(response.WhatYoureSeeing))

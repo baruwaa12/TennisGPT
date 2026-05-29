@@ -6,4 +6,5 @@ public class TacticalAnalysisRequest
 {
     public required string MatchDescription { get; set; }
     public List<JsonElement>? RecentMatches { get; set; }
+    public string? FocusType { get; set; }
 }

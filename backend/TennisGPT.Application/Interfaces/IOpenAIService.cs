@@ -9,6 +9,7 @@ public interface IOpenAIService
     Task<TacticalAnalysisResponse> TacticalAnalysisAsync(
         string matchDescription,
         string? recentMatchesJson,
+        string? focusType,
         IReadOnlyList<string>? recentAdviceHistory);
     Task<string> GenerateDrillsAsync(string matchesJson);
     Task<string> QuickTacticalTipAsync(string situation);

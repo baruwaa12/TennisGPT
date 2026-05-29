@@ -67,12 +67,19 @@ public class OpenAIService : IOpenAIService
     public async Task<TacticalAnalysisResponse> TacticalAnalysisAsync(
         string matchDescription,
         string? recentMatchesJson,
+        string? focusType,
         IReadOnlyList<string>? recentAdviceHistory)
     {
         var matchesContext = BuildMatchContext(recentMatchesJson);
         var recentAdviceContext = BuildRecentAdviceContext(recentAdviceHistory);
+        var focusInstructions = BuildFocusInstructions(focusType);
 
-        var variables = BuildTacticalVariables(matchDescription, matchesContext, recentAdviceContext);
+        var variables = BuildTacticalVariables(
+            matchDescription,
+            matchesContext,
+            recentAdviceContext,
+            focusType,
+            focusInstructions);
         var systemPrompt = await BuildTacticalSystemPromptAsync();
         var userPrompt = await _promptComposer.ComposeAsync(
             ["tactical/user-analysis.md"],
@@ -92,6 +99,8 @@ public class OpenAIService : IOpenAIService
                 matchDescription,
                 matchesContext,
                 recentAdviceContext,
+                focusType,
+                focusInstructions,
                 recentAdviceHistory);
         }
 
@@ -135,6 +144,8 @@ public class OpenAIService : IOpenAIService
                 matchDescription,
                 matchesContext,
                 recentAdviceContext,
+                focusType,
+                focusInstructions,
                 recentAdviceHistory);
         }
 
@@ -349,6 +360,8 @@ public class OpenAIService : IOpenAIService
         string matchDescription,
         string matchesContext,
         string recentAdviceContext,
+        string? focusType,
+        string focusInstructions,
         IReadOnlyList<string>? recentAdviceHistory)
     {
         if (recentAdviceHistory == null || recentAdviceHistory.Count == 0)
@@ -360,7 +373,12 @@ public class OpenAIService : IOpenAIService
         _logger.LogInformation(
             "Tactical analysis too similar to recent advice. Triggering one novelty regeneration pass.");
 
-        var variables = BuildTacticalVariables(matchDescription, matchesContext, recentAdviceContext);
+        var variables = BuildTacticalVariables(
+            matchDescription,
+            matchesContext,
+            recentAdviceContext,
+            focusType,
+            focusInstructions);
         var noveltyPrompt = await _promptComposer.ComposeAsync(
             ["tactical/regenerate-novelty.md"],
             variables);
@@ -396,13 +414,34 @@ public class OpenAIService : IOpenAIService
     private static Dictionary<string, string> BuildTacticalVariables(
         string matchDescription,
         string matchesContext,
-        string recentAdviceContext)
+        string recentAdviceContext,
+        string? focusType,
+        string focusInstructions)
     {
         return new Dictionary<string, string>
         {
             ["matchDescription"] = matchDescription,
             ["matchesContext"] = matchesContext,
-            ["recentAdviceContext"] = recentAdviceContext
+            ["recentAdviceContext"] = recentAdviceContext,
+            ["focusType"] = string.IsNullOrWhiteSpace(focusType) ? "what_keeps_showing_up" : focusType,
+            ["focusInstructions"] = focusInstructions
+        };
+    }
+
+    private static string BuildFocusInstructions(string? focusType)
+    {
+        return focusType switch
+        {
+            "what_keeps_showing_up" =>
+                "Analyze recurring themes across recent matches. Look for repeated strengths, weaknesses, momentum shifts, score patterns, and tactical habits.",
+            "whats_helping_you_win" =>
+                "Focus on wins and strongest performances where possible. Identify what is working well and what the player should keep trusting.",
+            "what_breaks_under_pressure" =>
+                "Focus on losses, close sets, missed leads, deciding sets, and pressure moments. Identify where execution, decision-making, or composure drops.",
+            "next_match_focus" =>
+                "Use recent match history to give one clear tactical priority for the next match. Keep it practical and easy to remember.",
+            _ =>
+                "Analyze recurring themes across recent matches and provide the most useful tactical priority for the next match."
         };
     }
 

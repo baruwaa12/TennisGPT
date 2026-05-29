@@ -42,13 +42,13 @@ class _SetResultSummary {
 }
 
 /// Quick Match Log - Stage 1
-/// 
+///
 /// Design Philosophy:
 /// - Speed first: Log in under 30 seconds
 /// - Minimal inputs: Result + Score only required
 /// - Calm aesthetic: No emojis, no loud colors
 /// - Clear hierarchy: One decision at a time
-/// 
+///
 /// Flow:
 /// 1. Select match format
 /// 2. Select result (Win/Loss)
@@ -68,7 +68,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
   final TextEditingController _opponentController = TextEditingController();
   final TextEditingController _quickNoteController = TextEditingController();
-  
+
   String _matchFormat = MatchFormat.fast4;
   String _selectedResult = 'Win';
   final List<_SetScore> _setScores = [
@@ -79,10 +79,12 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   bool _isSaving = false;
   bool _showSuccess = false;
   MatchPerformance? _savedMatch;
+  String? _draftMatchId;
+  DateTime? _draftMatchDate;
   String _guidedScoreLine = '';
   String? _guidedScoreError;
   MatchScoreParseResult? _guidedScoreParsed;
-  
+
   late AnimationController _successController;
   late Animation<double> _fadeAnimation;
 
@@ -122,57 +124,16 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     }
 
     // Check usage limits (respects feature flags)
-    final purchaseService = Provider.of<PurchaseService>(context, listen: false);
+    final purchaseService =
+        Provider.of<PurchaseService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
     final usageService = Provider.of<UsageService>(context, listen: false);
     setState(() => _isSaving = true);
     HapticFeedback.lightImpact();
 
     try {
-      final matchId = DateTime.now().millisecondsSinceEpoch.toString();
-      final opponent = _opponentController.text.trim().isNotEmpty
-          ? _opponentController.text.trim()
-          : 'Opponent';
-      final quickNote = _quickNoteController.text.trim();
-
-      final parsedScore = _guidedScoreParsed;
-      if (parsedScore == null) {
-        throw Exception('Score not parsed');
-      }
-      final setsWon = parsedScore.setsWon;
-      final setsLost = parsedScore.setsLost;
-      final result = setsWon > setsLost ? 'Win' : 'Loss';
-      final scoreLine = _guidedScoreLine;
-      final setScores = parsedScore.setScores;
-
-      // Create match
-      final match = MatchPerformance(
-        id: matchId,
-        date: DateTime.now(),
-        opponent: opponent,
-        result: result,
-        setsWon: setsWon,
-        setsLost: setsLost,
-        matchFormat: _matchFormat,
-        scoreLine: scoreLine,
-        setScores: setScores,
-        opponentLevelSeed: '',
-        surface: 'Hard',
-        weather: '',
-        notes: quickNote,
-        matchSummary: '',
-        mentalNotes: '',
-        tacticalNotes: '',
-        strengthNotes: '',
-        weaknessNotes: '',
-        strengths: {},
-        weaknesses: {},
-        keyMoments: [],
-        tacticalAnalysis: '',
-        recommendedDrills: [],
-      );
-
-      await _matchHistoryService.saveMatch(match);
+      final match = _buildQuickMatch();
+      await _matchHistoryService.saveOrUpdateMatch(match);
 
       // Record usage
       if (!AppConfig.hasPremiumAccess(
@@ -187,6 +148,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         _isSaving = false;
         _showSuccess = true;
         _savedMatch = match;
+        _draftMatchId = match.id;
+        _draftMatchDate = match.date;
       });
 
       _successController.forward();
@@ -194,7 +157,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
       // Handle celebrations
       if (mounted) {
-        final streakService = Provider.of<StreakService>(context, listen: false);
+        final streakService =
+            Provider.of<StreakService>(context, listen: false);
         final streakMilestone = await streakService.recordActivity();
 
         if (streakMilestone != null && mounted) {
@@ -207,7 +171,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         }
 
         await CelebrationService.checkFirstMatch(context);
-        if (result == 'Win') {
+        if (match.result == 'Win') {
           await CelebrationService.checkFirstWin(context);
         }
 
@@ -219,7 +183,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving match', style: AppTheme.bodyMediumThemed(context).copyWith(color: Colors.white)),
+            content: Text('Error saving match',
+                style: AppTheme.bodyMediumThemed(context)
+                    .copyWith(color: Colors.white)),
             backgroundColor: AppTheme.loss,
           ),
         );
@@ -227,12 +193,74 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     }
   }
 
+  MatchPerformance _buildQuickMatch() {
+    final parsedScore = _guidedScoreParsed;
+    if (parsedScore == null) {
+      throw Exception('Score not parsed');
+    }
+
+    final matchId =
+        _draftMatchId ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final matchDate = _draftMatchDate ?? DateTime.now();
+    final opponent = _opponentController.text.trim().isNotEmpty
+        ? _opponentController.text.trim()
+        : 'Opponent';
+    final quickNote = _quickNoteController.text.trim();
+    final setsWon = parsedScore.setsWon;
+    final setsLost = parsedScore.setsLost;
+    final result = setsWon > setsLost ? 'Win' : 'Loss';
+
+    return MatchPerformance(
+      id: matchId,
+      date: matchDate,
+      opponent: opponent,
+      result: result,
+      setsWon: setsWon,
+      setsLost: setsLost,
+      matchFormat: _matchFormat,
+      scoreLine: _guidedScoreLine,
+      setScores: parsedScore.setScores,
+      opponentLevelSeed: '',
+      surface: 'Hard',
+      weather: '',
+      notes: quickNote,
+      matchSummary: '',
+      mentalNotes: '',
+      tacticalNotes: '',
+      strengthNotes: '',
+      weaknessNotes: '',
+      strengths: {},
+      weaknesses: {},
+      keyMoments: [],
+      tacticalAnalysis: '',
+      recommendedDrills: [],
+    );
+  }
+
+  Future<MatchPerformance?> _saveOrRefreshQuickDraft() async {
+    final scoreError = _guidedScoreError;
+    if (scoreError != null || _guidedScoreParsed == null) {
+      return null;
+    }
+
+    final draft = _buildQuickMatch();
+    await _matchHistoryService.saveOrUpdateMatch(draft);
+    setState(() {
+      _draftMatchId = draft.id;
+      _draftMatchDate = draft.date;
+    });
+    return draft;
+  }
+
   bool get _isNormalSets => _matchFormat == MatchFormat.bestOf3;
 
   int get _visibleSetCount => _isNormalSets ? 3 : 2;
 
   bool _isSetUnused(_SetScore score) {
-    return score.you == 0 && score.opp == 0 && score.tbYou == null && score.tbOpp == null;
+    return score.you == 0 &&
+        score.opp == 0 &&
+        score.tbYou == null &&
+        score.tbOpp == null;
   }
 
   bool _isPotentialFast4Score(int you, int opp) {
@@ -267,11 +295,13 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     if (_isNormalSets) {
       if (other >= 7 && delta > 0) return;
       if (next > 7) return;
-      if (!_isPotentialNormalScore(isYou ? next : other, isYou ? other : next)) return;
+      if (!_isPotentialNormalScore(isYou ? next : other, isYou ? other : next))
+        return;
     } else {
       if (other >= 4 && delta > 0) return;
       if (next > 4) return;
-      if (!_isPotentialFast4Score(isYou ? next : other, isYou ? other : next)) return;
+      if (!_isPotentialFast4Score(isYou ? next : other, isYou ? other : next))
+        return;
     }
 
     setState(() {
@@ -356,7 +386,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     return false;
   }
 
-  String? _validateSetScore(int index, _SetScore score, {required bool requiredSet}) {
+  String? _validateSetScore(int index, _SetScore score,
+      {required bool requiredSet}) {
     if (_isSetUnused(score)) {
       return requiredSet ? 'Enter a set score' : null;
     }
@@ -365,7 +396,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       if (!_isNormalFinal(score)) {
         return 'Use 6-0 to 6-4, 7-5, or 7-6';
       }
-      if ((score.you == 7 && score.opp == 6) || (score.opp == 7 && score.you == 6)) {
+      if ((score.you == 7 && score.opp == 6) ||
+          (score.opp == 7 && score.you == 6)) {
         if (score.tbYou == null || score.tbOpp == null) {
           return 'Enter tiebreak score for 7-6 set';
         }
@@ -382,7 +414,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       if (!_isFast4Final(score)) {
         return 'Fast4 sets must be 4-0 to 4-3';
       }
-      if ((score.you == 4 && score.opp == 3) || (score.opp == 4 && score.you == 3)) {
+      if ((score.you == 4 && score.opp == 3) ||
+          (score.opp == 4 && score.you == 3)) {
         if (score.tbYou != null && score.tbOpp != null) {
           if (score.tbYou == score.tbOpp) {
             return 'Tiebreak score must have a winner';
@@ -402,7 +435,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   String? _validateAllScores() {
     for (var i = 0; i < _visibleSetCount; i++) {
       final requiredSet = i < 2;
-      final error = _validateSetScore(i, _setScores[i], requiredSet: requiredSet);
+      final error =
+          _validateSetScore(i, _setScores[i], requiredSet: requiredSet);
       if (error != null) {
         return 'Set ${i + 1}: $error';
       }
@@ -432,7 +466,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       if (_isSetUnused(score)) {
         continue;
       }
-      final isFinal = _isNormalSets ? _isNormalFinal(score) : _isFast4Final(score);
+      final isFinal =
+          _isNormalSets ? _isNormalFinal(score) : _isFast4Final(score);
       if (!isFinal) {
         continue;
       }
@@ -479,13 +514,15 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   String _formatSetScore(_SetScore score) {
     final base = '${score.you}-${score.opp}';
     if (_isNormalSets) {
-      final isTbSet = (score.you == 7 && score.opp == 6) || (score.opp == 7 && score.you == 6);
+      final isTbSet = (score.you == 7 && score.opp == 6) ||
+          (score.opp == 7 && score.you == 6);
       if (isTbSet && score.tbYou != null && score.tbOpp != null) {
         final loserPoints = score.you > score.opp ? score.tbOpp! : score.tbYou!;
         return '$base($loserPoints)';
       }
     } else {
-      final isTbSet = (score.you == 4 && score.opp == 3) || (score.opp == 4 && score.you == 3);
+      final isTbSet = (score.you == 4 && score.opp == 3) ||
+          (score.opp == 4 && score.you == 3);
       if (isTbSet && score.tbYou != null && score.tbOpp != null) {
         final loserPoints = score.you > score.opp ? score.tbOpp! : score.tbYou!;
         return '$base($loserPoints)';
@@ -499,7 +536,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     if (_showSuccess) {
       return _buildSuccessView();
     }
-    
+
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
@@ -509,7 +546,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
             children: [
               // Header
               _buildHeader(),
-              
+
               // Form
               Expanded(
                 child: SingleChildScrollView(
@@ -519,28 +556,28 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     children: [
                       // Match Format - Primary
                       _buildFormatSection(),
-                      
+
                       const SizedBox(height: AppTheme.spaceLG),
 
                       // Result
                       _buildResultSection(),
-                      
+
                       const SizedBox(height: AppTheme.spaceLG),
-                      
+
                       // Score - Secondary
                       _buildScoreSection(),
-                      
+
                       const SizedBox(height: AppTheme.spaceLG),
-                      
+
                       // Optional Fields
                       _buildOptionalSection(),
-                      
+
                       const SizedBox(height: AppTheme.spaceXL),
                     ],
                   ),
                 ),
               ),
-              
+
               // Save Button - Fixed at bottom
               _buildSaveButton(),
             ],
@@ -634,10 +671,13 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withValues(alpha: 0.15) : AppTheme.cardBackground(context),
+          color: isSelected
+              ? AppTheme.primary.withValues(alpha: 0.15)
+              : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: isSelected ? AppTheme.primary : AppTheme.borderColor(context),
+            color:
+                isSelected ? AppTheme.primary : AppTheme.borderColor(context),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -649,7 +689,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 label,
                 textAlign: TextAlign.center,
                 style: AppTheme.headingMediumThemed(context).copyWith(
-                  color: isSelected ? AppTheme.primary : AppTheme.textSecondaryColor(context),
+                  color: isSelected
+                      ? AppTheme.primary
+                      : AppTheme.textSecondaryColor(context),
                 ),
               ),
               if (subtitle != null) ...[
@@ -657,7 +699,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 Text(
                   subtitle,
                   style: AppTheme.labelThemed(context).copyWith(
-                    color: isSelected ? AppTheme.primary : AppTheme.textMutedColor(context),
+                    color: isSelected
+                        ? AppTheme.primary
+                        : AppTheme.textMutedColor(context),
                   ),
                 ),
               ],
@@ -714,10 +758,13 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary.withValues(alpha: 0.15) : AppTheme.cardBackground(context),
+          color: isSelected
+              ? AppTheme.primary.withValues(alpha: 0.15)
+              : AppTheme.cardBackground(context),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(
-            color: isSelected ? AppTheme.primary : AppTheme.borderColor(context),
+            color:
+                isSelected ? AppTheme.primary : AppTheme.borderColor(context),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -725,7 +772,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           child: Text(
             label,
             style: AppTheme.headingMediumThemed(context).copyWith(
-              color: isSelected ? AppTheme.primary : AppTheme.textSecondaryColor(context),
+              color: isSelected
+                  ? AppTheme.primary
+                  : AppTheme.textSecondaryColor(context),
             ),
           ),
         ),
@@ -757,7 +806,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
               const SizedBox(height: AppTheme.spaceMD),
               Divider(color: AppTheme.borderColor(context)),
               const SizedBox(height: AppTheme.spaceMD),
-              Text('Set scores (shared editor)', style: AppTheme.labelThemed(context)),
+              Text('Set scores (shared editor)',
+                  style: AppTheme.labelThemed(context)),
               const SizedBox(height: AppTheme.spaceSM),
               GuidedSetScoreEditor(
                 key: ValueKey(_matchFormat),
@@ -768,8 +818,12 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     _guidedScoreLine = scoreLine;
                     _guidedScoreParsed = parsedScore;
                     _guidedScoreError = error;
-                    if (parsedScore != null && parsedScore.setsWon != parsedScore.setsLost) {
-                      _selectedResult = parsedScore.setsWon > parsedScore.setsLost ? 'Win' : 'Loss';
+                    if (parsedScore != null &&
+                        parsedScore.setsWon != parsedScore.setsLost) {
+                      _selectedResult =
+                          parsedScore.setsWon > parsedScore.setsLost
+                              ? 'Win'
+                              : 'Loss';
                     }
                   });
                 },
@@ -778,7 +832,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   _guidedScoreError!,
-                  style: AppTheme.bodySmallThemed(context).copyWith(color: AppTheme.loss),
+                  style: AppTheme.bodySmallThemed(context)
+                      .copyWith(color: AppTheme.loss),
                 ),
               ],
             ],
@@ -800,10 +855,12 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
             children: [
               TextField(
                 controller: _opponentController,
-                style: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textPrimaryColor(context)),
+                style: AppTheme.bodyMediumThemed(context)
+                    .copyWith(color: AppTheme.textPrimaryColor(context)),
                 decoration: InputDecoration(
                   hintText: 'Opponent name (optional)',
-                  hintStyle: AppTheme.bodyMediumThemed(context).copyWith(color: AppTheme.textMutedColor(context)),
+                  hintStyle: AppTheme.bodyMediumThemed(context)
+                      .copyWith(color: AppTheme.textMutedColor(context)),
                   border: InputBorder.none,
                   contentPadding: AppTheme.cardPadding,
                 ),
@@ -852,7 +909,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         _guidedScoreError == null &&
         parsed.setScores.length >= 2 &&
         parsed.setsWon != parsed.setsLost;
-    
+
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
       decoration: BoxDecoration(
@@ -867,21 +924,48 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             GestureDetector(
-              onTap: _isSaving ? null : () async {
-                HapticFeedback.lightImpact();
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddMatchScreen(
-                      initialMatchFormat: _matchFormat,
-                      initialScoreLine: _guidedScoreLine,
-                      initialOpponentLevelSeed: '',
-                      initialOpponentName: _opponentController.text.trim(),
-                      initialNotes: _quickNoteController.text.trim(),
-                    ),
-                  ),
-                );
-              },
+              onTap: _isSaving
+                  ? null
+                  : () async {
+                      HapticFeedback.lightImpact();
+                      final draft = await _saveOrRefreshQuickDraft();
+                      if (draft == null) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Enter a valid score before opening detailed log.',
+                              style: AppTheme.bodyMediumThemed(context),
+                            ),
+                            backgroundColor:
+                                AppTheme.elevatedBackground(context),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+                      if (!mounted) return;
+
+                      final detailedSaved = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddMatchScreen(
+                            existingMatchId: draft.id,
+                            existingMatchDate: draft.date,
+                            initialMatchFormat: _matchFormat,
+                            initialScoreLine: _guidedScoreLine,
+                            initialOpponentLevelSeed: '',
+                            initialOpponentName:
+                                _opponentController.text.trim(),
+                            initialNotes: _quickNoteController.text.trim(),
+                          ),
+                        ),
+                      );
+
+                      if (detailedSaved == true && mounted) {
+                        Navigator.pop(context, true);
+                      }
+                    },
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
@@ -907,7 +991,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
                 decoration: BoxDecoration(
-                  color: isValid ? AppTheme.primary : AppTheme.cardBackground(context),
+                  color: isValid
+                      ? AppTheme.primary
+                      : AppTheme.cardBackground(context),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: Center(
@@ -923,7 +1009,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                       : Text(
                           'Save Match',
                           style: AppTheme.headingSmallThemed(context).copyWith(
-                            color: isValid ? Colors.white : AppTheme.textMutedColor(context),
+                            color: isValid
+                                ? Colors.white
+                                : AppTheme.textMutedColor(context),
                           ),
                         ),
                 ),
@@ -956,7 +1044,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   Widget _buildSetScoreHeaderRow() {
     return Row(
       children: [
-        SizedBox(width: 64, child: Text('', style: AppTheme.labelThemed(context))),
+        SizedBox(
+            width: 64, child: Text('', style: AppTheme.labelThemed(context))),
         Expanded(
           child: Center(
             child: Text('You', style: AppTheme.labelThemed(context)),
@@ -1016,7 +1105,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           width: 64,
           child: Text(
             label,
-            style: isTiebreak ? AppTheme.labelThemed(context) : AppTheme.bodySmallThemed(context),
+            style: isTiebreak
+                ? AppTheme.labelThemed(context)
+                : AppTheme.bodySmallThemed(context),
           ),
         ),
         Expanded(
@@ -1086,14 +1177,18 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isEnabled ? AppTheme.cardBackground(context) : AppTheme.cardBackground(context).withValues(alpha: 0.5),
+          color: isEnabled
+              ? AppTheme.cardBackground(context)
+              : AppTheme.cardBackground(context).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           border: Border.all(color: AppTheme.borderColor(context)),
         ),
         child: Icon(
           icon,
           size: size * 0.6,
-          color: isEnabled ? AppTheme.textSecondaryColor(context) : AppTheme.textMutedColor(context),
+          color: isEnabled
+              ? AppTheme.textSecondaryColor(context)
+              : AppTheme.textMutedColor(context),
         ),
       ),
     );
@@ -1109,7 +1204,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   Widget _buildSuccessView() {
     final isWin = _savedMatch?.result == 'Win';
     final scoreDisplay = _savedMatch?.scoreLine ?? '';
-    
+
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
@@ -1141,15 +1236,16 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     ),
                   ),
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Confirmation
                 Container(
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: (isWin ? AppTheme.win : AppTheme.primary).withValues(alpha: 0.15),
+                    color: (isWin ? AppTheme.win : AppTheme.primary)
+                        .withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -1158,25 +1254,25 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     color: isWin ? AppTheme.win : AppTheme.primary,
                   ),
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceLG),
-                
+
                 Text(
                   'Match Saved',
                   style: AppTheme.headingLargeThemed(context),
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceSM),
-                
+
                 Text(
                   '${isWin == true ? "Win" : "Loss"} · $scoreDisplay',
                   style: AppTheme.bodyLargeThemed(context),
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceXL),
-                
+
                 const SizedBox(height: AppTheme.spaceMD),
-                
+
                 // Actions
                 Row(
                   children: [
@@ -1200,9 +1296,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: AppTheme.spaceSM),
-                
+
                 // Done - Primary
                 GestureDetector(
                   onTap: () {
@@ -1211,7 +1307,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                   },
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
                     decoration: BoxDecoration(
                       color: AppTheme.primary,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMD),
@@ -1219,7 +1316,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     child: Center(
                       child: Text(
                         'Done',
-                        style: AppTheme.headingSmallThemed(context).copyWith(color: Colors.white),
+                        style: AppTheme.headingSmallThemed(context)
+                            .copyWith(color: Colors.white),
                       ),
                     ),
                   ),
