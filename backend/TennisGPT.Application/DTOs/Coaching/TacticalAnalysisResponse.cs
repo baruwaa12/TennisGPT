@@ -7,17 +7,59 @@ namespace TennisGPT.Application.DTOs.Coaching;
 /// </summary>
 public class TacticalAnalysisResponse
 {
-    [JsonPropertyName("whatYoureSeeing")]
-    public string WhatYoureSeeing { get; set; } = string.Empty;
+    [JsonPropertyName("dataScope")]
+    public DataScopeBlock? DataScope { get; set; }
 
-    [JsonPropertyName("whyItMatters")]
-    public string WhyItMatters { get; set; } = string.Empty;
+    [JsonPropertyName("whatKeepsShowingUp")]
+    public SectionBlock WhatKeepsShowingUp { get; set; } = new();
 
-    [JsonPropertyName("nextFocus")]
-    public string NextFocus { get; set; } = string.Empty;
+    [JsonPropertyName("whatsHelpingYouWin")]
+    public SectionBlock WhatsHelpingYouWin { get; set; } = new();
+
+    [JsonPropertyName("whatBreaksUnderPressure")]
+    public SectionBlock WhatBreaksUnderPressure { get; set; } = new();
+
+    [JsonPropertyName("nextMatchFocus")]
+    public NextMatchFocusBlock NextMatchFocus { get; set; } = new();
 
     [JsonPropertyName("optionalPracticePlan")]
     public PracticePlanBlock? OptionalPracticePlan { get; set; }
+}
+
+public class DataScopeBlock
+{
+    [JsonPropertyName("matchesUsed")]
+    public int MatchesUsed { get; set; }
+
+    [JsonPropertyName("note")]
+    public string Note { get; set; } = string.Empty;
+}
+
+public class SectionBlock
+{
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = string.Empty;
+
+    [JsonPropertyName("evidence")]
+    public string Evidence { get; set; } = string.Empty;
+
+    [JsonPropertyName("confidence")]
+    public string Confidence { get; set; } = string.Empty;
+
+    [JsonPropertyName("trend")]
+    public string Trend { get; set; } = string.Empty;
+}
+
+public class NextMatchFocusBlock
+{
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = string.Empty;
+
+    [JsonPropertyName("triggerRule")]
+    public string TriggerRule { get; set; } = string.Empty;
+
+    [JsonPropertyName("confidence")]
+    public string Confidence { get; set; } = string.Empty;
 }
 
 /// <summary>

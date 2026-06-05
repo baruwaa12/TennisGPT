@@ -132,9 +132,10 @@ public class CoachingController : ControllerBase
     {
         return string.Join("\n", new[]
         {
-            $"WhatYoureSeeing: {response.WhatYoureSeeing}",
-            $"WhyItMatters: {response.WhyItMatters}",
-            $"NextFocus: {response.NextFocus}",
+            $"WhatKeepsShowingUp: {response.WhatKeepsShowingUp.Text}",
+            $"WhatsHelpingYouWin: {response.WhatsHelpingYouWin.Text}",
+            $"WhatBreaksUnderPressure: {response.WhatBreaksUnderPressure.Text}",
+            $"NextMatchFocus: {response.NextMatchFocus.Text}",
             $"PracticePlan: {response.OptionalPracticePlan?.DrillName} - {response.OptionalPracticePlan?.Objective}"
         });
     }
@@ -276,7 +277,7 @@ public class CoachingController : ControllerBase
                 request.FocusType,
                 recentAdviceHistory);
 
-            if (userId.HasValue && !string.IsNullOrWhiteSpace(response.WhatYoureSeeing))
+            if (userId.HasValue && !string.IsNullOrWhiteSpace(response.WhatKeepsShowingUp.Text))
             {
                 // Auto-capture tactical outputs so future requests can adapt and avoid repetition.
                 var snapshot = BuildTacticalHistorySnapshot(response);

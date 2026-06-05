@@ -358,11 +358,48 @@ class ApiService extends ChangeNotifier {
         }
 
         // The backend returns structured coach format.
-        if (data.containsKey('whatYoureSeeing')) {
+        if (data.containsKey('whatKeepsShowingUp') &&
+            data.containsKey('whatsHelpingYouWin') &&
+            data.containsKey('whatBreaksUnderPressure') &&
+            data.containsKey('nextMatchFocus')) {
           _lastErrorCode = ApiErrorCode.none;
           _error = null;
           notifyListeners();
           return data;
+        }
+
+        // Fallback: previous tactical format
+        if (data.containsKey('whatYoureSeeing')) {
+          _lastErrorCode = ApiErrorCode.none;
+          _error = null;
+          notifyListeners();
+          return {
+            'dataScope': {'matchesUsed': matchesJson?.length ?? 0, 'note': ''},
+            'whatKeepsShowingUp': {
+              'text': data['whatYoureSeeing'] ?? '',
+              'evidence': '',
+              'confidence': 'medium',
+              'trend': 'unclear',
+            },
+            'whatsHelpingYouWin': {
+              'text': data['whyItMatters'] ?? '',
+              'evidence': '',
+              'confidence': 'medium',
+              'trend': 'unclear',
+            },
+            'whatBreaksUnderPressure': {
+              'text': '',
+              'evidence': '',
+              'confidence': 'low',
+              'trend': 'unclear',
+            },
+            'nextMatchFocus': {
+              'text': data['nextFocus'] ?? '',
+              'triggerRule': '',
+              'confidence': 'medium',
+            },
+            'optionalPracticePlan': data['optionalPracticePlan'],
+          };
         }
 
         // Fallback: legacy CoachingResponse format (response field)
@@ -373,9 +410,30 @@ class ApiService extends ChangeNotifier {
           notifyListeners();
           // Wrap in current coach format for backward compatibility.
           return {
-            'whatYoureSeeing': data['response'] ?? '',
-            'whyItMatters': '',
-            'nextFocus': '',
+            'dataScope': {'matchesUsed': 0, 'note': ''},
+            'whatKeepsShowingUp': {
+              'text': data['response'] ?? '',
+              'evidence': '',
+              'confidence': 'low',
+              'trend': 'unclear',
+            },
+            'whatsHelpingYouWin': {
+              'text': '',
+              'evidence': '',
+              'confidence': 'low',
+              'trend': 'unclear',
+            },
+            'whatBreaksUnderPressure': {
+              'text': '',
+              'evidence': '',
+              'confidence': 'low',
+              'trend': 'unclear',
+            },
+            'nextMatchFocus': {
+              'text': '',
+              'triggerRule': '',
+              'confidence': 'low',
+            },
             'optionalPracticePlan': null,
           };
         }

@@ -41,7 +41,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   final GlobalKey _insightCardKey = GlobalKey();
 
   List<MatchPerformance> _recentMatches = [];
-  String? _selectedFocus;
   Map<String, dynamic>? _analysisResult;
   String? _errorMessage;
   bool _isLoading = true;
@@ -57,42 +56,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   String _formTrend = '';
   String _topStrength = '';
   String _needsWork = '';
-
-  /// Focus areas - framed as coach lenses, not AI tools
-  final List<Map<String, dynamic>> _focusAreas = [
-    {
-      'id': 'what_keeps_showing_up',
-      'title': 'What keeps showing up',
-      'subtitle': 'Recurring patterns from recent matches',
-      'icon': Icons.repeat_rounded,
-      'prompt':
-          'Analyze recurring themes across recent matches. Look for repeated strengths, weaknesses, momentum shifts, score patterns, and tactical habits.',
-    },
-    {
-      'id': 'whats_helping_you_win',
-      'title': 'What\'s helping you win',
-      'subtitle': 'Patterns from your best tennis',
-      'icon': Icons.trending_up_rounded,
-      'prompt':
-          'Focus only on wins or strong performances where possible. Identify what is working well and what the player should keep trusting.',
-    },
-    {
-      'id': 'what_breaks_under_pressure',
-      'title': 'What breaks under pressure',
-      'subtitle': 'Where your level drops in big moments',
-      'icon': Icons.warning_amber_rounded,
-      'prompt':
-          'Focus on losses, close sets, missed leads, deciding sets, and pressure moments. Identify where execution, decision-making, or composure drops.',
-    },
-    {
-      'id': 'next_match_focus',
-      'title': 'Next match focus',
-      'subtitle': 'Your clearest tactical priority going forward',
-      'icon': Icons.center_focus_strong_rounded,
-      'prompt':
-          'Use recent match history to give one clear tactical priority for the next match. Keep it practical and easy to remember.',
-    },
-  ];
 
   @override
   void initState() {
@@ -191,28 +154,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     }
   }
 
-  Future<void> _getInsight() async {
-    if (_selectedFocus == null) {
-      HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Select a focus area to continue',
-            style: AppTheme.bodyMediumThemed(context)
-                .copyWith(color: Colors.white),
-          ),
-          backgroundColor: AppTheme.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          ),
-        ),
-      );
-      return;
-    }
-
-    final focusArea = _focusAreas.firstWhere((f) => f['id'] == _selectedFocus);
-    String query = focusArea['prompt'];
+  Future<void> _reviewRecentMatchHistory() async {
+    String query =
+        'Review my recent logged match history and give a tactical rundown. '
+        'Split it into: what keeps showing up, what helps me win, what breaks under pressure, and next match focus.';
 
     final additionalContext = _contextController.text.trim();
 
@@ -264,7 +209,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       final response = await apiService.tacticalAnalysis(
         query,
         _recentMatches,
-        focusType: _selectedFocus,
       );
 
       setState(() {
@@ -385,11 +329,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         delegate: SliverChildListDelegate([
                           _buildCurrentFormCard(),
                           const SizedBox(height: AppTheme.spaceLG),
-                          _buildFocusAreasSection(),
-                          const SizedBox(height: AppTheme.spaceLG),
                           _buildOptionalContextInput(),
-                          const SizedBox(height: AppTheme.spaceLG),
-                          _buildPrimaryCTA(),
+                          const SizedBox(height: AppTheme.spaceMD),
+                          _buildReviewButton(),
 
                           if (_isGenerating) ...[
                             const SizedBox(height: AppTheme.spaceLG),
@@ -596,100 +538,57 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  // ============ Focus Areas Section ============
-
-  Widget _buildFocusAreasSection() {
+  Widget _buildReviewButton() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Review your recent patterns',
+        Text('Review your tennis',
             style: AppTheme.headingMediumThemed(context)),
         const SizedBox(height: AppTheme.spaceXS),
-        Text('Insights based on your logged matches',
-            style: AppTheme.bodySmallThemed(context)),
+        Text(
+          'Insights based on your logged matches',
+          style: AppTheme.bodySmallThemed(context),
+        ),
         const SizedBox(height: AppTheme.spaceMD),
-        ...List.generate(_focusAreas.length, (index) {
-          final focus = _focusAreas[index];
-          final isSelected = _selectedFocus == focus['id'];
-
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: index < _focusAreas.length - 1 ? AppTheme.spaceSM : 0,
+        GestureDetector(
+          onTap: _isGenerating ? null : _reviewRecentMatchHistory,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             ),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _selectedFocus = isSelected ? null : focus['id'];
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(AppTheme.spaceMD),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.primary.withValues(alpha: 0.1)
-                      : AppTheme.cardBackground(context),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppTheme.primary
-                        : AppTheme.borderColor(context),
-                    width: isSelected ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(AppTheme.spaceSM),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.primary.withValues(alpha: 0.2)
-                            : AppTheme.elevatedBackground(context),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                      ),
-                      child: Icon(
-                        focus['icon'] as IconData,
-                        size: 20,
-                        color: isSelected
-                            ? AppTheme.primary
-                            : AppTheme.textSecondaryColor(context),
-                      ),
-                    ),
-                    const SizedBox(width: AppTheme.spaceMD),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            focus['title'] as String,
-                            style:
-                                AppTheme.headingSmallThemed(context).copyWith(
-                              color: isSelected
-                                  ? AppTheme.textPrimaryColor(context)
-                                  : AppTheme.textSecondaryColor(context),
-                            ),
+            child: Center(
+              child: _isGenerating
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            focus['subtitle'] as String,
-                            style: AppTheme.bodySmallThemed(context),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: AppTheme.spaceSM),
+                        Text(
+                          'Reviewing history...',
+                          style: AppTheme.headingSmallThemed(context)
+                              .copyWith(color: Colors.white),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      'Review recent match history',
+                      style: AppTheme.headingSmallThemed(context)
+                          .copyWith(color: Colors.white),
                     ),
-                    if (isSelected)
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: AppTheme.primary,
-                        size: 20,
-                      ),
-                  ],
-                ),
-              ),
             ),
-          );
-        }),
+          ),
+        ),
       ],
     );
   }
@@ -731,70 +630,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         const SizedBox(height: AppTheme.spaceSM),
         VoiceTextField(
           controller: _contextController,
-          hintText: 'e.g., Facing a left-handed opponent...',
+          hintText: 'e.g. I get tight serving for sets...',
           maxLines: 2,
           style: AppTheme.bodyMediumThemed(context)
               .copyWith(color: AppTheme.textPrimaryColor(context)),
         ),
       ],
-    );
-  }
-
-  // ============ Primary CTA ============
-
-  Widget _buildPrimaryCTA() {
-    final hasSelection = _selectedFocus != null;
-
-    return GestureDetector(
-      onTap: _isGenerating || !hasSelection ? null : _getInsight,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: hasSelection
-              ? AppTheme.primary
-              : AppTheme.elevatedBackground(context),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: hasSelection
-              ? null
-              : Border.all(color: AppTheme.borderColor(context)),
-        ),
-        child: Center(
-          child: _isGenerating
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        color: hasSelection
-                            ? Colors.white
-                            : AppTheme.textMutedColor(context),
-                        strokeWidth: 2,
-                      ),
-                    ),
-                    const SizedBox(width: AppTheme.spaceSM),
-                    Text(
-                      'Preparing insight...',
-                      style: AppTheme.headingSmallThemed(context).copyWith(
-                        color: hasSelection
-                            ? Colors.white
-                            : AppTheme.textMutedColor(context),
-                      ),
-                    ),
-                  ],
-                )
-              : Text(
-                  'View tactical insight',
-                  style: AppTheme.headingSmallThemed(context).copyWith(
-                    color: hasSelection
-                        ? Colors.white
-                        : AppTheme.textMutedColor(context),
-                  ),
-                ),
-        ),
-      ),
     );
   }
 
@@ -807,7 +648,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         children: [
           const CircularProgressIndicator(color: AppTheme.primary),
           const SizedBox(height: AppTheme.spaceMD),
-          Text('Analyzing your recent form...',
+          Text('Reviewing your recent match history...',
               style: AppTheme.bodyMediumThemed(context)),
         ],
       ),
@@ -859,41 +700,80 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   Widget _buildStructuredAnalysis() {
     final data = _analysisResult!;
-    final whatYoureSeeing = data['whatYoureSeeing'] as String? ?? '';
-    final whyItMatters = data['whyItMatters'] as String? ?? '';
-    final nextFocus = data['nextFocus'] as String? ?? '';
+    final dataScope = data['dataScope'] as Map<String, dynamic>?;
+    final matchesUsed =
+        (dataScope?['matchesUsed'] as num?)?.toInt() ?? _recentMatches.length;
+    final scopeNote = dataScope?['note'] as String? ?? '';
+
+    final whatKeepsShowingUp =
+        data['whatKeepsShowingUp'] as Map<String, dynamic>? ?? {};
+    final whatsHelpingYouWin =
+        data['whatsHelpingYouWin'] as Map<String, dynamic>? ?? {};
+    final whatBreaksUnderPressure =
+        data['whatBreaksUnderPressure'] as Map<String, dynamic>? ?? {};
+    final nextMatchFocus =
+        data['nextMatchFocus'] as Map<String, dynamic>? ?? {};
+
     final practicePlan = data['optionalPracticePlan'] as Map<String, dynamic>?;
     final hasPracticePlan = practicePlan != null &&
         ((practicePlan['drillName'] as String? ?? '').isNotEmpty ||
             (practicePlan['objective'] as String? ?? '').isNotEmpty);
 
     final shareText = _buildShareText(
-      whatYoureSeeing,
-      whyItMatters,
-      nextFocus,
+      whatKeepsShowingUp,
+      whatsHelpingYouWin,
+      whatBreaksUnderPressure,
+      nextMatchFocus,
       practicePlan,
+      matchesUsed,
+      scopeNote,
     );
 
     return Column(
       key: _insightCardKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'Based on your last $matchesUsed logged matches',
+          style: AppTheme.labelThemed(context),
+        ),
+        if (scopeNote.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.spaceXS),
+          Text(scopeNote, style: AppTheme.bodySmallThemed(context)),
+        ],
+        const SizedBox(height: AppTheme.spaceMD),
         _buildCoachSectionCard(
-          title: 'WHAT YOURE SEEING',
-          text: whatYoureSeeing,
+          title: 'WHAT KEEPS SHOWING UP',
+          text: whatKeepsShowingUp['text'] as String? ?? '',
+          evidence: whatKeepsShowingUp['evidence'] as String?,
+          confidence: whatKeepsShowingUp['confidence'] as String?,
+          trend: whatKeepsShowingUp['trend'] as String?,
           icon: Icons.visibility_outlined,
           highlighted: true,
         ),
         const SizedBox(height: AppTheme.spaceMD),
         _buildCoachSectionCard(
-          title: 'WHY IT MATTERS',
-          text: whyItMatters,
+          title: 'WHAT\'S HELPING YOU WIN',
+          text: whatsHelpingYouWin['text'] as String? ?? '',
+          evidence: whatsHelpingYouWin['evidence'] as String?,
+          confidence: whatsHelpingYouWin['confidence'] as String?,
+          trend: whatsHelpingYouWin['trend'] as String?,
           icon: Icons.trending_up_rounded,
         ),
         const SizedBox(height: AppTheme.spaceMD),
         _buildCoachSectionCard(
-          title: 'NEXT FOCUS',
-          text: nextFocus,
+          title: 'WHAT BREAKS UNDER PRESSURE',
+          text: whatBreaksUnderPressure['text'] as String? ?? '',
+          evidence: whatBreaksUnderPressure['evidence'] as String?,
+          confidence: whatBreaksUnderPressure['confidence'] as String?,
+          trend: whatBreaksUnderPressure['trend'] as String?,
+          icon: Icons.warning_amber_rounded,
+        ),
+        const SizedBox(height: AppTheme.spaceMD),
+        _buildCoachSectionCard(
+          title: 'NEXT MATCH FOCUS',
+          text: _buildNextMatchFocusText(nextMatchFocus),
+          confidence: nextMatchFocus['confidence'] as String?,
           icon: Icons.center_focus_strong_rounded,
         ),
         if (hasPracticePlan) ...[
@@ -910,6 +790,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     required String title,
     required String text,
     required IconData icon,
+    String? evidence,
+    String? confidence,
+    String? trend,
     bool highlighted = false,
   }) {
     return Container(
@@ -946,9 +829,40 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             text,
             style: AppTheme.bodyLargeThemed(context).copyWith(height: 1.45),
           ),
+          if ((evidence ?? '').isNotEmpty ||
+              (confidence ?? '').isNotEmpty ||
+              (trend ?? '').isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spaceSM),
+            Text(
+              _buildEvidenceMeta(evidence, confidence, trend),
+              style: AppTheme.labelThemed(context),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  String _buildEvidenceMeta(
+      String? evidence, String? confidence, String? trend) {
+    final parts = <String>[];
+    if ((evidence ?? '').isNotEmpty) {
+      parts.add(evidence!.trim());
+    }
+    if ((confidence ?? '').isNotEmpty) {
+      parts.add('Confidence: ${confidence!.trim()}');
+    }
+    if ((trend ?? '').isNotEmpty) {
+      parts.add('Trend: ${trend!.trim()}');
+    }
+    return parts.join(' • ');
+  }
+
+  String _buildNextMatchFocusText(Map<String, dynamic> nextMatchFocus) {
+    final text = nextMatchFocus['text'] as String? ?? '';
+    final triggerRule = nextMatchFocus['triggerRule'] as String? ?? '';
+    if (triggerRule.isEmpty) return text;
+    return '$text\nTrigger: $triggerRule';
   }
 
   Widget _buildPracticePlanCard(Map<String, dynamic> practicePlan) {
@@ -1033,14 +947,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             HapticFeedback.lightImpact();
             setState(() {
               _analysisResult = null;
-              _selectedFocus = null;
               _contextController.clear();
             });
           },
           icon: Icon(Icons.refresh_rounded,
               size: 18, color: AppTheme.textSecondaryColor(context)),
           label: Text(
-            'New focus',
+            'New review',
             style: AppTheme.headingSmallThemed(context).copyWith(
               color: AppTheme.textSecondaryColor(context),
             ),
@@ -1252,19 +1165,36 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   String _buildShareText(
-    String whatYoureSeeing,
-    String whyItMatters,
-    String nextFocus,
+    Map<String, dynamic> whatKeepsShowingUp,
+    Map<String, dynamic> whatsHelpingYouWin,
+    Map<String, dynamic> whatBreaksUnderPressure,
+    Map<String, dynamic> nextMatchFocus,
     Map<String, dynamic>? practicePlan,
+    int matchesUsed,
+    String scopeNote,
   ) {
     final buffer = StringBuffer();
     buffer.writeln('Tactical Analysis - Composure');
     buffer.writeln();
-    buffer.writeln('What youre seeing: $whatYoureSeeing');
+    buffer.writeln('Based on last $matchesUsed matches');
+    if (scopeNote.isNotEmpty) {
+      buffer.writeln(scopeNote);
+      buffer.writeln();
+    }
+    buffer
+        .writeln('What keeps showing up: ${whatKeepsShowingUp['text'] ?? ''}');
     buffer.writeln();
-    buffer.writeln('Why it matters: $whyItMatters');
+    buffer.writeln('What helps me win: ${whatsHelpingYouWin['text'] ?? ''}');
     buffer.writeln();
-    buffer.writeln('Next focus: $nextFocus');
+    buffer.writeln(
+      'What breaks under pressure: ${whatBreaksUnderPressure['text'] ?? ''}',
+    );
+    buffer.writeln();
+    buffer.writeln('Next match focus: ${nextMatchFocus['text'] ?? ''}');
+    final triggerRule = nextMatchFocus['triggerRule'] as String? ?? '';
+    if (triggerRule.isNotEmpty) {
+      buffer.writeln('Trigger: $triggerRule');
+    }
 
     if (practicePlan != null) {
       final drillName = practicePlan['drillName'] as String? ?? '';

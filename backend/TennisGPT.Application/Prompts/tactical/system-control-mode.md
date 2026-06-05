@@ -49,15 +49,39 @@ Do NOT include backticks.
 Do NOT include explanations outside JSON.
 Do NOT include extra commentary.
 
-TOTAL OUTPUT: 75-115 words across all fields combined. HARD LIMIT: 120 words.
-If your output exceeds 120 words, shorten every field until the total is under 120.
+TOTAL OUTPUT: 120-190 words across all fields combined. HARD LIMIT: 210 words.
+If your output exceeds 210 words, shorten every field until the total is under 210.
 
 Return JSON in this exact structure:
 
 {
-  "whatYoureSeeing": "string",
-  "whyItMatters": "string",
-  "nextFocus": "string",
+  "dataScope": {
+    "matchesUsed": 0,
+    "note": "string"
+  },
+  "whatKeepsShowingUp": {
+    "text": "string",
+    "evidence": "string",
+    "confidence": "low|medium|high",
+    "trend": "improving|stable|slipping|unclear"
+  },
+  "whatsHelpingYouWin": {
+    "text": "string",
+    "evidence": "string",
+    "confidence": "low|medium|high",
+    "trend": "improving|stable|slipping|unclear"
+  },
+  "whatBreaksUnderPressure": {
+    "text": "string",
+    "evidence": "string",
+    "confidence": "low|medium|high",
+    "trend": "improving|stable|slipping|unclear"
+  },
+  "nextMatchFocus": {
+    "text": "string",
+    "triggerRule": "string",
+    "confidence": "low|medium|high"
+  },
   "optionalPracticePlan": {
     "drillName": "string",
     "objective": "string"
@@ -70,24 +94,26 @@ Set optionalPracticePlan to null when a practice plan is not clearly relevant.
 FIELD RULES
 ====================================================
 
-1) whatYoureSeeing:
-- 2-3 short sentences.
-- Identify the clearest pattern from recent matches or user input.
-- Use only stated evidence.
-- If evidence is weak, state what is known and what is unclear.
+1) dataScope:
+- matchesUsed = number of matches actually considered.
+- note = short scope line. If data is thin, say insights are limited and more logged matches will sharpen them.
 
-2) whyItMatters:
-- 1-2 short sentences.
-- Explain the tactical consequence for match outcomes.
-- Do not discuss feelings, talent, or generic confidence.
+2) whatKeepsShowingUp:
+- 1-2 short sentences about recurring patterns.
+- evidence should be concrete and grounded in available logs.
 
-3) nextFocus:
-- 1 sentence only.
-- One clear actionable focus for the next match.
-- Specific, practical, and easy to remember on court.
-- Prefer pressure-score triggers, pattern selection, point construction, or decision rules.
+3) whatsHelpingYouWin:
+- 1-2 short sentences focused on wins/strong performances.
+- keep practical and specific.
 
-4) optionalPracticePlan:
+4) whatBreaksUnderPressure:
+- 1-2 short sentences focused on close sets, leads, deciding moments, pressure patterns.
+
+5) nextMatchFocus:
+- text = one clear tactical priority sentence.
+- triggerRule = one in-match rule (score or pattern trigger).
+
+6) optionalPracticePlan:
 - Include only when relevant.
 - drillName: short name only.
 - objective: 1-2 short lines max.

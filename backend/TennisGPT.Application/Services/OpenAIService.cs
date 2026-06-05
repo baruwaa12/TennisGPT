@@ -94,7 +94,7 @@ public class OpenAIService : IOpenAIService
         var parsed = TryParseTacticalResponse(rawResponse);
         if (parsed != null)
         {
-            return await EnsureNoveltyIfNeededAsync(
+            var finalized = await EnsureNoveltyIfNeededAsync(
                 parsed,
                 matchDescription,
                 matchesContext,
@@ -102,6 +102,7 @@ public class OpenAIService : IOpenAIService
                 focusType,
                 focusInstructions,
                 recentAdviceHistory);
+            return FinalizeDataScope(finalized, recentMatchesJson);
         }
 
         // Don't retry if the response is a known error/fallback (not AI content)
@@ -115,12 +116,13 @@ public class OpenAIService : IOpenAIService
             rawResponse.StartsWith("The coaching service"))
         {
             _logger.LogWarning("Tactical analysis received error response, skipping retry: {Msg}", rawResponse);
-            return new TacticalAnalysisResponse
+            return FinalizeDataScope(new TacticalAnalysisResponse
             {
-                WhatYoureSeeing = rawResponse,
-                WhyItMatters = "",
-                NextFocus = ""
-            };
+                WhatKeepsShowingUp = new SectionBlock { Text = rawResponse },
+                WhatsHelpingYouWin = new SectionBlock { Text = "" },
+                WhatBreaksUnderPressure = new SectionBlock { Text = "" },
+                NextMatchFocus = new NextMatchFocusBlock { Text = "" }
+            }, recentMatchesJson);
         }
 
         // Only retry if we got actual AI content that failed to parse
@@ -139,7 +141,7 @@ public class OpenAIService : IOpenAIService
         parsed = TryParseTacticalResponse(retryResponse);
         if (parsed != null)
         {
-            return await EnsureNoveltyIfNeededAsync(
+            var finalized = await EnsureNoveltyIfNeededAsync(
                 parsed,
                 matchDescription,
                 matchesContext,
@@ -147,16 +149,41 @@ public class OpenAIService : IOpenAIService
                 focusType,
                 focusInstructions,
                 recentAdviceHistory);
+            return FinalizeDataScope(finalized, recentMatchesJson);
         }
 
         // Fallback — wrap raw text in structured response
         _logger.LogError("Tactical analysis JSON parse failed after retry. Returning fallback.");
-        return new TacticalAnalysisResponse
+        return FinalizeDataScope(new TacticalAnalysisResponse
         {
-            WhatYoureSeeing = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
-            WhyItMatters = "The available response was not structured enough to turn into a reliable tactical read.",
-            NextFocus = "Add one clear match pattern or pressure moment and run the coach again."
-        };
+            WhatKeepsShowingUp = new SectionBlock
+            {
+                Text = rawResponse.Length > 500 ? rawResponse[..500] : rawResponse,
+                Evidence = "Limited by unstructured output",
+                Confidence = "low",
+                Trend = "unclear"
+            },
+            WhatsHelpingYouWin = new SectionBlock
+            {
+                Text = "Not enough structured detail to isolate your strongest winning pattern yet.",
+                Evidence = "Needs clearer match summaries",
+                Confidence = "low",
+                Trend = "unclear"
+            },
+            WhatBreaksUnderPressure = new SectionBlock
+            {
+                Text = "Pressure pattern is unclear from this run.",
+                Evidence = "No reliable pressure markers parsed",
+                Confidence = "low",
+                Trend = "unclear"
+            },
+            NextMatchFocus = new NextMatchFocusBlock
+            {
+                Text = "Log one clear pressure moment each match and rerun review.",
+                TriggerRule = "After match: record turning point and score context in summary.",
+                Confidence = "medium"
+            }
+        }, recentMatchesJson);
     }
 
     /// <summary>
@@ -331,11 +358,12 @@ public class OpenAIService : IOpenAIService
             };
             var result = JsonSerializer.Deserialize<TacticalAnalysisResponse>(rawResponse, options);
             
-            // Validate: must have the three required coach sections.
+            // Validate: must have the four required coach sections.
             if (result != null && 
-                !string.IsNullOrWhiteSpace(result.WhatYoureSeeing) && 
-                !string.IsNullOrWhiteSpace(result.WhyItMatters) &&
-                !string.IsNullOrWhiteSpace(result.NextFocus))
+                !string.IsNullOrWhiteSpace(result.WhatKeepsShowingUp.Text) &&
+                !string.IsNullOrWhiteSpace(result.WhatsHelpingYouWin.Text) &&
+                !string.IsNullOrWhiteSpace(result.WhatBreaksUnderPressure.Text) &&
+                !string.IsNullOrWhiteSpace(result.NextMatchFocus.Text))
             {
                 if (result.OptionalPracticePlan != null &&
                     string.IsNullOrWhiteSpace(result.OptionalPracticePlan.DrillName) &&
@@ -441,7 +469,7 @@ public class OpenAIService : IOpenAIService
             "next_match_focus" =>
                 "Use recent match history to give one clear tactical priority for the next match. Keep it practical and easy to remember.",
             _ =>
-                "Analyze recurring themes across recent matches and provide the most useful tactical priority for the next match."
+                "Create a full review from recent match history: what keeps showing up, what is helping the player win, what breaks under pressure, and one clear next-match focus."
         };
     }
 
@@ -490,9 +518,11 @@ public class OpenAIService : IOpenAIService
     {
         return string.Join(" ", new[]
         {
-            response.WhatYoureSeeing,
-            response.WhyItMatters,
-            response.NextFocus,
+            response.WhatKeepsShowingUp.Text,
+            response.WhatsHelpingYouWin.Text,
+            response.WhatBreaksUnderPressure.Text,
+            response.NextMatchFocus.Text,
+            response.NextMatchFocus.TriggerRule,
             response.OptionalPracticePlan?.DrillName ?? string.Empty,
             response.OptionalPracticePlan?.Objective ?? string.Empty
         });
@@ -519,5 +549,41 @@ public class OpenAIService : IOpenAIService
             return 0;
 
         return (double)intersectionCount / unionCount;
+    }
+
+    private static TacticalAnalysisResponse FinalizeDataScope(
+        TacticalAnalysisResponse response,
+        string? recentMatchesJson)
+    {
+        var matchesUsed = 0;
+        if (!string.IsNullOrWhiteSpace(recentMatchesJson))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(recentMatchesJson);
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    matchesUsed = doc.RootElement.GetArrayLength();
+                }
+            }
+            catch
+            {
+                matchesUsed = 0;
+            }
+        }
+
+        response.DataScope ??= new DataScopeBlock();
+        if (response.DataScope.MatchesUsed <= 0)
+        {
+            response.DataScope.MatchesUsed = matchesUsed;
+        }
+        if (string.IsNullOrWhiteSpace(response.DataScope.Note))
+        {
+            response.DataScope.Note = matchesUsed < 3
+                ? "Limited match history - log more detailed matches to sharpen these insights."
+                : "Built from your recent logged matches.";
+        }
+
+        return response;
     }
 }
