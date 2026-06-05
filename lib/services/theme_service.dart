@@ -5,14 +5,15 @@ import '../theme/app_theme.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
-  
+
   ThemeMode _themeMode = ThemeMode.system;
-  
+
   ThemeMode get themeMode => _themeMode;
-  
+
   bool get isDarkMode {
     if (_themeMode == ThemeMode.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
     }
     return _themeMode == ThemeMode.dark;
   }
@@ -20,7 +21,7 @@ class ThemeService extends ChangeNotifier {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString(_themeKey);
-    
+
     if (savedTheme != null) {
       _themeMode = ThemeMode.values.firstWhere(
         (mode) => mode.name == savedTheme,
@@ -33,7 +34,7 @@ class ThemeService extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     notifyListeners();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeKey, mode.name);
   }
@@ -49,11 +50,11 @@ class ThemeService extends ChangeNotifier {
   // Light Theme
   static ThemeData get lightTheme {
     // Define light mode text colors explicitly
-    final lightTextTheme = GoogleFonts.poppinsTextTheme().apply(
+    final lightTextTheme = GoogleFonts.ibmPlexSansTextTheme().apply(
       bodyColor: Colors.grey[800],
       displayColor: Colors.grey[800],
     );
-    
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -62,16 +63,17 @@ class ThemeService extends ChangeNotifier {
         brightness: Brightness.light,
         onSurface: Colors.grey[800]!, // Text color on surfaces
       ),
-      scaffoldBackgroundColor: Colors.grey[50],
+      scaffoldBackgroundColor: const Color(0xFFF3ECE3),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: Colors.grey[800],
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.oswald(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: Colors.grey[800],
+          letterSpacing: 0.3,
         ),
       ),
       cardTheme: CardThemeData(
@@ -93,7 +95,7 @@ class ThemeService extends ChangeNotifier {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
         labelStyle: TextStyle(color: Colors.grey[700]),
@@ -108,8 +110,9 @@ class ThemeService extends ChangeNotifier {
           backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: GoogleFonts.ibmPlexSans(fontWeight: FontWeight.w600),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -122,11 +125,12 @@ class ThemeService extends ChangeNotifier {
   // Dark Theme
   static ThemeData get darkTheme {
     // Define dark mode text colors explicitly
-    final darkTextTheme = GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).apply(
+    final darkTextTheme =
+        GoogleFonts.ibmPlexSansTextTheme(ThemeData.dark().textTheme).apply(
       bodyColor: Colors.white,
       displayColor: Colors.white,
     );
-    
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -141,10 +145,11 @@ class ThemeService extends ChangeNotifier {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.poppins(
+        titleTextStyle: GoogleFonts.oswald(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: Colors.white,
+          letterSpacing: 0.3,
         ),
       ),
       cardTheme: CardThemeData(
@@ -166,7 +171,7 @@ class ThemeService extends ChangeNotifier {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
         labelStyle: TextStyle(color: Colors.grey[400]),
@@ -181,8 +186,9 @@ class ThemeService extends ChangeNotifier {
           backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: GoogleFonts.ibmPlexSans(fontWeight: FontWeight.w600),
         ),
       ),
       snackBarTheme: SnackBarThemeData(

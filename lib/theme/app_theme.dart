@@ -2,103 +2,99 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// TennisGPT Design System
-/// Inspired by Whoop + Strava: calm, confident, premium sports aesthetic
-/// 
-/// Typography sized for:
-/// - One-handed mobile use
-/// - Outdoor lighting conditions
-/// - Post-match fatigue readability
+/// Direction: editorial-brutalist sport dossier.
+/// High contrast, structured geometry, and distinctive typography.
 
 class AppTheme {
   AppTheme._();
 
   // ============ COLORS ============
-  
-  /// Primary brand color - confident blue accent
-  static const Color primary = Color(0xFF2563EB);
-  static const Color primaryLight = Color(0xFF3B82F6);
-  static const Color primaryDark = Color(0xFF1D4ED8);
-  
-  /// Soft glow blue for highlights and subtle accents
-  static const Color softGlow = Color(0xFF3B82F6);
-  
+
+  /// Primary accent - energetic clay red
+  static const Color primary = Color(0xFFE6462E);
+  static const Color primaryLight = Color(0xFFFF6A4E);
+  static const Color primaryDark = Color(0xFFB92E1A);
+
+  /// Warm glow tone for highlighted surfaces
+  static const Color softGlow = Color(0xFFFF7C58);
+
   /// Surface colors - layered depth system (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
-  static const Color surfaceDark = Color(0xFF0B0F1A);
-  static const Color surfaceSecondary = Color(0xFF111827);
-  static const Color surfaceCard = Color(0xFF161D2E);
-  static const Color surfaceElevated = Color(0xFF1E2A42);
-  static const Color surfaceBorder = Color(0xFF243352);
-  
+  static const Color surfaceDark = Color(0xFF0A0A0C);
+  static const Color surfaceSecondary = Color(0xFF141418);
+  static const Color surfaceCard = Color(0xFF1B1A1E);
+  static const Color surfaceElevated = Color(0xFF222128);
+  static const Color surfaceBorder = Color(0xFF31313A);
+
   /// Text colors - clear hierarchy (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
-  static const Color textPrimary = Color(0xFFF5F5F5);
-  static const Color textSecondary = Color(0xFFB0B5BE);
-  static const Color textMuted = Color(0xFF787D85);
-  
+  static const Color textPrimary = Color(0xFFF4EFE8);
+  static const Color textSecondary = Color(0xFFC3BBB0);
+  static const Color textMuted = Color(0xFF8F867C);
+
   /// Accent colors for data/stats
-  static const Color win = Color(0xFF22C55E);
-  static const Color loss = Color(0xFFEF4444);
-  static const Color neutral = Color(0xFF3B82F6);
-  static const Color warning = Color(0xFFF59E0B);
+  static const Color win = Color(0xFF79D27D);
+  static const Color loss = Color(0xFFFF7764);
+  static const Color neutral = Color(0xFFFFA248);
+  static const Color warning = Color(0xFFF4C152);
 
   // ============ LIGHT MODE COLORS ============
-  static const Color _surfaceLight = Color(0xFFFAFAFA);
-  static const Color _surfaceCardLight = Color(0xFFFFFFFF);
-  static const Color _surfaceElevatedLight = Color(0xFFF5F5F5);
-  static const Color _surfaceBorderLight = Color(0xFFE0E0E0);
-  static const Color _textPrimaryLight = Color(0xFF1A1A1A);
-  static const Color _textSecondaryLight = Color(0xFF4A4A4A);
-  static const Color _textMutedLight = Color(0xFF8A8A8A);
+  static const Color _surfaceLight = Color(0xFFF3ECE3);
+  static const Color _surfaceCardLight = Color(0xFFFFFBF5);
+  static const Color _surfaceElevatedLight = Color(0xFFEDE2D3);
+  static const Color _surfaceBorderLight = Color(0xFFD7C6B0);
+  static const Color _textPrimaryLight = Color(0xFF1B1715);
+  static const Color _textSecondaryLight = Color(0xFF463E38);
+  static const Color _textMutedLight = Color(0xFF7A6F65);
 
   // ============ THEME-AWARE COLOR GETTERS ============
-  
+
   /// Get scaffold background color based on theme
   static Color scaffoldBackground(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? surfaceDark 
+    return Theme.of(context).brightness == Brightness.dark
+        ? surfaceDark
         : _surfaceLight;
   }
 
   /// Get card background color based on theme
   static Color cardBackground(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? surfaceCard 
+    return Theme.of(context).brightness == Brightness.dark
+        ? surfaceCard
         : _surfaceCardLight;
   }
 
   /// Get elevated surface color based on theme
   static Color elevatedBackground(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? surfaceElevated 
+    return Theme.of(context).brightness == Brightness.dark
+        ? surfaceElevated
         : _surfaceElevatedLight;
   }
 
   /// Get border color based on theme
   static Color borderColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? surfaceBorder 
+    return Theme.of(context).brightness == Brightness.dark
+        ? surfaceBorder
         : _surfaceBorderLight;
   }
 
   /// Get primary text color based on theme
   static Color textPrimaryColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? textPrimary 
+    return Theme.of(context).brightness == Brightness.dark
+        ? textPrimary
         : _textPrimaryLight;
   }
 
   /// Get secondary text color based on theme
   static Color textSecondaryColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? textSecondary 
+    return Theme.of(context).brightness == Brightness.dark
+        ? textSecondary
         : _textSecondaryLight;
   }
 
   /// Get muted text color based on theme
   static Color textMutedColor(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark 
-        ? textMuted 
+    return Theme.of(context).brightness == Brightness.dark
+        ? textMuted
         : _textMutedLight;
   }
 
@@ -126,7 +122,7 @@ class AppTheme {
   }
 
   // ============ SPACING ============
-  
+
   /// Consistent spacing scale (4px base)
   static const double spaceXS = 4.0;
   static const double spaceSM = 8.0;
@@ -134,307 +130,349 @@ class AppTheme {
   static const double spaceLG = 24.0;
   static const double spaceXL = 32.0;
   static const double spaceXXL = 48.0;
-  
+
   /// Screen padding
   static const EdgeInsets screenPadding = EdgeInsets.symmetric(
     horizontal: spaceMD,
     vertical: spaceLG,
   );
-  
+
   /// Card padding
   static const EdgeInsets cardPadding = EdgeInsets.all(spaceMD);
   static const EdgeInsets cardPaddingLarge = EdgeInsets.all(spaceLG);
 
   // ============ BORDER RADIUS ============
-  
+
   static const double radiusSM = 8.0;
   static const double radiusMD = 12.0;
   static const double radiusLG = 16.0;
   static const double radiusXL = 20.0;
 
   // ============ TYPOGRAPHY ============
-  // Sized for glanceability, outdoor use, and post-match fatigue
+  // Display font: Oswald (editorial, athletic authority)
+  // Body font: IBM Plex Sans (technical clarity and readability)
   // NOTE: These use dark mode colors by default. Use themed versions for proper light/dark support.
-  
+  static TextStyle _display({
+    required double size,
+    required FontWeight weight,
+    required Color color,
+    double spacing = 0,
+    double? height,
+  }) {
+    return GoogleFonts.oswald(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: spacing,
+      height: height,
+    );
+  }
+
+  static TextStyle _body({
+    required double size,
+    required FontWeight weight,
+    required Color color,
+    double spacing = 0,
+    double? height,
+  }) {
+    return GoogleFonts.ibmPlexSans(
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: spacing,
+      height: height,
+    );
+  }
+
   /// Screen titles - bold, commanding (increased ~15%)
-  static TextStyle get headingLarge => GoogleFonts.inter(
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    color: textPrimary,
-    letterSpacing: -0.5,
-    height: 1.25,
-  );
-  
+  static TextStyle get headingLarge => _display(
+        size: 38,
+        weight: FontWeight.w600,
+        color: textPrimary,
+        spacing: -0.4,
+        height: 1.1,
+      );
+
   /// Section/Card headers (increased ~18%)
-  static TextStyle get headingMedium => GoogleFonts.inter(
-    fontSize: 21,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    letterSpacing: -0.3,
-    height: 1.35,
-  );
-  
+  static TextStyle get headingMedium => _display(
+        size: 26,
+        weight: FontWeight.w600,
+        color: textPrimary,
+        spacing: -0.25,
+        height: 1.15,
+      );
+
   /// Card titles / Row headers (increased ~15%)
-  static TextStyle get headingSmall => GoogleFonts.inter(
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    letterSpacing: -0.2,
-    height: 1.3,
-  );
-  
+  static TextStyle get headingSmall => _display(
+        size: 20,
+        weight: FontWeight.w500,
+        color: textPrimary,
+        spacing: -0.1,
+        height: 1.2,
+      );
+
   /// Body text - readable, calm (increased ~15%)
-  static TextStyle get bodyLarge => GoogleFonts.inter(
-    fontSize: 18,
-    fontWeight: FontWeight.w400,
-    color: textSecondary,
-    height: 1.6,
-  );
-  
+  static TextStyle get bodyLarge => _body(
+        size: 18,
+        weight: FontWeight.w400,
+        color: textSecondary,
+        height: 1.55,
+      );
+
   /// Standard body (increased ~14%)
-  static TextStyle get bodyMedium => GoogleFonts.inter(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: textSecondary,
-    height: 1.55,
-  );
-  
+  static TextStyle get bodyMedium => _body(
+        size: 16,
+        weight: FontWeight.w400,
+        color: textSecondary,
+        height: 1.5,
+      );
+
   /// Helper text, descriptions (increased ~15%)
-  static TextStyle get bodySmall => GoogleFonts.inter(
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
-    color: textMuted,
-    height: 1.5,
-  );
-  
+  static TextStyle get bodySmall => _body(
+        size: 15,
+        weight: FontWeight.w400,
+        color: textMuted,
+        height: 1.45,
+      );
+
   /// Labels and captions (increased ~17%)
-  static TextStyle get label => GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: textMuted,
-    letterSpacing: 0.3,
-    height: 1.4,
-  );
-  
+  static TextStyle get label => _body(
+        size: 13,
+        weight: FontWeight.w600,
+        color: textMuted,
+        spacing: 0.8,
+        height: 1.4,
+      );
+
   /// Stats/numbers - large display (hero stats like win rate)
-  static TextStyle get statLarge => GoogleFonts.inter(
-    fontSize: 42,
-    fontWeight: FontWeight.w800,
-    color: textPrimary,
-    letterSpacing: -1.5,
-    height: 1.05,
-  );
-  
+  static TextStyle get statLarge => _display(
+        size: 42,
+        weight: FontWeight.w800,
+        color: textPrimary,
+        spacing: -1.0,
+        height: 1.0,
+      );
+
   /// Stats - medium display
-  static TextStyle get statMedium => GoogleFonts.inter(
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: textPrimary,
-    letterSpacing: -0.5,
-    height: 1.15,
-  );
-  
+  static TextStyle get statMedium => _display(
+        size: 30,
+        weight: FontWeight.w600,
+        color: textPrimary,
+        spacing: -0.4,
+        height: 1.05,
+      );
+
   /// Score display - prominent
-  static TextStyle get scoreDisplay => GoogleFonts.inter(
-    fontSize: 32,
-    fontWeight: FontWeight.w800,
-    color: textPrimary,
-    letterSpacing: -0.75,
-  );
+  static TextStyle get scoreDisplay => _display(
+        size: 36,
+        weight: FontWeight.w700,
+        color: textPrimary,
+        spacing: -0.6,
+      );
 
   // ============ THEME-AWARE TEXT STYLES ============
-  
-  static TextStyle headingLargeThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    color: textPrimaryColor(context),
-    letterSpacing: -0.5,
-    height: 1.25,
-  );
 
-  static TextStyle headingMediumThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 21,
-    fontWeight: FontWeight.w600,
-    color: textPrimaryColor(context),
-    letterSpacing: -0.3,
-    height: 1.35,
-  );
+  static TextStyle headingLargeThemed(BuildContext context) => _display(
+        size: 38,
+        weight: FontWeight.w600,
+        color: textPrimaryColor(context),
+        spacing: -0.4,
+        height: 1.1,
+      );
 
-  static TextStyle headingSmallThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: textPrimaryColor(context),
-    letterSpacing: -0.2,
-    height: 1.3,
-  );
+  static TextStyle headingMediumThemed(BuildContext context) => _display(
+        size: 26,
+        weight: FontWeight.w600,
+        color: textPrimaryColor(context),
+        spacing: -0.25,
+        height: 1.15,
+      );
 
-  static TextStyle bodyLargeThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 18,
-    fontWeight: FontWeight.w400,
-    color: textSecondaryColor(context),
-    height: 1.6,
-  );
+  static TextStyle headingSmallThemed(BuildContext context) => _display(
+        size: 20,
+        weight: FontWeight.w500,
+        color: textPrimaryColor(context),
+        spacing: -0.1,
+        height: 1.2,
+      );
 
-  static TextStyle bodyMediumThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: textSecondaryColor(context),
-    height: 1.55,
-  );
+  static TextStyle bodyLargeThemed(BuildContext context) => _body(
+        size: 18,
+        weight: FontWeight.w400,
+        color: textSecondaryColor(context),
+        height: 1.55,
+      );
 
-  static TextStyle bodySmallThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
-    color: textMutedColor(context),
-    height: 1.5,
-  );
+  static TextStyle bodyMediumThemed(BuildContext context) => _body(
+        size: 16,
+        weight: FontWeight.w400,
+        color: textSecondaryColor(context),
+        height: 1.5,
+      );
 
-  static TextStyle labelThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: textMutedColor(context),
-    letterSpacing: 0.3,
-    height: 1.4,
-  );
+  static TextStyle bodySmallThemed(BuildContext context) => _body(
+        size: 15,
+        weight: FontWeight.w400,
+        color: textMutedColor(context),
+        height: 1.45,
+      );
 
-  static TextStyle statLargeThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 42,
-    fontWeight: FontWeight.w800,
-    color: textPrimaryColor(context),
-    letterSpacing: -1.5,
-    height: 1.05,
-  );
+  static TextStyle labelThemed(BuildContext context) => _body(
+        size: 13,
+        weight: FontWeight.w600,
+        color: textMutedColor(context),
+        spacing: 0.8,
+        height: 1.4,
+      );
 
-  static TextStyle statMediumThemed(BuildContext context) => GoogleFonts.inter(
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: textPrimaryColor(context),
-    letterSpacing: -0.5,
-    height: 1.15,
-  );
+  static TextStyle statLargeThemed(BuildContext context) => _display(
+        size: 42,
+        weight: FontWeight.w800,
+        color: textPrimaryColor(context),
+        spacing: -1.0,
+        height: 1.0,
+      );
+
+  static TextStyle statMediumThemed(BuildContext context) => _display(
+        size: 30,
+        weight: FontWeight.w600,
+        color: textPrimaryColor(context),
+        spacing: -0.4,
+        height: 1.05,
+      );
 
   /// Get theme-aware input decoration
-  static InputDecoration inputDecorationThemed(BuildContext context, {
+  static InputDecoration inputDecorationThemed(
+    BuildContext context, {
     String? label,
     String? hint,
     IconData? prefixIcon,
-  }) => InputDecoration(
-    labelText: label,
-    hintText: hint,
-    labelStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context)),
-    hintStyle: bodyMediumThemed(context).copyWith(color: textMutedColor(context).withValues(alpha: 0.5)),
-    prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: textMutedColor(context)) : null,
-    filled: true,
-    fillColor: cardBackground(context),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMD),
-      borderSide: BorderSide(color: borderColor(context)),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMD),
-      borderSide: BorderSide(color: borderColor(context)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMD),
-      borderSide: const BorderSide(color: primary, width: 1.5),
-    ),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: spaceMD,
-      vertical: spaceMD,
-    ),
-  );
+  }) =>
+      InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle:
+            bodyMediumThemed(context).copyWith(color: textMutedColor(context)),
+        hintStyle: bodyMediumThemed(context)
+            .copyWith(color: textMutedColor(context).withValues(alpha: 0.5)),
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: textMutedColor(context))
+            : null,
+        filled: true,
+        fillColor: cardBackground(context),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMD),
+          borderSide: BorderSide(color: borderColor(context)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMD),
+          borderSide: BorderSide(color: borderColor(context)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMD),
+          borderSide: const BorderSide(color: primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: spaceMD,
+          vertical: spaceMD,
+        ),
+      );
 
   // ============ SHADOWS ============
-  
+
   static List<BoxShadow> get cardShadow => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.25),
-      blurRadius: 10,
-      offset: const Offset(0, 2),
-    ),
-  ];
-  
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.25),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ];
+
   static List<BoxShadow> get elevatedShadow => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.35),
-      blurRadius: 20,
-      offset: const Offset(0, 4),
-    ),
-  ];
-  
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.35),
+          blurRadius: 20,
+          offset: const Offset(0, 4),
+        ),
+      ];
+
   /// Subtle blue glow for primary CTA buttons
   static List<BoxShadow> get ctaGlow => [
-    BoxShadow(
-      color: primary.withValues(alpha: 0.4),
-      blurRadius: 16,
-      spreadRadius: 0,
-      offset: const Offset(0, 4),
-    ),
-    BoxShadow(
-      color: softGlow.withValues(alpha: 0.2),
-      blurRadius: 32,
-      spreadRadius: -4,
-      offset: const Offset(0, 8),
-    ),
-  ];
-  
+        BoxShadow(
+          color: primary.withValues(alpha: 0.4),
+          blurRadius: 16,
+          spreadRadius: 0,
+          offset: const Offset(0, 4),
+        ),
+        BoxShadow(
+          color: softGlow.withValues(alpha: 0.2),
+          blurRadius: 32,
+          spreadRadius: -4,
+          offset: const Offset(0, 8),
+        ),
+      ];
+
   /// Theme-aware CTA glow (only applies in dark mode for subtlety)
   static List<BoxShadow> ctaGlowThemed(BuildContext context) {
-    return isDark(context) ? ctaGlow : [
-      BoxShadow(
-        color: primary.withValues(alpha: 0.25),
-        blurRadius: 12,
-        spreadRadius: 0,
-        offset: const Offset(0, 4),
-      ),
-    ];
+    return isDark(context)
+        ? ctaGlow
+        : [
+            BoxShadow(
+              color: primary.withValues(alpha: 0.25),
+              blurRadius: 12,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+          ];
   }
 
   // ============ DECORATIONS ============
-  
+
   static BoxDecoration get cardDecoration => BoxDecoration(
-    color: surfaceCard,
-    borderRadius: BorderRadius.circular(radiusLG),
-    border: Border.all(color: surfaceBorder, width: 1),
-  );
-  
+        color: surfaceCard,
+        borderRadius: BorderRadius.circular(radiusLG),
+        border: Border.all(color: surfaceBorder, width: 1),
+      );
+
   static BoxDecoration get elevatedCardDecoration => BoxDecoration(
-    color: surfaceElevated,
-    borderRadius: BorderRadius.circular(radiusLG),
-    boxShadow: cardShadow,
-  );
-  
+        color: surfaceElevated,
+        borderRadius: BorderRadius.circular(radiusLG),
+        boxShadow: cardShadow,
+      );
+
   // ============ INPUT DECORATION ============
-  
+
   static InputDecoration inputDecoration({
     String? label,
     String? hint,
     IconData? prefixIcon,
-  }) => InputDecoration(
-    labelText: label,
-    hintText: hint,
-    labelStyle: bodyMedium.copyWith(color: textMuted),
-    hintStyle: bodyMedium.copyWith(color: textMuted.withValues(alpha: 0.5)),
-    prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: textMuted) : null,
-    filled: true,
-    fillColor: surfaceCard,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMD),
-      borderSide: BorderSide(color: surfaceBorder),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMD),
-      borderSide: BorderSide(color: surfaceBorder),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radiusMD),
-      borderSide: const BorderSide(color: primary, width: 1.5),
-    ),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: spaceMD,
-      vertical: spaceMD,
-    ),
-  );
+  }) =>
+      InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: bodyMedium.copyWith(color: textMuted),
+        hintStyle: bodyMedium.copyWith(color: textMuted.withValues(alpha: 0.5)),
+        prefixIcon:
+            prefixIcon != null ? Icon(prefixIcon, color: textMuted) : null,
+        filled: true,
+        fillColor: surfaceCard,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMD),
+          borderSide: const BorderSide(color: surfaceBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMD),
+          borderSide: const BorderSide(color: surfaceBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusMD),
+          borderSide: const BorderSide(color: primary, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: spaceMD,
+          vertical: spaceMD,
+        ),
+      );
 }
 
 /// Reusable card widget following design system - NOW THEME-AWARE
@@ -442,20 +480,20 @@ class TGCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final bool elevated;
-  
+
   const TGCard({
     super.key,
     required this.child,
     this.padding,
     this.elevated = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: padding ?? AppTheme.cardPadding,
-      decoration: elevated 
-          ? AppTheme.elevatedCardDecorationThemed(context) 
+      decoration: elevated
+          ? AppTheme.elevatedCardDecorationThemed(context)
           : AppTheme.cardDecorationThemed(context),
       child: child,
     );
@@ -468,7 +506,7 @@ class TGCardWithHeader extends StatelessWidget {
   final IconData? icon;
   final Color? iconColor;
   final Widget child;
-  
+
   const TGCardWithHeader({
     super.key,
     required this.title,
@@ -476,7 +514,7 @@ class TGCardWithHeader extends StatelessWidget {
     this.iconColor,
     required this.child,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return TGCard(
@@ -508,13 +546,13 @@ class TGCardWithHeader extends StatelessWidget {
 class TGBulletPoint extends StatelessWidget {
   final String text;
   final Color? bulletColor;
-  
+
   const TGBulletPoint({
     super.key,
     required this.text,
     this.bulletColor,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -546,27 +584,27 @@ class TGCollapsibleSection extends StatefulWidget {
   final String title;
   final Widget child;
   final bool initiallyExpanded;
-  
+
   const TGCollapsibleSection({
     super.key,
     required this.title,
     required this.child,
     this.initiallyExpanded = false,
   });
-  
+
   @override
   State<TGCollapsibleSection> createState() => _TGCollapsibleSectionState();
 }
 
 class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
   late bool _isExpanded;
-  
+
   @override
   void initState() {
     super.initState();
     _isExpanded = widget.initiallyExpanded;
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -580,7 +618,8 @@ class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(widget.title, style: AppTheme.headingSmallThemed(context)),
+                  Text(widget.title,
+                      style: AppTheme.headingSmallThemed(context)),
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
@@ -604,8 +643,8 @@ class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
               ),
               child: widget.child,
             ),
-            crossFadeState: _isExpanded 
-                ? CrossFadeState.showSecond 
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
           ),
