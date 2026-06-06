@@ -15,6 +15,7 @@ import '../widgets/shareable_card.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../widgets/voice_input_button.dart';
+import '../widgets/brand_direction_switcher.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
@@ -271,7 +272,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
         child: _isLoading
-            ? const Center(
+            ? Center(
                 child: CircularProgressIndicator(color: AppTheme.primary),
               )
             : CustomScrollView(
@@ -327,6 +328,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       padding: AppTheme.screenPadding,
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
+                          const BrandDirectionSwitcher(),
+                          const SizedBox(height: AppTheme.spaceLG),
                           _buildCurrentFormCard(),
                           const SizedBox(height: AppTheme.spaceLG),
                           _buildOptionalContextInput(),
@@ -646,7 +649,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       padding: AppTheme.cardPaddingLarge,
       child: Column(
         children: [
-          const CircularProgressIndicator(color: AppTheme.primary),
+          CircularProgressIndicator(color: AppTheme.primary),
           const SizedBox(height: AppTheme.spaceMD),
           Text('Reviewing your recent match history...',
               style: AppTheme.bodyMediumThemed(context)),

@@ -84,12 +84,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
             ],
-            
+
             // Appearance Section
             _buildSectionTitle('Appearance', isDark),
             _buildSettingsTile(
-              icon: themeService.themeMode == ThemeMode.dark 
-                  ? Icons.dark_mode 
+              icon: themeService.themeMode == ThemeMode.dark
+                  ? Icons.dark_mode
                   : Icons.light_mode,
               iconColor: Colors.blue,
               title: 'Theme',
@@ -98,9 +98,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
-            
+            _buildSettingsTile(
+              icon: Icons.palette_outlined,
+              iconColor: AppTheme.primary,
+              title: 'Design direction',
+              subtitle: _getBrandDirectionLabel(themeService.brandDirection),
+              onTap: () => _showBrandDirectionPicker(themeService),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              isDark: isDark,
+            ),
+
             const SizedBox(height: 24),
-            
+
             // Player Profile Section (authenticated only)
             if (!authService.isGuest) ...[
               _buildSectionTitle('Player Profile', isDark),
@@ -124,7 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
             ],
-            
+
             // Support Section
             _buildSectionTitle('Support', isDark),
             _buildSettingsTile(
@@ -152,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               isDark: isDark,
             ),
             const SizedBox(height: 24),
-            
+
             // Legal Section
             _buildSectionTitle('Legal', isDark),
             _buildSettingsTile(
@@ -195,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: const Icon(Icons.open_in_new, size: 16),
                 isDark: isDark,
               ),
-            
+
             // Account section (authenticated only)
             if (!authService.isGuest) ...[
               const SizedBox(height: 24),
@@ -217,9 +226,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 isDark: isDark,
               ),
             ],
-            
+
             const SizedBox(height: 32),
-            
+
             // Version
             Center(
               child: Text(
@@ -230,7 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
           ],
         ),
@@ -310,8 +319,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.workspace_premium, 
-                    size: 14, 
+                    Icons.workspace_premium,
+                    size: 14,
                     color: Colors.amber,
                   ),
                   const SizedBox(width: 4),
@@ -331,7 +340,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildStatsCard(UsageService usageService, StreakService streakService, bool isDark) {
+  Widget _buildStatsCard(
+      UsageService usageService, StreakService streakService, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -341,9 +351,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('🔥', '${streakService.currentStreak}', 'Streak', isDark),
+          _buildStatItem(
+              '🔥', '${streakService.currentStreak}', 'Streak', isDark),
           _buildStatItem('📊', '${usageService.matchCount}', 'Matches', isDark),
-          _buildStatItem('🎯', '${usageService.aiAnalysesRemaining}', 'Free analyses', isDark),
+          _buildStatItem('🎯', '${usageService.aiAnalysesRemaining}',
+              'Free analyses', isDark),
         ],
       ),
     );
@@ -398,10 +410,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool isDark,
   }) {
     return GestureDetector(
-      onTap: onTap != null ? () {
-        HapticFeedback.selectionClick();
-        onTap();
-      } : null,
+      onTap: onTap != null
+          ? () {
+              HapticFeedback.selectionClick();
+              onTap();
+            }
+          : null,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
@@ -461,6 +475,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _getBrandDirectionLabel(BrandDirection direction) {
+    switch (direction) {
+      case BrandDirection.deepBlueIntelligence:
+        return 'Deep Blue Intelligence';
+      case BrandDirection.burntOrangeTactical:
+        return 'Burnt Orange Tactical';
+      case BrandDirection.copperBronzePremium:
+        return 'Copper/Bronze Premium';
+    }
+  }
+
   String _getLevelLabel(String level) {
     final option = PlayerProfileService.levelOptions.firstWhere(
       (o) => o['id'] == level,
@@ -488,14 +513,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               'Choose Theme',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.brightness_auto),
               title: Text('System', style: GoogleFonts.poppins()),
-              trailing: themeService.themeMode == ThemeMode.system 
-                  ? Icon(Icons.check, color: AppTheme.primary) : null,
+              trailing: themeService.themeMode == ThemeMode.system
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.system);
                 Navigator.pop(context);
@@ -504,8 +531,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.light_mode),
               title: Text('Light', style: GoogleFonts.poppins()),
-              trailing: themeService.themeMode == ThemeMode.light 
-                  ? Icon(Icons.check, color: AppTheme.primary) : null,
+              trailing: themeService.themeMode == ThemeMode.light
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.light);
                 Navigator.pop(context);
@@ -514,10 +542,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.dark_mode),
               title: Text('Dark', style: GoogleFonts.poppins()),
-              trailing: themeService.themeMode == ThemeMode.dark 
-                  ? Icon(Icons.check, color: AppTheme.primary) : null,
+              trailing: themeService.themeMode == ThemeMode.dark
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBrandDirectionPicker(ThemeService themeService) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Design Direction',
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Preview each direction across Dashboard, Match Logger, Tactical Coach, Pre-Match Prep, and Post-Match Debrief.',
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.water_drop_outlined),
+              title:
+                  Text('Deep Blue Intelligence', style: GoogleFonts.poppins()),
+              trailing: themeService.brandDirection ==
+                      BrandDirection.deepBlueIntelligence
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                themeService
+                    .setBrandDirection(BrandDirection.deepBlueIntelligence);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.local_fire_department_outlined),
+              title:
+                  Text('Burnt Orange Tactical', style: GoogleFonts.poppins()),
+              trailing: themeService.brandDirection ==
+                      BrandDirection.burntOrangeTactical
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                themeService
+                    .setBrandDirection(BrandDirection.burntOrangeTactical);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title:
+                  Text('Copper/Bronze Premium', style: GoogleFonts.poppins()),
+              trailing: themeService.brandDirection ==
+                      BrandDirection.copperBronzePremium
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                themeService
+                    .setBrandDirection(BrandDirection.copperBronzePremium);
                 Navigator.pop(context);
               },
             ),
@@ -538,19 +635,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               'Your Skill Level',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ...PlayerProfileService.levelOptions.map((option) => ListTile(
-              title: Text(option['title']!, style: GoogleFonts.poppins()),
-              subtitle: Text(option['subtitle']!, style: GoogleFonts.poppins(fontSize: 12)),
-              trailing: profileService.playerLevel == option['id'] 
-                  ? Icon(Icons.check, color: AppTheme.primary) : null,
-              onTap: () {
-                profileService.setPlayerLevel(option['id']!);
-                Navigator.pop(context);
-              },
-            )),
+                  title: Text(option['title']!, style: GoogleFonts.poppins()),
+                  subtitle: Text(option['subtitle']!,
+                      style: GoogleFonts.poppins(fontSize: 12)),
+                  trailing: profileService.playerLevel == option['id']
+                      ? Icon(Icons.check, color: AppTheme.primary)
+                      : null,
+                  onTap: () {
+                    profileService.setPlayerLevel(option['id']!);
+                    Navigator.pop(context);
+                  },
+                )),
           ],
         ),
       ),
@@ -568,19 +668,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               'Your Primary Goal',
-              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ...PlayerProfileService.goalOptions.map((option) => ListTile(
-              leading: Text(option['emoji']!, style: const TextStyle(fontSize: 24)),
-              title: Text(option['title']!, style: GoogleFonts.poppins()),
-              trailing: profileService.primaryGoal == option['id'] 
-                  ? Icon(Icons.check, color: AppTheme.primary) : null,
-              onTap: () {
-                profileService.setPrimaryGoal(option['id']!);
-                Navigator.pop(context);
-              },
-            )),
+                  leading: Text(option['emoji']!,
+                      style: const TextStyle(fontSize: 24)),
+                  title: Text(option['title']!, style: GoogleFonts.poppins()),
+                  trailing: profileService.primaryGoal == option['id']
+                      ? Icon(Icons.check, color: AppTheme.primary)
+                      : null,
+                  onTap: () {
+                    profileService.setPrimaryGoal(option['id']!);
+                    Navigator.pop(context);
+                  },
+                )),
           ],
         ),
       ),
@@ -591,8 +694,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Sign Out', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to sign out?', style: GoogleFonts.poppins()),
+        title: Text('Sign Out',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to sign out?',
+            style: GoogleFonts.poppins()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -600,7 +705,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Sign Out', style: GoogleFonts.poppins(color: Colors.red)),
+            child:
+                Text('Sign Out', style: GoogleFonts.poppins(color: Colors.red)),
           ),
         ],
       ),
@@ -621,7 +727,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Account?', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text('Delete Account?',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         content: Text(
           'This permanently deletes your account and all associated app data. This action cannot be undone.',
           style: GoogleFonts.poppins(),
@@ -633,7 +740,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: GoogleFonts.poppins(color: Colors.red)),
+            child:
+                Text('Delete', style: GoogleFonts.poppins(color: Colors.red)),
           ),
         ],
       ),
@@ -647,7 +755,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Account deleted successfully', style: GoogleFonts.poppins()),
+          content: Text('Account deleted successfully',
+              style: GoogleFonts.poppins()),
           backgroundColor: AppTheme.primary,
         ),
       );

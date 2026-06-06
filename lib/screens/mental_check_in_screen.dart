@@ -11,6 +11,7 @@ import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
 import '../widgets/voice_input_button.dart';
+import '../widgets/brand_direction_switcher.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
@@ -191,6 +192,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  const BrandDirectionSwitcher(),
+                  const SizedBox(height: AppTheme.spaceLG),
                   // Intro
                   _buildIntroSection(),
 
@@ -259,7 +262,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               color: AppTheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.sports_tennis_rounded,
               color: AppTheme.primary,
               size: 20,
@@ -292,8 +295,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Primary Weapon',
-            style: AppTheme.headingMediumThemed(context)),
+        Text('Primary Weapon', style: AppTheme.headingMediumThemed(context)),
         const SizedBox(height: AppTheme.spaceXS),
         Text(
           'Your main attacking asset today (required)',
@@ -472,8 +474,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppTheme.primary.withValues(alpha: 0.15)
@@ -489,8 +491,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                 child: Text(
                   weakness,
                   style: AppTheme.bodySmallThemed(context).copyWith(
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isSelected
                         ? AppTheme.primary
                         : AppTheme.textSecondaryColor(context),
@@ -517,7 +518,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               decoration: InputDecoration(
                 hintText: 'Describe their weakness...',
                 hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-                  color: AppTheme.textMutedColor(context).withValues(alpha: 0.5),
+                  color:
+                      AppTheme.textMutedColor(context).withValues(alpha: 0.5),
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
@@ -559,7 +561,6 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
           Text('First two service game plan',
               style: AppTheme.bodySmallThemed(context)),
           const SizedBox(height: AppTheme.spaceMD),
-
           ...List.generate(_serveStrategyOptions.length, (index) {
             final strategy = _serveStrategyOptions[index];
             final isSelected = _serveStrategy == strategy;
@@ -570,13 +571,12 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               child: GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  setState(
-                      () => _serveStrategy = isSelected ? null : strategy);
+                  setState(() => _serveStrategy = isSelected ? null : strategy);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppTheme.primary.withValues(alpha: 0.1)
@@ -604,9 +604,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                         child: Text(
                           strategy,
                           style: AppTheme.bodySmallThemed(context).copyWith(
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
                                 ? AppTheme.textPrimaryColor(context)
                                 : AppTheme.textSecondaryColor(context),
@@ -663,8 +662,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   decoration: InputDecoration(
                     hintText: 'Who are you playing?',
                     hintStyle: AppTheme.bodySmallThemed(context).copyWith(
-                      color:
-                          AppTheme.textMutedColor(context).withValues(alpha: 0.5),
+                      color: AppTheme.textMutedColor(context)
+                          .withValues(alpha: 0.5),
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
@@ -715,8 +714,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   vertical: AppTheme.spaceXS,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      _getReadinessColor(_readinessLevel).withValues(alpha: 0.15),
+                  color: _getReadinessColor(_readinessLevel)
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
@@ -913,8 +912,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   padding: AppTheme.cardPadding,
                   decoration: BoxDecoration(
                     color: AppTheme.win.withValues(alpha: 0.1),
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusMD),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     border:
                         Border.all(color: AppTheme.win.withValues(alpha: 0.3)),
                   ),
@@ -952,10 +950,8 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   padding: AppTheme.cardPaddingLarge,
                   decoration: BoxDecoration(
                     color: AppTheme.cardBackground(context),
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusXL),
-                    border:
-                        Border.all(color: AppTheme.borderColor(context)),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                    border: Border.all(color: AppTheme.borderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -963,14 +959,13 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       Row(
                         children: [
                           Container(
-                            padding:
-                                const EdgeInsets.all(AppTheme.spaceSM),
+                            padding: const EdgeInsets.all(AppTheme.spaceSM),
                             decoration: BoxDecoration(
                               color: AppTheme.primary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(
-                                  AppTheme.radiusSM),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusSM),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.analytics_outlined,
                               color: AppTheme.primary,
                               size: 20,
@@ -978,18 +973,15 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           ),
                           const SizedBox(width: AppTheme.spaceSM),
                           Text('Match Briefing',
-                              style:
-                                  AppTheme.headingMediumThemed(context)),
+                              style: AppTheme.headingMediumThemed(context)),
                         ],
                       ),
                       const SizedBox(height: AppTheme.spaceMD),
-                      Divider(
-                          color: AppTheme.borderColor(context), height: 1),
+                      Divider(color: AppTheme.borderColor(context), height: 1),
                       const SizedBox(height: AppTheme.spaceMD),
                       Text(
                         _briefingResponse!,
-                        style:
-                            AppTheme.bodyLargeThemed(context).copyWith(
+                        style: AppTheme.bodyLargeThemed(context).copyWith(
                           height: 1.7,
                           color: AppTheme.textSecondaryColor(context),
                         ),
@@ -1009,8 +1001,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
                       color: AppTheme.cardBackground(context),
-                      borderRadius:
-                          BorderRadius.circular(AppTheme.radiusMD),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       border: Border.all(
                           color: AppTheme.primary.withValues(alpha: 0.3)),
                     ),
@@ -1062,22 +1053,20 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           });
                         },
                         child: Container(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: AppTheme.cardBackground(context),
-                            borderRadius: BorderRadius.circular(
-                                AppTheme.radiusMD),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMD),
                             border: Border.all(
                                 color: AppTheme.borderColor(context)),
                           ),
                           child: Center(
                             child: Text(
                               'New prep',
-                              style: AppTheme.headingSmallThemed(context)
-                                  .copyWith(
-                                color:
-                                    AppTheme.textSecondaryColor(context),
+                              style:
+                                  AppTheme.headingSmallThemed(context).copyWith(
+                                color: AppTheme.textSecondaryColor(context),
                               ),
                             ),
                           ),
@@ -1092,12 +1081,11 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                           Navigator.pop(context);
                         },
                         child: Container(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(
-                                AppTheme.radiusMD),
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.radiusMD),
                           ),
                           child: Center(
                             child: Text(
@@ -1136,8 +1124,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       (w) => w['id'] == _primaryWeapon,
     )['label'];
     final secondaryLabel = _secondaryWeapon != null
-        ? _weaponOptions
-            .firstWhere((w) => w['id'] == _secondaryWeapon)['label']
+        ? _weaponOptions.firstWhere((w) => w['id'] == _secondaryWeapon)['label']
         : null;
 
     // Resolve weakness text
@@ -1319,8 +1306,7 @@ Instructions:
                     child: Column(
                       children: [
                         Icon(Icons.bookmark_border_rounded,
-                            size: 48,
-                            color: AppTheme.textMutedColor(context)),
+                            size: 48, color: AppTheme.textMutedColor(context)),
                         const SizedBox(height: AppTheme.spaceMD),
                         Text('No saved plans yet',
                             style: AppTheme.headingSmallThemed(context)),
@@ -1343,12 +1329,11 @@ Instructions:
                   ...List.generate(_savedEntries.length, (index) {
                     final entry = _savedEntries[index];
                     final content = entry['content'] as String? ?? '';
-                    final createdAt =
-                        entry['createdAtUtc'] as String? ?? '';
+                    final createdAt = entry['createdAtUtc'] as String? ?? '';
                     return Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: AppTheme.spaceMD),
-                      child: _buildExpandableSavedCard(index, content, createdAt),
+                      padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+                      child:
+                          _buildExpandableSavedCard(index, content, createdAt),
                     );
                   }),
                 ],
@@ -1361,7 +1346,8 @@ Instructions:
     );
   }
 
-  Widget _buildExpandableSavedCard(int index, String content, String createdAt) {
+  Widget _buildExpandableSavedCard(
+      int index, String content, String createdAt) {
     final isExpanded = _expandedCardIndex == index;
 
     String dateLabel = '';
@@ -1380,9 +1366,8 @@ Instructions:
     }
 
     final needsExpansion = content.length > 200;
-    final previewText = needsExpansion
-        ? '${content.substring(0, 200).trimRight()}…'
-        : content;
+    final previewText =
+        needsExpansion ? '${content.substring(0, 200).trimRight()}…' : content;
 
     return GestureDetector(
       onTap: needsExpansion

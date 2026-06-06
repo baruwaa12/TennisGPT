@@ -13,6 +13,7 @@ import '../services/streak_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/shareable_card.dart';
 import '../widgets/guided_set_score_editor.dart';
+import '../widgets/brand_direction_switcher.dart';
 import 'add_match_screen.dart';
 
 class _SetScore {
@@ -554,6 +555,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const BrandDirectionSwitcher(),
+                      const SizedBox(height: AppTheme.spaceLG),
                       // Match Format - Primary
                       _buildFormatSection(),
 

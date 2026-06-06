@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
 import '../models/match_performance.dart';
+import '../widgets/brand_direction_switcher.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
 import 'quick_match_screen.dart';
@@ -161,6 +162,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         horizontal: AppTheme.spaceMD),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
+                        const BrandDirectionSwitcher(),
+                        const SizedBox(height: AppTheme.spaceMD),
                         _buildPerformanceCard(streakService),
                         const SizedBox(height: AppTheme.spaceLG),
                         _buildPrimaryAction(),
@@ -194,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 12,
                       height: 12,
                       child: CircularProgressIndicator(
@@ -552,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
           vertical: AppTheme.spaceLG,
         ),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             colors: [AppTheme.primaryLight, AppTheme.primaryDark],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,

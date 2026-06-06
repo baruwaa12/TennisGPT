@@ -5,10 +5,13 @@ import '../theme/app_theme.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
+  static const String _brandDirectionKey = 'brand_direction';
 
   ThemeMode _themeMode = ThemeMode.system;
+  BrandDirection _brandDirection = BrandDirection.burntOrangeTactical;
 
   ThemeMode get themeMode => _themeMode;
+  BrandDirection get brandDirection => _brandDirection;
 
   bool get isDarkMode {
     if (_themeMode == ThemeMode.system) {
@@ -21,6 +24,7 @@ class ThemeService extends ChangeNotifier {
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final savedTheme = prefs.getString(_themeKey);
+    final savedBrandDirection = prefs.getString(_brandDirectionKey);
 
     if (savedTheme != null) {
       _themeMode = ThemeMode.values.firstWhere(
@@ -28,6 +32,15 @@ class ThemeService extends ChangeNotifier {
         orElse: () => ThemeMode.system,
       );
     }
+
+    if (savedBrandDirection != null) {
+      _brandDirection = BrandDirection.values.firstWhere(
+        (direction) => direction.name == savedBrandDirection,
+        orElse: () => BrandDirection.burntOrangeTactical,
+      );
+    }
+
+    AppTheme.setBrandDirection(_brandDirection);
     notifyListeners();
   }
 
@@ -45,6 +58,15 @@ class ThemeService extends ChangeNotifier {
     } else {
       await setThemeMode(ThemeMode.dark);
     }
+  }
+
+  Future<void> setBrandDirection(BrandDirection direction) async {
+    _brandDirection = direction;
+    AppTheme.setBrandDirection(direction);
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_brandDirectionKey, direction.name);
   }
 
   // Light Theme
@@ -95,7 +117,7 @@ class ThemeService extends ChangeNotifier {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: BorderSide(color: AppTheme.primary, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
         labelStyle: TextStyle(color: Colors.grey[700]),
@@ -171,7 +193,7 @@ class ThemeService extends ChangeNotifier {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: BorderSide(color: AppTheme.primary, width: 2),
         ),
         hintStyle: TextStyle(color: Colors.grey[500]),
         labelStyle: TextStyle(color: Colors.grey[400]),

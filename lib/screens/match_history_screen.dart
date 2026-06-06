@@ -6,14 +6,14 @@ import '../services/match_history_service.dart';
 import 'quick_match_screen.dart';
 
 /// Match History Screen
-/// 
+///
 /// UX Philosophy: Scannable, personal, premium
-/// 
+///
 /// Hierarchy:
 /// 1. Score - most visually prominent
 /// 2. Opponent name - second
 /// 3. Date + surface - tertiary
-/// 
+///
 /// Goal: Scan match list in under 2 seconds
 class MatchHistoryScreen extends StatefulWidget {
   const MatchHistoryScreen({super.key});
@@ -44,7 +44,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
     try {
       final matches = await _matchHistoryService.getAllMatches();
       final trends = await _matchHistoryService.getPerformanceTrends();
-      
+
       setState(() {
         _matches = matches;
         _performanceTrends = trends;
@@ -79,7 +79,8 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         ),
-        title: Text('Delete match?', style: AppTheme.headingMediumThemed(dialogContext)),
+        title: Text('Delete match?',
+            style: AppTheme.headingMediumThemed(dialogContext)),
         content: Text(
           'This action cannot be undone.',
           style: AppTheme.bodyMediumThemed(dialogContext),
@@ -87,11 +88,15 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('Cancel', style: AppTheme.bodyMediumThemed(dialogContext).copyWith(color: AppTheme.textSecondaryColor(dialogContext))),
+            child: Text('Cancel',
+                style: AppTheme.bodyMediumThemed(dialogContext).copyWith(
+                    color: AppTheme.textSecondaryColor(dialogContext))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text('Delete', style: AppTheme.bodyMediumThemed(dialogContext).copyWith(color: AppTheme.loss)),
+            child: Text('Delete',
+                style: AppTheme.bodyMediumThemed(dialogContext)
+                    .copyWith(color: AppTheme.loss)),
           ),
         ],
       ),
@@ -117,25 +122,27 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             pinned: true,
             centerTitle: true,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: AppTheme.textSecondaryColor(context)),
+              icon: Icon(Icons.arrow_back,
+                  color: AppTheme.textSecondaryColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
               'Match History',
-              style: AppTheme.headingSmallThemed(context).copyWith(color: AppTheme.textSecondaryColor(context)),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(color: AppTheme.textSecondaryColor(context)),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.add_rounded, color: AppTheme.primary),
+                icon: Icon(Icons.add_rounded, color: AppTheme.primary),
                 onPressed: _addNewMatch,
                 tooltip: 'Quick Match Log',
               ),
             ],
           ),
-          
+
           // Content
           if (_isLoading)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               child: Center(
                 child: CircularProgressIndicator(color: AppTheme.primary),
               ),
@@ -152,23 +159,25 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                     _buildErrorCard(),
                     const SizedBox(height: AppTheme.spaceMD),
                   ],
-                  
+
                   // Performance Summary
                   if (_performanceTrends.isNotEmpty) ...[
                     _buildPerformanceSummary(),
                     const SizedBox(height: AppTheme.spaceLG),
                   ],
-                  
+
                   // Section header
-                  Text('Recent matches', style: AppTheme.headingMediumThemed(context)),
+                  Text('Recent matches',
+                      style: AppTheme.headingMediumThemed(context)),
                   const SizedBox(height: AppTheme.spaceMD),
-                  
+
                   // Match List
                   ..._matches.map((match) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-                    child: _buildMatchRow(match),
-                  )),
-                  
+                        padding:
+                            const EdgeInsets.only(bottom: AppTheme.spaceSM),
+                        child: _buildMatchRow(match),
+                      )),
+
                   const SizedBox(height: AppTheme.spaceXL),
                 ]),
               ),
@@ -222,7 +231,8 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                 ),
                 child: Text(
                   'Quick Match Log',
-                  style: AppTheme.headingSmallThemed(context).copyWith(color: Colors.white),
+                  style: AppTheme.headingSmallThemed(context)
+                      .copyWith(color: Colors.white),
                 ),
               ),
             ),
@@ -245,7 +255,8 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
           Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 20),
           const SizedBox(width: AppTheme.spaceSM),
           Expanded(
-            child: Text(_errorMessage!, style: AppTheme.bodySmallThemed(context)),
+            child:
+                Text(_errorMessage!, style: AppTheme.bodySmallThemed(context)),
           ),
         ],
       ),
@@ -339,18 +350,16 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   /// Left: win/loss vertical indicator
   Widget _buildMatchRow(MatchPerformance match) {
     final isWin = match.result.toLowerCase() == 'win';
-    final opponentName = match.opponent.trim().isNotEmpty 
-        ? match.opponent 
-        : 'Unknown opponent';
+    final opponentName =
+        match.opponent.trim().isNotEmpty ? match.opponent : 'Unknown opponent';
     final dateStr = _formatDate(match.date);
     final scoreDisplay = match.scoreLine.isNotEmpty
         ? match.scoreLine
         : '${match.setsWon}–${match.setsLost}';
-    final formatLabel = match.matchFormat.isNotEmpty
-        ? match.matchFormat
-        : 'BO3';
+    final formatLabel =
+        match.matchFormat.isNotEmpty ? match.matchFormat : 'BO3';
     final resultLabel = isWin ? 'Win' : 'Loss';
-    
+
     return GestureDetector(
       onTap: () => _showMatchDetails(match),
       child: Container(
@@ -372,7 +381,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Main content
               Expanded(
                 child: Column(
@@ -394,11 +403,13 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                           height: 32,
                           child: PopupMenuButton<String>(
                             padding: EdgeInsets.zero,
-                            icon: Icon(Icons.more_vert_rounded, 
-                                color: AppTheme.textMutedColor(context), size: 18),
+                            icon: Icon(Icons.more_vert_rounded,
+                                color: AppTheme.textMutedColor(context),
+                                size: 18),
                             color: AppTheme.elevatedBackground(context),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.radiusMD),
                             ),
                             onSelected: (value) {
                               if (value == 'delete') {
@@ -410,9 +421,13 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                                 value: 'delete',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.delete_outline_rounded, color: AppTheme.loss, size: 20),
+                                    Icon(Icons.delete_outline_rounded,
+                                        color: AppTheme.loss, size: 20),
                                     const SizedBox(width: AppTheme.spaceSM),
-                                    Text('Delete', style: AppTheme.bodyMediumThemed(menuContext).copyWith(color: AppTheme.loss)),
+                                    Text('Delete',
+                                        style: AppTheme.bodyMediumThemed(
+                                                menuContext)
+                                            .copyWith(color: AppTheme.loss)),
                                   ],
                                 ),
                               ),
@@ -453,13 +468,25 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inDays == 0) return 'Today';
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
-    
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${months[date.month - 1]} ${date.day}';
   }
 
@@ -468,7 +495,8 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
       context: context,
       backgroundColor: AppTheme.cardBackground(context),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXL)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusXL)),
       ),
       isScrollControlled: true,
       builder: (sheetContext) => DraggableScrollableSheet(
@@ -476,24 +504,24 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         minChildSize: 0.5,
         maxChildSize: 0.9,
         expand: false,
-        builder: (context, scrollController) => _buildMatchDetailSheet(match, scrollController),
+        builder: (context, scrollController) =>
+            _buildMatchDetailSheet(match, scrollController),
       ),
     );
   }
 
-  Widget _buildMatchDetailSheet(MatchPerformance match, ScrollController scrollController) {
+  Widget _buildMatchDetailSheet(
+      MatchPerformance match, ScrollController scrollController) {
     final isWin = match.result.toLowerCase() == 'win';
-    final opponentName = match.opponent.trim().isNotEmpty 
-        ? match.opponent 
-        : 'Unknown opponent';
+    final opponentName =
+        match.opponent.trim().isNotEmpty ? match.opponent : 'Unknown opponent';
     final scoreDisplay = match.scoreLine.isNotEmpty
         ? match.scoreLine
         : '${match.setsWon}–${match.setsLost}';
-    final formatLabel = match.matchFormat.isNotEmpty
-        ? match.matchFormat
-        : 'Best of 3 sets';
+    final formatLabel =
+        match.matchFormat.isNotEmpty ? match.matchFormat : 'Best of 3 sets';
     final resultLabel = isWin ? 'Win' : 'Loss';
-    
+
     return SingleChildScrollView(
       controller: scrollController,
       padding: AppTheme.cardPaddingLarge,
@@ -512,7 +540,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             ),
           ),
           const SizedBox(height: AppTheme.spaceLG),
-          
+
           // Header
           Row(
             children: [
@@ -522,7 +550,8 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
                   vertical: AppTheme.spaceSM,
                 ),
                 decoration: BoxDecoration(
-                  color: (isWin ? AppTheme.win : AppTheme.loss).withValues(alpha: 0.15),
+                  color: (isWin ? AppTheme.win : AppTheme.loss)
+                      .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
@@ -556,11 +585,11 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: AppTheme.spaceLG),
           Divider(color: AppTheme.borderColor(context)),
           const SizedBox(height: AppTheme.spaceLG),
-          
+
           // Match summary
           if (match.matchSummary.isNotEmpty) ...[
             Text('Match summary', style: AppTheme.headingSmallThemed(context)),
@@ -568,11 +597,10 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
             Text(match.matchSummary, style: AppTheme.bodyMediumThemed(context)),
             const SizedBox(height: AppTheme.spaceMD),
           ],
-          
+
           const SizedBox(height: AppTheme.spaceXXL),
         ],
       ),
     );
   }
-
 }
