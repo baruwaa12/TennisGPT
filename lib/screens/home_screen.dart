@@ -226,6 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAtmosphericBackground() {
+    final screenWidth = MediaQuery.of(context).size.width;
     return IgnorePointer(
       child: Stack(
         children: [
@@ -256,6 +257,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   stops: const [0.0, 0.5, 1.0],
                 ),
               ),
+            ),
+          ),
+          // Tennis ball peeking from the top-right corner.
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 64,
+            right: -18,
+            child: Image.asset(
+              'assets/images/tennis_ball.png',
+              width: 86,
+              height: 86,
+              fit: BoxFit.contain,
+            ),
+          ),
+          // Racket head emerging from the bottom-left corner.
+          Positioned(
+            left: -screenWidth * 0.18,
+            bottom: -screenWidth * 0.14,
+            child: Image.asset(
+              'assets/images/tennis_racket.png',
+              width: screenWidth * 0.85,
+              fit: BoxFit.contain,
             ),
           ),
         ],
