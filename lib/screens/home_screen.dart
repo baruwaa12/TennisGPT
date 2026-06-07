@@ -234,34 +234,27 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppTheme.scaffoldBackground(context),
             ),
           ),
-          Positioned(
-            top: -40,
-            right: -30,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -70,
-            left: -50,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.neutral.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
           Positioned.fill(
-            child: CustomPaint(
-              painter: _CourtLinePainter(
-                lineColor: AppTheme.textMuted.withValues(alpha: 0.12),
+            child: Image.asset(
+              'assets/images/menu_background.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+            ),
+          ),
+          // Readability scrim: darkens top/bottom so text and cards stay legible
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppTheme.scaffoldBackground(context).withValues(alpha: 0.55),
+                    AppTheme.scaffoldBackground(context).withValues(alpha: 0.30),
+                    AppTheme.scaffoldBackground(context).withValues(alpha: 0.65),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
+                ),
               ),
             ),
           ),
@@ -819,34 +812,5 @@ class _HomeScreenState extends State<HomeScreen> {
       'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}';
-  }
-}
-
-class _CourtLinePainter extends CustomPainter {
-  const _CourtLinePainter({required this.lineColor});
-
-  final Color lineColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 1;
-
-    final thirds = size.height / 3;
-    canvas.drawLine(Offset(0, thirds), Offset(size.width, thirds), paint);
-    canvas.drawLine(
-        Offset(0, thirds * 2), Offset(size.width, thirds * 2), paint);
-
-    final xStep = size.width / 4;
-    for (var i = 1; i < 4; i++) {
-      final x = xStep * i;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CourtLinePainter oldDelegate) {
-    return oldDelegate.lineColor != lineColor;
   }
 }
