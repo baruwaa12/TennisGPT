@@ -15,7 +15,7 @@ export function PhoneMockup({ src, alt, className = "" }: PhoneMockupProps) {
 
   return (
     <div
-      className={`relative mx-auto w-[280px] sm:w-[320px] rounded-[2.5rem] border-[10px] border-[var(--card2)] bg-[var(--card2)] p-2 shadow-2xl ${className}`}
+      className={`relative mx-auto w-[280px] sm:w-[320px] rounded-[2.5rem] border-[10px] border-[var(--card2)] bg-[var(--card2)] p-2 shadow-glow-sm ${className}`}
     >
       <div className="overflow-hidden rounded-[1.75rem] bg-black aspect-[9/19] relative">
         {errored ? (

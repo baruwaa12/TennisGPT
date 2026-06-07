@@ -53,13 +53,13 @@ export function FounderAccess() {
           </p>
           <p className="text-[var(--muted)] mb-8">
             Enter your email to secure your founder spot. You&apos;ll receive
-            payment details once the app is approved.
+            the App Store link and next steps right away.
           </p>
 
           {success ? (
-            <p className="text-[var(--blue)] font-medium py-4">
-              Founder spot secured. You&apos;ll receive payment details when
-              Composure is approved.
+            <p className="text-[var(--success)] font-medium py-4">
+              Founder spot secured. Check your email for the App Store link and
+              next steps.
             </p>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
@@ -74,7 +74,7 @@ export function FounderAccess() {
                 placeholder="you@example.com"
                 required
                 disabled={loading}
-                className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--text)] placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--blue)] focus:border-transparent disabled:opacity-50"
+                className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--text)] placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--blueGlow)] focus:border-transparent disabled:opacity-50"
               />
               <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? "Joining…" : "Join Founder Access"}

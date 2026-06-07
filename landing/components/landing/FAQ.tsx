@@ -1,4 +1,5 @@
 import { Container } from "@/components/ui/Container";
+import { Card } from "@/components/ui/Card";
 
 const faqs = [
   {
@@ -11,11 +12,11 @@ const faqs = [
   },
   {
     q: "When does payment start?",
-    a: "Payment will open after Composure is approved on the App Store. Founder spots are secured now — you'll receive payment details when the app is live.",
+    a: "Payment starts immediately through the App Store when you subscribe.",
   },
   {
     q: "What happens after I join?",
-    a: "You'll receive a confirmation that your founder spot is secured. When the app is approved, we'll send you payment details to lock in your £4.99/month rate.",
+    a: "You'll receive confirmation by email so you can claim your founder rate and start using Composure right away.",
   },
   {
     q: "Can I cancel later?",
@@ -32,13 +33,10 @@ export function FAQ() {
         </h2>
         <div className="max-w-2xl mx-auto space-y-6">
           {faqs.map((faq) => (
-            <div
-              key={faq.q}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6"
-            >
+            <Card key={faq.q}>
               <h3 className="text-lg font-semibold mb-2">{faq.q}</h3>
               <p className="text-[var(--muted)]">{faq.a}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </Container>

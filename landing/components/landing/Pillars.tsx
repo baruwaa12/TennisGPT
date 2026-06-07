@@ -1,4 +1,5 @@
 import { Container } from "@/components/ui/Container";
+import { Card } from "@/components/ui/Card";
 
 export function Pillars() {
   const pillars = [
@@ -24,13 +25,10 @@ export function Pillars() {
         </h2>
         <div className="grid gap-8 md:grid-cols-3">
           {pillars.map((p) => (
-            <div
-              key={p.title}
-              className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6"
-            >
+            <Card key={p.title}>
               <h3 className="text-xl font-semibold mb-2">{p.title}</h3>
               <p className="text-[var(--muted)]">{p.desc}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </Container>

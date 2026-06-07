@@ -14,13 +14,16 @@ export function Hero() {
       <Container>
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 lg:items-center">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-[var(--text)] leading-tight">
+            <p className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
+              Clarity. Control. Composure.
+            </p>
+            <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-[var(--text)] leading-tight">
               Stop Losing Tennis Matches<br />
               <span className="text-[var(--blue)]">You Should Be Winning.</span>
             </h1>
             <p className="mt-6 text-lg text-[var(--muted)] max-w-xl leading-relaxed">
-              Composure analyses your match history, finds the patterns holding
-              you back, and gives you a tactical plan for the next one.
+              Composure turns match patterns into tactical decisions and calm,
+              repeatable routines you can execute under pressure.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
               <Button onClick={scrollToFounder} className="w-full sm:w-auto">

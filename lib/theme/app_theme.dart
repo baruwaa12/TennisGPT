@@ -26,24 +26,24 @@ class _BrandAccentPalette {
 }
 
 /// TennisGPT Design System
-/// Direction: editorial-brutalist sport dossier.
-/// High contrast, structured geometry, and distinctive typography.
+/// Direction: calm tactical intelligence.
+/// Clarity-first hierarchy, premium restraint, and pressure-ready readability.
 
 class AppTheme {
   AppTheme._();
 
   // ============ COLORS ============
   static BrandDirection _activeBrandDirection =
-      BrandDirection.burntOrangeTactical;
+      BrandDirection.deepBlueIntelligence;
 
   static const Map<BrandDirection, _BrandAccentPalette> _accentPalettes = {
     BrandDirection.deepBlueIntelligence: _BrandAccentPalette(
-      primary: Color(0xFF2563EB),
-      primaryLight: Color(0xFF3B82F6),
-      primaryDark: Color(0xFF1D4ED8),
-      softGlow: Color(0xFF60A5FA),
-      neutral: Color(0xFF60A5FA),
-      warning: Color(0xFFF59E0B),
+      primary: Color(0xFF4DA3FF),
+      primaryLight: Color(0xFF7DC2FF),
+      primaryDark: Color(0xFF2E7DD6),
+      softGlow: Color(0xFF7DC2FF),
+      neutral: Color(0xFF27D3B2),
+      warning: Color(0xFFFFB547),
     ),
     BrandDirection.burntOrangeTactical: _BrandAccentPalette(
       primary: Color(0xFFE6462E),
@@ -81,21 +81,21 @@ class AppTheme {
 
   /// Surface colors - layered depth system (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
-  static const Color surfaceDark = Color(0xFF0A0A0C);
-  static const Color surfaceSecondary = Color(0xFF141418);
-  static const Color surfaceCard = Color(0xFF1B1A1E);
-  static const Color surfaceElevated = Color(0xFF222128);
-  static const Color surfaceBorder = Color(0xFF31313A);
+  static const Color surfaceDark = Color(0xFF0A0E14);
+  static const Color surfaceSecondary = Color(0xFF0F1622);
+  static const Color surfaceCard = Color(0xFF111824);
+  static const Color surfaceElevated = Color(0xFF162132);
+  static const Color surfaceBorder = Color(0xFF263246);
 
   /// Text colors - clear hierarchy (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
-  static const Color textPrimary = Color(0xFFF4EFE8);
-  static const Color textSecondary = Color(0xFFC3BBB0);
-  static const Color textMuted = Color(0xFF8F867C);
+  static const Color textPrimary = Color(0xFFF7FBFF);
+  static const Color textSecondary = Color(0xFFC7D2E5);
+  static const Color textMuted = Color(0xFF9FB0CB);
 
   /// Accent colors for data/stats
-  static const Color win = Color(0xFF79D27D);
-  static const Color loss = Color(0xFFFF7764);
+  static const Color win = Color(0xFF2ED47A);
+  static const Color loss = Color(0xFFFF5C7A);
   static Color get neutral => _activeAccent.neutral;
   static Color get warning => _activeAccent.warning;
 
@@ -210,8 +210,8 @@ class AppTheme {
   static const double radiusXL = 20.0;
 
   // ============ TYPOGRAPHY ============
-  // Display font: Oswald (editorial, athletic authority)
-  // Body font: IBM Plex Sans (technical clarity and readability)
+  // Display font: Sora (calm authority)
+  // Body font: Inter (decision-first readability)
   // NOTE: These use dark mode colors by default. Use themed versions for proper light/dark support.
   static TextStyle _display({
     required double size,
@@ -220,7 +220,7 @@ class AppTheme {
     double spacing = 0,
     double? height,
   }) {
-    return GoogleFonts.oswald(
+    return GoogleFonts.sora(
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -236,7 +236,7 @@ class AppTheme {
     double spacing = 0,
     double? height,
   }) {
-    return GoogleFonts.ibmPlexSans(
+    return GoogleFonts.inter(
       fontSize: size,
       fontWeight: weight,
       color: color,

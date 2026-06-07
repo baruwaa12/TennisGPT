@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/match_performance.dart';
@@ -34,21 +33,21 @@ class _MatchReflectionScreenState extends State<MatchReflectionScreen> {
   String? _tacticalAdvice;
 
   static const List<Map<String, String>> strengthOptions = [
-    {'id': 'serve', 'label': 'Serve was on', 'emoji': '🎯'},
-    {'id': 'movement', 'label': 'Movement was good', 'emoji': '🏃'},
-    {'id': 'shot_selection', 'label': 'Made smart shot selections', 'emoji': '🧠'},
-    {'id': 'focus', 'label': 'Stayed focused throughout', 'emoji': '👁️'},
-    {'id': 'returns', 'label': 'Returns were solid', 'emoji': '↩️'},
-    {'id': 'net_play', 'label': 'Net play was effective', 'emoji': '🏐'},
+    {'id': 'serve', 'label': 'Serve was on'},
+    {'id': 'movement', 'label': 'Movement was good'},
+    {'id': 'shot_selection', 'label': 'Made smart shot selections'},
+    {'id': 'focus', 'label': 'Stayed focused throughout'},
+    {'id': 'returns', 'label': 'Returns were solid'},
+    {'id': 'net_play', 'label': 'Net play was effective'},
   ];
 
   static const List<Map<String, String>> weaknessOptions = [
-    {'id': 'errors', 'label': 'Too many unforced errors', 'emoji': '❌'},
-    {'id': 'backhand', 'label': 'Backhand broke down', 'emoji': '🔙'},
-    {'id': 'focus', 'label': 'Lost focus in key moments', 'emoji': '😵'},
-    {'id': 'fitness', 'label': 'Fitness/stamina issues', 'emoji': '😮‍💨'},
-    {'id': 'serve', 'label': 'Serve was inconsistent', 'emoji': '🎾'},
-    {'id': 'nerves', 'label': 'Nerves affected play', 'emoji': '😰'},
+    {'id': 'errors', 'label': 'Too many unforced errors'},
+    {'id': 'backhand', 'label': 'Backhand broke down'},
+    {'id': 'focus', 'label': 'Lost focus in key moments'},
+    {'id': 'fitness', 'label': 'Fitness or stamina issues'},
+    {'id': 'serve', 'label': 'Serve was inconsistent'},
+    {'id': 'nerves', 'label': 'Nerves affected play'},
   ];
 
   Future<void> _getTacticalAdvice() async {
@@ -58,9 +57,9 @@ class _MatchReflectionScreenState extends State<MatchReflectionScreen> {
         SnackBar(
           content: Text(
             'Select at least one item to get advice',
-            style: GoogleFonts.poppins(),
+            style: AppTheme.bodyMediumThemed(context),
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppTheme.warning,
         ),
       );
       return;
@@ -103,9 +102,8 @@ Based on this post-match reflection, provide specific tactical advice for improv
       final response = await apiService.tacticalAnalysisSummary(matchContext, null);
 
       if (response == null && apiService.requiresUpgrade) {
-        if (context.mounted) {
-          await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
-        }
+        if (!mounted) return;
+        await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
       }
       
       setState(() {
@@ -119,8 +117,11 @@ Based on this post-match reflection, provide specific tactical advice for improv
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'Unable to generate advice. Please try again.',
+              style: AppTheme.bodyMediumThemed(context),
+            ),
+            backgroundColor: AppTheme.loss,
           ),
         );
       }
@@ -144,19 +145,18 @@ Based on this post-match reflection, provide specific tactical advice for improv
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isWin = widget.match.result.toLowerCase() == 'win';
 
     if (_tacticalAdvice != null) {
-      return _buildAdviceView(isDark);
+      return _buildAdviceView();
     }
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
+      backgroundColor: AppTheme.scaffoldBackground(context),
       appBar: AppBar(
         title: Text(
-          '📝 Match Reflection',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          'Match Reflection',
+          style: AppTheme.headingSmallThemed(context),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -166,7 +166,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
             onPressed: _skip,
             child: Text(
               'Skip',
-              style: GoogleFonts.poppins(color: Colors.grey[600]),
+              style: AppTheme.bodySmallThemed(context),
             ),
           ),
         ],
@@ -181,15 +181,27 @@ Based on this post-match reflection, provide specific tactical advice for improv
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isWin 
-                    ? (isDark ? AppTheme.win.withValues(alpha: 0.15) : const Color(0xFFF0FDF4))
-                    : (isDark ? AppTheme.primary.withValues(alpha: 0.15) : const Color(0xFFEFF6FF)),
+                    ? AppTheme.win.withValues(alpha: 0.12)
+                    : AppTheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.borderColor(context)),
               ),
               child: Row(
                 children: [
-                  Text(
-                    isWin ? '🏆' : '💪',
-                    style: const TextStyle(fontSize: 32),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: isWin
+                          ? AppTheme.win.withValues(alpha: 0.18)
+                          : AppTheme.primary.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isWin
+                          ? Icons.emoji_events_outlined
+                          : Icons.insights_outlined,
+                      color: isWin ? AppTheme.win : AppTheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -198,20 +210,13 @@ Based on this post-match reflection, provide specific tactical advice for improv
                       children: [
                         Text(
                           '${widget.match.result} vs ${widget.match.opponent}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.grey[800],
-                          ),
+                          style: AppTheme.headingSmallThemed(context),
                         ),
                         Text(
                           widget.match.scoreLine.isNotEmpty
                               ? widget.match.scoreLine
                               : '${widget.match.setsWon}-${widget.match.setsLost}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
+                          style: AppTheme.bodySmallThemed(context),
                         ),
                       ],
                     ),
@@ -224,52 +229,38 @@ Based on this post-match reflection, provide specific tactical advice for improv
             
             // What went well
             Text(
-              'What went well? ✅',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
+              'What went well?',
+              style: AppTheme.headingSmallThemed(context),
             ),
             const SizedBox(height: 12),
             _buildOptionGrid(
               options: strengthOptions,
               selected: _selectedStrengths,
-              isDark: isDark,
               accentColor: AppTheme.win,
             ),
             const SizedBox(height: 8),
             _buildOtherInput(
               hint: 'Other strength...',
-              value: _otherStrength,
               onChanged: (v) => setState(() => _otherStrength = v),
-              isDark: isDark,
             ),
             
             const SizedBox(height: 24),
             
             // What needs work
             Text(
-              'What needs work? 🔧',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.grey[800],
-              ),
+              'What needs work?',
+              style: AppTheme.headingSmallThemed(context),
             ),
             const SizedBox(height: 12),
             _buildOptionGrid(
               options: weaknessOptions,
               selected: _selectedWeaknesses,
-              isDark: isDark,
-              accentColor: Colors.orange,
+              accentColor: AppTheme.warning,
             ),
             const SizedBox(height: 8),
             _buildOtherInput(
               hint: 'Other area to improve...',
-              value: _otherWeakness,
               onChanged: (v) => setState(() => _otherWeakness = v),
-              isDark: isDark,
             ),
             
             const SizedBox(height: 32),
@@ -297,27 +288,22 @@ Based on this post-match reflection, provide specific tactical advice for improv
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppTheme.surfaceDark),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Text(
                               'Analyzing...',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                              style: AppTheme.headingSmallThemed(context)
+                                  .copyWith(color: AppTheme.surfaceDark),
                             ),
                           ],
                         )
                       : Text(
-                          'Get Tactical Advice 🎯',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                          'Get Tactical Advice',
+                          style: AppTheme.headingSmallThemed(context)
+                              .copyWith(color: AppTheme.surfaceDark),
                         ),
                 ),
               ),
@@ -331,10 +317,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 onPressed: _done,
                 child: Text(
                   'Save without advice',
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey[500],
-                    fontSize: 14,
-                  ),
+                  style: AppTheme.bodySmallThemed(context),
                 ),
               ),
             ),
@@ -344,13 +327,13 @@ Based on this post-match reflection, provide specific tactical advice for improv
     );
   }
 
-  Widget _buildAdviceView(bool isDark) {
+  Widget _buildAdviceView() {
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
+      backgroundColor: AppTheme.scaffoldBackground(context),
       appBar: AppBar(
         title: Text(
-          '🎯 Tactical Advice',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          'Tactical Advice',
+          style: AppTheme.headingSmallThemed(context),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -364,15 +347,9 @@ Based on this post-match reflection, provide specific tactical advice for improv
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.surfaceCard : Colors.white,
+                color: AppTheme.cardBackground(context),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                border: Border.all(color: AppTheme.borderColor(context)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,11 +367,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                       const SizedBox(width: 12),
                       Text(
                         'Based on Your Reflection',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.grey[800],
-                        ),
+                        style: AppTheme.headingSmallThemed(context),
                       ),
                     ],
                   ),
@@ -403,10 +376,8 @@ Based on this post-match reflection, provide specific tactical advice for improv
                   const SizedBox(height: 16),
                   Text(
                     _tacticalAdvice!,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
+                    style: AppTheme.bodyMediumThemed(context).copyWith(
                       height: 1.7,
-                      color: isDark ? Colors.grey[300] : Colors.grey[800],
                     ),
                   ),
                 ],
@@ -429,12 +400,9 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 ),
                 child: Center(
                   child: Text(
-                    'Done ✓',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                    'Done',
+                    style: AppTheme.headingSmallThemed(context)
+                        .copyWith(color: AppTheme.surfaceDark),
                   ),
                 ),
               ),
@@ -448,7 +416,6 @@ Based on this post-match reflection, provide specific tactical advice for improv
   Widget _buildOptionGrid({
     required List<Map<String, String>> options,
     required Set<String> selected,
-    required bool isDark,
     required Color accentColor,
   }) {
     return Wrap(
@@ -471,29 +438,24 @@ Based on this post-match reflection, provide specific tactical advice for improv
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? accentColor.withValues(alpha: isDark ? 0.3 : 0.15)
-                  : (isDark ? AppTheme.surfaceElevated : Colors.white),
+                  ? accentColor.withValues(alpha: 0.2)
+                  : AppTheme.elevatedBackground(context),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected 
                     ? accentColor 
-                    : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                width: isSelected ? 2 : 1,
+                    : AppTheme.borderColor(context),
+                width: isSelected ? 1.5 : 1,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(option['emoji'] ?? '', style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
                 Text(
                   option['label'] ?? '',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
+                  style: AppTheme.bodySmallThemed(context).copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected 
-                        ? accentColor 
-                        : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                    color: isSelected ? accentColor : AppTheme.textSecondaryColor(context),
                   ),
                 ),
               ],
@@ -506,31 +468,24 @@ Based on this post-match reflection, provide specific tactical advice for improv
 
   Widget _buildOtherInput({
     required String hint,
-    required String value,
     required Function(String) onChanged,
-    required bool isDark,
   }) {
     return TextField(
       onChanged: onChanged,
-      style: GoogleFonts.poppins(
-        fontSize: 14,
-        color: isDark ? Colors.white : Colors.grey[800],
-      ),
+      style: AppTheme.bodyMediumThemed(context)
+          .copyWith(color: AppTheme.textPrimaryColor(context)),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.poppins(
-          color: Colors.grey[500],
-          fontSize: 14,
-        ),
+        hintStyle: AppTheme.bodySmallThemed(context),
         filled: true,
-        fillColor: isDark ? AppTheme.surfaceElevated : Colors.white,
+        fillColor: AppTheme.elevatedBackground(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
+          borderSide: BorderSide(color: AppTheme.borderColor(context)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
+          borderSide: BorderSide(color: AppTheme.borderColor(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

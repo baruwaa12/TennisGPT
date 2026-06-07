@@ -13,7 +13,6 @@ import '../services/streak_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/shareable_card.dart';
 import '../widgets/guided_set_score_editor.dart';
-import '../widgets/brand_direction_switcher.dart';
 import 'add_match_screen.dart';
 
 class _SetScore {
@@ -22,24 +21,9 @@ class _SetScore {
   int? tbYou;
   int? tbOpp;
 
-  _SetScore({
-    this.you = 0,
-    this.opp = 0,
-    this.tbYou,
-    this.tbOpp,
-  });
-}
-
-class _SetResultSummary {
-  final int setsWon;
-  final int setsLost;
-  final int completedSets;
-
-  const _SetResultSummary({
-    required this.setsWon,
-    required this.setsLost,
-    required this.completedSets,
-  });
+  _SetScore()
+      : you = 0,
+        opp = 0;
 }
 
 /// Quick Match Log - Stage 1
@@ -162,6 +146,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
             Provider.of<StreakService>(context, listen: false);
         final streakMilestone = await streakService.recordActivity();
 
+        if (!mounted) return;
         if (streakMilestone != null && mounted) {
           CelebrationService.showAchievement(
             context,
@@ -172,11 +157,14 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         }
 
         await CelebrationService.checkFirstMatch(context);
+        if (!mounted) return;
         if (match.result == 'Win') {
           await CelebrationService.checkFirstWin(context);
+          if (!mounted) return;
         }
 
         final matchCount = await _matchHistoryService.getTotalMatches();
+        if (!mounted) return;
         await CelebrationService.checkTenMatches(context, matchCount);
       }
     } catch (e) {
@@ -255,82 +243,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
   bool get _isNormalSets => _matchFormat == MatchFormat.bestOf3;
 
-  int get _visibleSetCount => _isNormalSets ? 3 : 2;
-
-  bool _isSetUnused(_SetScore score) {
-    return score.you == 0 &&
-        score.opp == 0 &&
-        score.tbYou == null &&
-        score.tbOpp == null;
-  }
-
-  bool _isPotentialFast4Score(int you, int opp) {
-    if (you < 0 || opp < 0) return false;
-    if (you > 4 || opp > 4) return false;
-    if (you == 4 && opp == 4) return false;
-    if (you == 4 && opp > 3) return false;
-    if (opp == 4 && you > 3) return false;
-    return true;
-  }
-
-  bool _isPotentialNormalScore(int you, int opp) {
-    if (you < 0 || opp < 0) return false;
-    if (you > 7 || opp > 7) return false;
-    if (you == 7 && opp == 7) return false;
-    final max = you > opp ? you : opp;
-    final min = you > opp ? opp : you;
-    if (max == 7 && min <= 4) {
-      return false; // 7-0 to 7-4 are not valid final outcomes
-    }
-    return true;
-  }
-
-  void _updateGameScore(int setIndex, bool isYou, int delta) {
-    final score = _setScores[setIndex];
-    final current = isYou ? score.you : score.opp;
-    final other = isYou ? score.opp : score.you;
-    final next = current + delta;
-
-    if (delta < 0 && next < 0) return;
-
-    if (_isNormalSets) {
-      if (other >= 7 && delta > 0) return;
-      if (next > 7) return;
-      if (!_isPotentialNormalScore(isYou ? next : other, isYou ? other : next))
-        return;
-    } else {
-      if (other >= 4 && delta > 0) return;
-      if (next > 4) return;
-      if (!_isPotentialFast4Score(isYou ? next : other, isYou ? other : next))
-        return;
-    }
-
-    setState(() {
-      if (isYou) {
-        score.you = next;
-      } else {
-        score.opp = next;
-      }
-      _clearIrrelevantTiebreak(score);
-      _syncResultFromScores();
-    });
-  }
-
-  void _updateTiebreakScore(int setIndex, bool isYou, int delta) {
-    final score = _setScores[setIndex];
-    final current = isYou ? (score.tbYou ?? 0) : (score.tbOpp ?? 0);
-    final next = current + delta;
-    if (next < 0 || next > 20) return;
-
-    setState(() {
-      if (isYou) {
-        score.tbYou = next;
-      } else {
-        score.tbOpp = next;
-      }
-    });
-  }
-
   void _clearIrrelevantTiebreak(_SetScore score) {
     if (_isNormalSets) {
       if (!_isNormalTiebreakApplicable(score)) {
@@ -345,191 +257,16 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     }
   }
 
-  bool _isFast4TiebreakVisible(_SetScore score) {
-    return score.you == 3 && score.opp == 3;
-  }
-
   bool _isFast4TiebreakApplicable(_SetScore score) {
     return (score.you == 3 && score.opp == 3) ||
         (score.you == 4 && score.opp == 3) ||
         (score.opp == 4 && score.you == 3);
   }
 
-  bool _isNormalTiebreakVisible(_SetScore score) {
-    return (score.you == 6 && score.opp == 6) ||
-        (score.you == 7 && score.opp == 6) ||
-        (score.opp == 7 && score.you == 6);
-  }
-
   bool _isNormalTiebreakApplicable(_SetScore score) {
     return (score.you == 7 && score.opp == 6) ||
         (score.opp == 7 && score.you == 6) ||
         (score.you == 6 && score.opp == 6);
-  }
-
-  bool _isFast4Final(_SetScore score) {
-    return (score.you == 4 && score.opp <= 3) ||
-        (score.opp == 4 && score.you <= 3);
-  }
-
-  bool _isNormalFinal(_SetScore score) {
-    final you = score.you;
-    final opp = score.opp;
-    if ((you == 6 && opp <= 4) || (opp == 6 && you <= 4)) {
-      return true;
-    }
-    if ((you == 7 && opp == 5) || (opp == 7 && you == 5)) {
-      return true;
-    }
-    if ((you == 7 && opp == 6) || (opp == 7 && you == 6)) {
-      return true;
-    }
-    return false;
-  }
-
-  String? _validateSetScore(int index, _SetScore score,
-      {required bool requiredSet}) {
-    if (_isSetUnused(score)) {
-      return requiredSet ? 'Enter a set score' : null;
-    }
-
-    if (_isNormalSets) {
-      if (!_isNormalFinal(score)) {
-        return 'Use 6-0 to 6-4, 7-5, or 7-6';
-      }
-      if ((score.you == 7 && score.opp == 6) ||
-          (score.opp == 7 && score.you == 6)) {
-        if (score.tbYou == null || score.tbOpp == null) {
-          return 'Enter tiebreak score for 7-6 set';
-        }
-        if (score.tbYou == score.tbOpp) {
-          return 'Tiebreak score must have a winner';
-        }
-        final winnerIsYou = score.you > score.opp;
-        final tbWinnerIsYou = (score.tbYou ?? 0) > (score.tbOpp ?? 0);
-        if (winnerIsYou != tbWinnerIsYou) {
-          return 'Tiebreak winner must match set winner';
-        }
-      }
-    } else {
-      if (!_isFast4Final(score)) {
-        return 'Fast4 sets must be 4-0 to 4-3';
-      }
-      if ((score.you == 4 && score.opp == 3) ||
-          (score.opp == 4 && score.you == 3)) {
-        if (score.tbYou != null && score.tbOpp != null) {
-          if (score.tbYou == score.tbOpp) {
-            return 'Tiebreak score must have a winner';
-          }
-          final winnerIsYou = score.you > score.opp;
-          final tbWinnerIsYou = (score.tbYou ?? 0) > (score.tbOpp ?? 0);
-          if (winnerIsYou != tbWinnerIsYou) {
-            return 'Tiebreak winner must match set winner';
-          }
-        }
-      }
-    }
-
-    return null;
-  }
-
-  String? _validateAllScores() {
-    for (var i = 0; i < _visibleSetCount; i++) {
-      final requiredSet = i < 2;
-      final error =
-          _validateSetScore(i, _setScores[i], requiredSet: requiredSet);
-      if (error != null) {
-        return 'Set ${i + 1}: $error';
-      }
-    }
-
-    final results = _calculateSetResults();
-    if (results.completedSets < 2) {
-      return 'Enter at least two set scores';
-    }
-    if (results.setsWon == results.setsLost) {
-      return 'Score must have a winner';
-    }
-    if (results.setsWon > 2 || results.setsLost > 2) {
-      return 'Best of 3 requires first to 2 sets';
-    }
-
-    return null;
-  }
-
-  _SetResultSummary _calculateSetResults() {
-    int setsWon = 0;
-    int setsLost = 0;
-    int completedSets = 0;
-
-    for (var i = 0; i < _visibleSetCount; i++) {
-      final score = _setScores[i];
-      if (_isSetUnused(score)) {
-        continue;
-      }
-      final isFinal =
-          _isNormalSets ? _isNormalFinal(score) : _isFast4Final(score);
-      if (!isFinal) {
-        continue;
-      }
-      completedSets += 1;
-      if (score.you > score.opp) {
-        setsWon += 1;
-      } else if (score.opp > score.you) {
-        setsLost += 1;
-      }
-    }
-
-    return _SetResultSummary(
-      setsWon: setsWon,
-      setsLost: setsLost,
-      completedSets: completedSets,
-    );
-  }
-
-  void _syncResultFromScores() {
-    final results = _calculateSetResults();
-    if (results.setsWon == results.setsLost) return;
-    setState(() {
-      _selectedResult = results.setsWon > results.setsLost ? 'Win' : 'Loss';
-    });
-  }
-
-  String _buildScoreLine() {
-    final scores = _buildSetScoresList();
-    return scores.join(' ');
-  }
-
-  List<String> _buildSetScoresList() {
-    final List<String> scores = [];
-    for (var i = 0; i < _visibleSetCount; i++) {
-      final score = _setScores[i];
-      if (_isSetUnused(score)) {
-        continue;
-      }
-      scores.add(_formatSetScore(score));
-    }
-    return scores;
-  }
-
-  String _formatSetScore(_SetScore score) {
-    final base = '${score.you}-${score.opp}';
-    if (_isNormalSets) {
-      final isTbSet = (score.you == 7 && score.opp == 6) ||
-          (score.opp == 7 && score.you == 6);
-      if (isTbSet && score.tbYou != null && score.tbOpp != null) {
-        final loserPoints = score.you > score.opp ? score.tbOpp! : score.tbYou!;
-        return '$base($loserPoints)';
-      }
-    } else {
-      final isTbSet = (score.you == 4 && score.opp == 3) ||
-          (score.opp == 4 && score.you == 3);
-      if (isTbSet && score.tbYou != null && score.tbOpp != null) {
-        final loserPoints = score.you > score.opp ? score.tbOpp! : score.tbYou!;
-        return '$base($loserPoints)';
-      }
-    }
-    return base;
   }
 
   @override
@@ -555,8 +292,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const BrandDirectionSwitcher(),
-                      const SizedBox(height: AppTheme.spaceLG),
                       // Match Format - Primary
                       _buildFormatSection(),
 
@@ -1005,7 +740,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AppTheme.surfaceDark,
                             strokeWidth: 2,
                           ),
                         )
@@ -1013,7 +748,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                           'Save Match',
                           style: AppTheme.headingSmallThemed(context).copyWith(
                             color: isValid
-                                ? Colors.white
+                                ? AppTheme.surfaceDark
                                 : AppTheme.textMutedColor(context),
                           ),
                         ),
@@ -1029,26 +764,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   Widget _buildMainScoreHeaderRow() {
     return Row(
       children: [
-        Expanded(
-          child: Center(
-            child: Text('You', style: AppTheme.labelThemed(context)),
-          ),
-        ),
-        const SizedBox(width: 28),
-        Expanded(
-          child: Center(
-            child: Text('Opp', style: AppTheme.labelThemed(context)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSetScoreHeaderRow() {
-    return Row(
-      children: [
-        SizedBox(
-            width: 64, child: Text('', style: AppTheme.labelThemed(context))),
         Expanded(
           child: Center(
             child: Text('You', style: AppTheme.labelThemed(context)),
@@ -1085,49 +800,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
             onMinus: null,
             onPlus: null,
             compact: false,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSetScoreRow({
-    required String label,
-    required int youValue,
-    required int oppValue,
-    required VoidCallback? onYouMinus,
-    required VoidCallback? onYouPlus,
-    required VoidCallback? onOppMinus,
-    required VoidCallback? onOppPlus,
-    required bool compact,
-    bool isTiebreak = false,
-  }) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 64,
-          child: Text(
-            label,
-            style: isTiebreak
-                ? AppTheme.labelThemed(context)
-                : AppTheme.bodySmallThemed(context),
-          ),
-        ),
-        Expanded(
-          child: _buildStepper(
-            value: youValue,
-            onMinus: onYouMinus,
-            onPlus: onYouPlus,
-            compact: compact,
-          ),
-        ),
-        const SizedBox(width: 28, child: Center(child: Text('–'))),
-        Expanded(
-          child: _buildStepper(
-            value: oppValue,
-            onMinus: onOppMinus,
-            onPlus: onOppPlus,
-            compact: compact,
           ),
         ),
       ],
@@ -1320,7 +992,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                       child: Text(
                         'Done',
                         style: AppTheme.headingSmallThemed(context)
-                            .copyWith(color: Colors.white),
+                            .copyWith(color: AppTheme.surfaceDark),
                       ),
                     ),
                   ),

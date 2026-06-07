@@ -6,7 +6,6 @@ import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
 import '../models/match_performance.dart';
-import '../widgets/brand_direction_switcher.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
 import 'quick_match_screen.dart';
@@ -16,8 +15,8 @@ import 'settings_screen.dart';
 import 'login_screen.dart';
 
 /// Home Screen - Performance Dashboard
-/// Direction: editorial-brutalist sport dossier.
-/// Behavior is unchanged; only UI experience is refined.
+/// Direction: calm tactical intelligence.
+/// Behavior is unchanged; only UI presentation is refined.
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -162,8 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         horizontal: AppTheme.spaceMD),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        const BrandDirectionSwitcher(),
-                        const SizedBox(height: AppTheme.spaceMD),
                         _buildPerformanceCard(streakService),
                         const SizedBox(height: AppTheme.spaceLG),
                         _buildPrimaryAction(),
@@ -234,50 +231,30 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF121014),
-                    Color(0xFF09090B),
-                    Color(0xFF19161C),
-                  ],
-                ),
+              color: AppTheme.scaffoldBackground(context),
+            ),
+          ),
+          Positioned(
+            top: -40,
+            right: -30,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primary.withValues(alpha: 0.08),
               ),
             ),
           ),
           Positioned(
-            top: -80,
-            right: -70,
+            bottom: -70,
+            left: -50,
             child: Container(
-              width: 220,
-              height: 220,
+              width: 180,
+              height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppTheme.primary.withValues(alpha: 0.35),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -110,
-            left: -90,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppTheme.neutral.withValues(alpha: 0.22),
-                    Colors.transparent,
-                  ],
-                ),
+                color: AppTheme.neutral.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -387,14 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.surfaceCard.withValues(alpha: 0.96),
-            AppTheme.surfaceElevated.withValues(alpha: 0.96),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppTheme.elevatedBackground(context).withValues(alpha: 0.96),
         border: Border.all(color: AppTheme.borderColor(context)),
         boxShadow: [
           BoxShadow(
@@ -568,14 +538,14 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(
               Icons.sports_tennis_rounded,
-              color: Colors.white,
+              color: AppTheme.surfaceDark,
               size: 20,
             ),
             const SizedBox(width: AppTheme.spaceSM),
             Text(
               'Quick Match Log',
               style: AppTheme.headingSmall.copyWith(
-                color: Colors.white,
+                color: AppTheme.surfaceDark,
                 letterSpacing: 0.4,
               ),
             ),
@@ -792,13 +762,6 @@ class _HomeScreenState extends State<HomeScreen> {
           color: AppTheme.cardBackground(context).withValues(alpha: 0.94),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           border: Border.all(color: AppTheme.borderColor(context)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 8,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
         child: Column(
           children: [

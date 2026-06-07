@@ -11,7 +11,6 @@ import '../utils/tennis_validator.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 import '../widgets/voice_input_button.dart';
-import '../widgets/brand_direction_switcher.dart';
 
 /// Post-Match Debrief Screen
 ///
@@ -189,8 +188,6 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
             padding: AppTheme.screenPadding,
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const BrandDirectionSwitcher(),
-                const SizedBox(height: AppTheme.spaceLG),
                 // Intro card - calm, supportive tone
                 _buildIntroCard(),
 
@@ -199,12 +196,12 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                 // Situation selection
                 Text(
                   'What happened?',
-                  style: AppTheme.headingMedium,
+                  style: AppTheme.headingMediumThemed(context),
                 ),
                 const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   'Select what best describes your match',
-                  style: AppTheme.bodySmall,
+                  style: AppTheme.bodySmallThemed(context),
                 ),
 
                 const SizedBox(height: AppTheme.spaceMD),
@@ -585,7 +582,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                       height: 18,
                       child: CircularProgressIndicator(
                         color: hasSelection
-                            ? Colors.white
+                            ? AppTheme.surfaceDark
                             : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
@@ -595,7 +592,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                       'Reviewing match...',
                       style: AppTheme.headingSmallThemed(context).copyWith(
                         color: hasSelection
-                            ? Colors.white
+                            ? AppTheme.surfaceDark
                             : AppTheme.textMutedColor(context),
                       ),
                     ),
@@ -605,7 +602,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                   'Review match debrief',
                   style: AppTheme.headingSmallThemed(context).copyWith(
                     color: hasSelection
-                        ? Colors.white
+                        ? AppTheme.surfaceDark
                         : AppTheme.textMutedColor(context),
                   ),
                 ),
@@ -651,7 +648,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.check_circle_outline_rounded,
                       color: AppTheme.win,
                       size: 20,
@@ -824,7 +821,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
                             'Done',
                             style:
                                 AppTheme.headingSmallThemed(context).copyWith(
-                              color: Colors.white,
+                              color: AppTheme.surfaceDark,
                             ),
                           ),
                         ),
@@ -848,6 +845,12 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
   ) async {
     if (_selectedSituation == null) return;
 
+    // Check usage limits (respects feature flags)
+    final purchaseService =
+        Provider.of<PurchaseService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final usageService = Provider.of<UsageService>(context, listen: false);
+
     // Validate tennis-related content for custom input
     if (_showCustomInput) {
       final validationError = TennisValidator.validate(_selectedSituation!);
@@ -862,12 +865,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
     if (!consented) {
       return;
     }
-
-    // Check usage limits (respects feature flags)
-    final purchaseService =
-        Provider.of<PurchaseService>(context, listen: false);
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final usageService = Provider.of<UsageService>(context, listen: false);
+    if (!mounted) return;
 
     setState(() => _isLoading = true);
     HapticFeedback.lightImpact();
@@ -880,9 +878,12 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         _debriefResponse = response;
       });
 
-      if (response == null && context.mounted) {
+      if (response == null) {
         if (apiService.requiresUpgrade) {
+          if (!mounted) return;
+          // ignore: use_build_context_synchronously
           await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+          if (!mounted) return;
         } else if (apiService.error != null) {
           setState(() => _localError = apiService.error);
         }
@@ -898,7 +899,7 @@ class _EmotionalResetScreenState extends State<EmotionalResetScreen> {
         await usageService.recordDebrief();
       }
 
-      if (response != null && context.mounted) {
+      if (response != null && mounted) {
         _scrollToResponse();
       }
     } catch (e) {

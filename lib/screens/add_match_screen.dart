@@ -286,7 +286,7 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 20),
+          const Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 20),
           const SizedBox(width: AppTheme.spaceSM),
           Expanded(
             child:
@@ -414,18 +414,6 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
           .toList(),
       onChanged: onChanged,
     );
-  }
-
-  String _scoreHintForFormat() {
-    switch (_matchFormat) {
-      case MatchFormat.fast4:
-        return 'e.g. 4-1 4-3 or 4-3(5)';
-      case MatchFormat.shortSets:
-        return 'e.g. 4-2 4-1 or 6-4 7-6(5)';
-      case MatchFormat.bestOf3:
-      default:
-        return 'e.g. 6-4 7-6(5)';
-    }
   }
 
   Widget _buildKeyMomentSection() {
@@ -762,7 +750,7 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AppTheme.surfaceDark,
                         strokeWidth: 2,
                       ),
                     ),
@@ -770,13 +758,13 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
                     Text(
                       'Saving...',
                       style:
-                          AppTheme.headingSmall.copyWith(color: Colors.white),
+                          AppTheme.headingSmall.copyWith(color: AppTheme.surfaceDark),
                     ),
                   ],
                 )
               : Text(
                   'Save match',
-                  style: AppTheme.headingSmall.copyWith(color: Colors.white),
+                  style: AppTheme.headingSmall.copyWith(color: AppTheme.surfaceDark),
                 ),
         ),
       ),

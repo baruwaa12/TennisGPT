@@ -3,15 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0b0f1a;
-  --bg2: #0f172a;
-  --card: #121a2b;
-  --card2: #0e1526;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #f9fafb;
-  --muted: #9ca3af;
-  --blue: #2563eb;
-  --blueGlow: #3b82f6;
+  --bg: #0a0e14;
+  --bg2: #0f1622;
+  --card: #111824;
+  --card2: #162132;
+  --border: #263246;
+  --text: #f7fbff;
+  --muted: #9fb0cb;
+  --blue: #4da3ff;
+  --blueGlow: #7dc2ff;
+  --accent2: #27d3b2;
+  --success: #2ed47a;
+  --warning: #ffb547;
+  --error: #ff5c7a;
 }
 
 * {
@@ -27,9 +31,16 @@ html {
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), var(--font-body), system-ui, sans-serif;
 }
 
 .blog-prose {

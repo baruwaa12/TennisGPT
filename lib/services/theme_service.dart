@@ -8,7 +8,7 @@ class ThemeService extends ChangeNotifier {
   static const String _brandDirectionKey = 'brand_direction';
 
   ThemeMode _themeMode = ThemeMode.system;
-  BrandDirection _brandDirection = BrandDirection.burntOrangeTactical;
+  BrandDirection _brandDirection = BrandDirection.deepBlueIntelligence;
 
   ThemeMode get themeMode => _themeMode;
   BrandDirection get brandDirection => _brandDirection;
@@ -36,7 +36,7 @@ class ThemeService extends ChangeNotifier {
     if (savedBrandDirection != null) {
       _brandDirection = BrandDirection.values.firstWhere(
         (direction) => direction.name == savedBrandDirection,
-        orElse: () => BrandDirection.burntOrangeTactical,
+        orElse: () => BrandDirection.deepBlueIntelligence,
       );
     }
 
@@ -72,7 +72,7 @@ class ThemeService extends ChangeNotifier {
   // Light Theme
   static ThemeData get lightTheme {
     // Define light mode text colors explicitly
-    final lightTextTheme = GoogleFonts.ibmPlexSansTextTheme().apply(
+    final lightTextTheme = GoogleFonts.interTextTheme().apply(
       bodyColor: Colors.grey[800],
       displayColor: Colors.grey[800],
     );
@@ -91,7 +91,7 @@ class ThemeService extends ChangeNotifier {
         foregroundColor: Colors.grey[800],
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.oswald(
+        titleTextStyle: GoogleFonts.sora(
           fontSize: 18,
           fontWeight: FontWeight.w500,
           color: Colors.grey[800],
@@ -130,11 +130,11 @@ class ThemeService extends ChangeNotifier {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppTheme.surfaceDark,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.ibmPlexSans(fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -148,7 +148,7 @@ class ThemeService extends ChangeNotifier {
   static ThemeData get darkTheme {
     // Define dark mode text colors explicitly
     final darkTextTheme =
-        GoogleFonts.ibmPlexSansTextTheme(ThemeData.dark().textTheme).apply(
+        GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
       bodyColor: Colors.white,
       displayColor: Colors.white,
     );
@@ -167,7 +167,7 @@ class ThemeService extends ChangeNotifier {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.oswald(
+        titleTextStyle: GoogleFonts.sora(
           fontSize: 18,
           fontWeight: FontWeight.w500,
           color: Colors.white,
@@ -206,11 +206,11 @@ class ThemeService extends ChangeNotifier {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppTheme.surfaceDark,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.ibmPlexSans(fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
       snackBarTheme: SnackBarThemeData(

@@ -15,7 +15,6 @@ import '../widgets/shareable_card.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
 import '../widgets/voice_input_button.dart';
-import '../widgets/brand_direction_switcher.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
@@ -196,6 +195,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     if (!consented) {
       return;
     }
+    if (!mounted) return;
 
     setState(() {
       _isGenerating = true;
@@ -222,8 +222,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       }
 
       if (response == null && mounted) {
-        if (apiService.requiresUpgrade && context.mounted) {
+        if (apiService.requiresUpgrade && mounted) {
           await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
+          if (!mounted) return;
         }
         final errorMsg = apiService.error ?? 'Unable to generate insight';
         setState(() => _errorMessage = errorMsg);
@@ -328,8 +329,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                       padding: AppTheme.screenPadding,
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
-                          const BrandDirectionSwitcher(),
-                          const SizedBox(height: AppTheme.spaceLG),
                           _buildCurrentFormCard(),
                           const SizedBox(height: AppTheme.spaceLG),
                           _buildOptionalContextInput(),
@@ -572,7 +571,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AppTheme.surfaceDark,
                             strokeWidth: 2,
                           ),
                         ),
@@ -580,14 +579,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                         Text(
                           'Reviewing history...',
                           style: AppTheme.headingSmallThemed(context)
-                              .copyWith(color: Colors.white),
+                              .copyWith(color: AppTheme.surfaceDark),
                         ),
                       ],
                     )
                   : Text(
                       'Review recent match history',
                       style: AppTheme.headingSmallThemed(context)
-                          .copyWith(color: Colors.white),
+                          .copyWith(color: AppTheme.surfaceDark),
                     ),
             ),
           ),
@@ -670,7 +669,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       ),
       child: Column(
         children: [
-          Icon(Icons.error_outline_rounded, color: AppTheme.loss, size: 40),
+          const Icon(Icons.error_outline_rounded, color: AppTheme.loss, size: 40),
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             'Unable to generate insight',

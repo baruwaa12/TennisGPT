@@ -11,7 +11,6 @@ import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/check_in_entry.dart';
 import '../widgets/voice_input_button.dart';
-import '../widgets/brand_direction_switcher.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
@@ -192,8 +191,6 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const BrandDirectionSwitcher(),
-                  const SizedBox(height: AppTheme.spaceLG),
                   // Intro
                   _buildIntroSection(),
 
@@ -797,7 +794,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 18),
+          const Icon(Icons.info_outline_rounded, color: AppTheme.loss, size: 18),
           const SizedBox(width: AppTheme.spaceSM),
           Expanded(
             child: Text(
@@ -846,7 +843,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       height: 18,
                       child: CircularProgressIndicator(
                         color: hasSelection
-                            ? Colors.white
+                            ? AppTheme.surfaceDark
                             : AppTheme.textMutedColor(context),
                         strokeWidth: 2,
                       ),
@@ -856,7 +853,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                       'Preparing briefing...',
                       style: AppTheme.headingSmallThemed(context).copyWith(
                         color: hasSelection
-                            ? Colors.white
+                            ? AppTheme.surfaceDark
                             : AppTheme.textMutedColor(context),
                       ),
                     ),
@@ -866,7 +863,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   'Confirm game plan',
                   style: AppTheme.headingSmallThemed(context).copyWith(
                     color: hasSelection
-                        ? Colors.white
+                        ? AppTheme.surfaceDark
                         : AppTheme.textMutedColor(context),
                   ),
                 ),
@@ -918,7 +915,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle_outline_rounded,
+                      const Icon(Icons.check_circle_outline_rounded,
                           color: AppTheme.win, size: 20),
                       const SizedBox(width: AppTheme.spaceSM),
                       Expanded(
@@ -1091,7 +1088,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
                             child: Text(
                               'Ready to play',
                               style: AppTheme.headingSmallThemed(context)
-                                  .copyWith(color: Colors.white),
+                                  .copyWith(color: AppTheme.surfaceDark),
                             ),
                           ),
                         ),
@@ -1118,6 +1115,7 @@ class _MentalCheckInScreenState extends State<MentalCheckInScreen> {
     if (!consented) {
       return;
     }
+    if (!mounted) return;
 
     // Get weapon labels
     final primaryLabel = _weaponOptions.firstWhere(
@@ -1177,9 +1175,10 @@ Instructions:
           await apiService.mentalCheckIn(_readinessLevel, briefingRequest);
 
       if (response == null) {
-        if (apiService.requiresUpgrade && context.mounted) {
+        if (apiService.requiresUpgrade && mounted) {
           await presentPaywall(context, trigger: PaywallTrigger.serverQuota);
         }
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _errorMessage = apiService.error ??
