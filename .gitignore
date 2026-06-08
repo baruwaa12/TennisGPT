@@ -195,7 +195,13 @@ Thumbs.db
 
 # Azure
 PublishProfiles/
-appsettings.Development.json
+
+# Local secrets / dev config (NEVER commit real API keys)
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+secrets.json
+*.secrets.json
 
 # Next.js build output (landing)
 landing/.next/
