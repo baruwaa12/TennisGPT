@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
+import '../services/court_service.dart';
 import '../models/match_performance.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
@@ -226,7 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAtmosphericBackground() {
-    final screenWidth = MediaQuery.of(context).size.width;
     return IgnorePointer(
       child: Stack(
         children: [
@@ -237,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Positioned.fill(
             child: Image.asset(
-              'assets/images/menu_background.png',
+              context.watch<CourtService>().backgroundAsset,
               fit: BoxFit.cover,
               alignment: Alignment.center,
             ),
@@ -257,27 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   stops: const [0.0, 0.5, 1.0],
                 ),
               ),
-            ),
-          ),
-          // Tennis ball peeking from the top-right corner.
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 64,
-            right: -18,
-            child: Image.asset(
-              'assets/images/tennis_ball.png',
-              width: 86,
-              height: 86,
-              fit: BoxFit.contain,
-            ),
-          ),
-          // Racket head emerging from the bottom-left corner.
-          Positioned(
-            left: -screenWidth * 0.18,
-            bottom: -screenWidth * 0.14,
-            child: Image.asset(
-              'assets/images/tennis_racket.png',
-              width: screenWidth * 0.85,
-              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -522,6 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Primary Action - Clear but not overpowering
   Widget _buildPrimaryAction() {
+    final court = context.watch<CourtService>();
     return GestureDetector(
       onTap: () {
         HapticFeedback.mediumImpact();
@@ -541,26 +521,32 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppTheme.primaryLight, AppTheme.primaryDark],
+            colors: [court.buttonColorLight, court.buttonColorDark],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(AppTheme.radiusMD + 2),
-          boxShadow: AppTheme.ctaGlowThemed(context),
+          boxShadow: [
+            BoxShadow(
+              color: court.buttonGlow,
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.sports_tennis_rounded,
-              color: AppTheme.surfaceDark,
+              color: court.buttonForeground,
               size: 20,
             ),
             const SizedBox(width: AppTheme.spaceSM),
             Text(
               'Quick Match Log',
               style: AppTheme.headingSmall.copyWith(
-                color: AppTheme.surfaceDark,
+                color: court.buttonForeground,
                 letterSpacing: 0.4,
               ),
             ),

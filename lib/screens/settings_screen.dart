@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../services/court_service.dart';
 import '../services/purchase_service.dart';
 import '../services/player_profile_service.dart';
 import '../services/usage_service.dart';
@@ -30,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = Provider.of<AuthService>(context);
     final themeService = Provider.of<ThemeService>(context);
+    final courtService = Provider.of<CourtService>(context);
     final purchaseService = Provider.of<PurchaseService>(context);
     final profileService = Provider.of<PlayerProfileService>(context);
     final usageService = Provider.of<UsageService>(context);
@@ -104,6 +106,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Design direction',
               subtitle: _getBrandDirectionLabel(themeService.brandDirection),
               onTap: () => _showBrandDirectionPicker(themeService),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              isDark: isDark,
+            ),
+            _buildSettingsTile(
+              icon: Icons.sports_tennis_outlined,
+              iconColor: AppTheme.primary,
+              title: 'Court surface',
+              subtitle: courtService.displayName,
+              onTap: () => _showCourtSurfacePicker(courtService),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -615,6 +626,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 themeService
                     .setBrandDirection(BrandDirection.copperBronzePremium);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCourtSurfacePicker(CourtService courtService) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Court Surface',
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Changes the home screen background. The Quick Match button uses a complementary colour for each court.',
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.terrain_outlined,
+                  color: Color(0xFFE6462E)),
+              title: Text('Clay', style: GoogleFonts.poppins()),
+              subtitle: Text('Roland Garros - blue button',
+                  style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: courtService.surface == CourtSurface.clay
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                courtService.setSurface(CourtSurface.clay);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.sports_tennis_outlined,
+                  color: Color(0xFF2E7DD6)),
+              title: Text('Hard (Blue)', style: GoogleFonts.poppins()),
+              subtitle: Text('US / Australian Open - red button',
+                  style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: courtService.surface == CourtSurface.hard
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                courtService.setSurface(CourtSurface.hard);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.grass_outlined,
+                  color: Color(0xFF3F8C3F)),
+              title: Text('Grass', style: GoogleFonts.poppins()),
+              subtitle: Text('Wimbledon - navy button',
+                  style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: courtService.surface == CourtSurface.grass
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                courtService.setSurface(CourtSurface.grass);
                 Navigator.pop(context);
               },
             ),
