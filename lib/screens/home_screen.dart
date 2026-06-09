@@ -10,8 +10,6 @@ import '../models/match_performance.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
 import 'quick_match_screen.dart';
-import 'mental_check_in_screen.dart';
-import 'emotional_reset_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 
@@ -686,59 +684,20 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildSectionTitle('Coach tools'),
         const SizedBox(height: AppTheme.spaceMD),
-        Row(
-          children: [
-            Expanded(
-                child: _buildToolItem(
-              icon: Icons.analytics_outlined,
-              label: 'Tactical\nCoach',
-              onTap: () {
-                if (_isGuest) {
-                  _requireSignIn();
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const TacticalCoachScreen()),
-                );
-              },
-            )),
-            const SizedBox(width: AppTheme.spaceSM),
-            Expanded(
-                child: _buildToolItem(
-              icon: Icons.flag_outlined,
-              label: 'Pre-Match\nPrep',
-              onTap: () {
-                if (_isGuest) {
-                  _requireSignIn();
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const MentalCheckInScreen()),
-                );
-              },
-            )),
-            const SizedBox(width: AppTheme.spaceSM),
-            Expanded(
-                child: _buildToolItem(
-              icon: Icons.edit_note_outlined,
-              label: 'Post-Match\nDebrief',
-              onTap: () {
-                if (_isGuest) {
-                  _requireSignIn();
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const EmotionalResetScreen()),
-                );
-              },
-            )),
-          ],
+        _buildToolItem(
+          icon: Icons.analytics_outlined,
+          label: 'Tactical Coach',
+          onTap: () {
+            if (_isGuest) {
+              _requireSignIn();
+              return;
+            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const TacticalCoachScreen()),
+            );
+          },
         ),
       ],
     );

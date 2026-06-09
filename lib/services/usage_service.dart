@@ -47,8 +47,6 @@ class UsageService extends ChangeNotifier {
   // Limit checkers
   bool get canLogMatch => _matchCount < freeMatchesLimit;
   bool get canUseTacticalAnalysis => _isToday() ? _dailyAIUsed < freeDailyAILimit : true;
-  bool get canUsePrepSession => canUseTacticalAnalysis;
-  bool get canUseDebrief => canUseTacticalAnalysis;
 
   bool _isToday() => _dailyAIDate == _todayUTC();
 
@@ -133,12 +131,6 @@ class UsageService extends ChangeNotifier {
 
   /// Record a tactical analysis used
   Future<void> recordTacticalAnalysis() async => _recordAIAnalysis();
-
-  /// Record a prep session used
-  Future<void> recordPrepSession() async => _recordAIAnalysis();
-
-  /// Record a debrief used
-  Future<void> recordDebrief() async => _recordAIAnalysis();
 
   /// Get usage summary text
   String getMatchUsageText() {

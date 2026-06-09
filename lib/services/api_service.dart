@@ -272,52 +272,6 @@ class ApiService extends ChangeNotifier {
 
   // ============ Coaching Endpoints ============
 
-  Future<String?> mentalCheckIn(int mood, String journalEntry) async {
-    _isLoading = true;
-    _error = null;
-    _lastRequestId = _generateRequestId();
-    notifyListeners();
-
-    try {
-      final response = await _makeRequest(
-        endpoint: '/api/coaching/mental-check-in',
-        body: {'mood': mood, 'journalEntry': journalEntry},
-        requestId: _lastRequestId!,
-      );
-      return _processResponse(response, _lastRequestId!);
-    } catch (e) {
-      _setError(ApiErrorCode.networkError,
-          debugMessage: e.toString(), requestId: _lastRequestId);
-      return null;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<String?> emotionalReset(String situation) async {
-    _isLoading = true;
-    _error = null;
-    _lastRequestId = _generateRequestId();
-    notifyListeners();
-
-    try {
-      final response = await _makeRequest(
-        endpoint: '/api/coaching/emotional-reset',
-        body: {'situation': situation},
-        requestId: _lastRequestId!,
-      );
-      return _processResponse(response, _lastRequestId!);
-    } catch (e) {
-      _setError(ApiErrorCode.networkError,
-          debugMessage: e.toString(), requestId: _lastRequestId);
-      return null;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   /// Tactical analysis returns structured coach JSON from the backend.
   /// Returns keys: whatYoureSeeing, whyItMatters, nextFocus, optionalPracticePlan.
   Future<Map<String, dynamic>?> tacticalAnalysis(
@@ -681,18 +635,6 @@ class ApiService extends ChangeNotifier {
   Future<bool> saveTacticalAdvice(String content) =>
       saveEntry(endpoint: '/api/tactical/save', content: content);
 
-  Future<bool> saveDebrief(String content) =>
-      saveEntry(endpoint: '/api/debrief/save', content: content);
-
-  Future<bool> savePreMatchPlan(String content) =>
-      saveEntry(endpoint: '/api/prematch/save', content: content);
-
   Future<List<Map<String, dynamic>>> getSavedTactical() =>
       getSavedEntries('/api/tactical/saved');
-
-  Future<List<Map<String, dynamic>>> getSavedDebriefs() =>
-      getSavedEntries('/api/debrief/saved');
-
-  Future<List<Map<String, dynamic>>> getSavedPreMatchPlans() =>
-      getSavedEntries('/api/prematch/saved');
 }
