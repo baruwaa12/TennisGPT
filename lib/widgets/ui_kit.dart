@@ -1,31 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../services/ui_style_service.dart';
 
 /// ============================================================
-/// UI Kit — modern, youthful, colourful-but-sleek components.
+/// UI Kit — dual style.
 ///
-/// Design rules (per ui-design-brain):
-/// - Restraint over decoration; white space is structure.
-/// - One strong colour moment per surface; neutrals carry the rest.
-/// - Real affordances: every interactive element has hover/press/disabled.
-/// - Accessibility: 44px touch targets, semantic labels, AA contrast.
-/// - Skeletons over spinners for predictable layouts.
+/// Every component renders in one of two visual languages, chosen live via
+/// [UiStyleService] and remembered across launches:
+///
+///  • Vibrant  — youthful & colourful: gradients, vivid accents, ink ripples.
+///  • Minimal  — Apple-level: near-monochrome, big type, press-to-brighten.
+///
+/// Shared rules (both styles): real affordances, 44px targets, semantic
+/// labels, AA contrast, skeletons over spinners.
 /// ============================================================
 
-/// A curated, vibrant-but-soft accent palette. These read consistently
-/// across light/dark and brand directions, used for tonal "colour moments".
+/// Reads the active style. Subscribes so widgets rebuild on toggle.
+bool _vibrant(BuildContext context) =>
+    context.watch<UiStyleService>().style == UiStyle.vibrant;
+
+/// Accent palette. The vibrant fields are the rainbow "colour moments"; the
+/// minimal style mostly ignores them in favour of a single brand accent.
 class AppAccents {
   AppAccents._();
 
-  static const Color blue = Color(0xFF4C8DFF); // patterns / focus signal
-  static const Color violet = Color(0xFF8B7CFF); // next focus
-  static const Color teal = Color(0xFF2BD9C0); // energy / streaks
-  static const Color green = Color(0xFF22C77E); // winning / positive
-  static const Color coral = Color(0xFFFF6B81); // pressure / caution
-  static const Color amber = Color(0xFFFFB23E); // practice / warm
+  // Vibrant palette.
+  static const Color blue = Color(0xFF4C8DFF);
+  static const Color violet = Color(0xFF8B7CFF);
+  static const Color teal = Color(0xFF2BD9C0);
+  static const Color green = Color(0xFF22C77E);
+  static const Color coral = Color(0xFFFF6B81);
+  static const Color amber = Color(0xFFFFB23E);
 
-  /// Primary brand gradient — the single hero colour moment.
+  /// The single brand accent (system-blue style).
+  static Color accent(BuildContext context) => AppTheme.primary;
+
+  /// Reserved for errors / destructive moments.
+  static const Color negative = Color(0xFFFF453A);
+
+  /// Reserved for positive confirmations (e.g. saved).
+  static const Color positive = Color(0xFF32D74B);
+
+  /// Primary brand gradient — the vibrant hero colour moment.
   static List<Color> heroGradient(BuildContext context) =>
       [AppTheme.primary, violet];
 
@@ -34,8 +52,8 @@ class AppAccents {
       color.withValues(alpha: alpha);
 }
 
-/// A subtle accent glow painted behind the scaffold content. Replaces the
-/// legibility-killing full-bleed photo with a clean, modern ambience.
+/// Backdrop behind scaffold content.
+/// Vibrant → soft colour blobs. Minimal → a barely-there vertical lift.
 class AmbientBackground extends StatelessWidget {
   const AmbientBackground({super.key, this.color});
 
@@ -43,29 +61,48 @@ class AmbientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glow = color ?? AppTheme.primary;
+    if (_vibrant(context)) {
+      final glow = color ?? AppTheme.primary;
+      return IgnorePointer(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ColoredBox(color: AppTheme.scaffoldBackground(context)),
+            ),
+            Positioned(
+              top: -160,
+              right: -120,
+              child: _blob(glow.withValues(alpha: 0.22), 360),
+            ),
+            Positioned(
+              top: 120,
+              left: -140,
+              child: _blob(AppAccents.teal.withValues(alpha: 0.12), 300),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final scaffold = AppTheme.scaffoldBackground(context);
+    final lift = AppTheme.isDark(context)
+        ? AppTheme.elevatedBackground(context).withValues(alpha: 0.55)
+        : Colors.white.withValues(alpha: 0.5);
     return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ColoredBox(color: AppTheme.scaffoldBackground(context)),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [lift, scaffold],
+            stops: const [0.0, 0.45],
           ),
-          Positioned(
-            top: -160,
-            right: -120,
-            child: _blurBlob(glow.withValues(alpha: 0.22), 360),
-          ),
-          Positioned(
-            top: 120,
-            left: -140,
-            child: _blurBlob(AppAccents.teal.withValues(alpha: 0.12), 300),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _blurBlob(Color color, double size) {
+  Widget _blob(Color color, double size) {
     return Container(
       width: size,
       height: size,
@@ -79,9 +116,16 @@ class AmbientBackground extends StatelessWidget {
   }
 }
 
-/// Primary call-to-action. Gradient fill, real ink ripple, loading + disabled
-/// states, and a semantic label. Verb-first labels expected.
-class PrimaryActionButton extends StatelessWidget {
+/// Internal: the brighter surface a minimal card/button animates to on press.
+Color _brighten(BuildContext context, Color base, {double dark = 0.10}) {
+  return AppTheme.isDark(context)
+      ? Color.lerp(base, Colors.white, dark)!
+      : Color.lerp(base, Colors.white, 1.0)!;
+}
+
+/// Primary call-to-action.
+/// Vibrant → gradient fill. Minimal → solid accent. Both brighten + lift.
+class PrimaryActionButton extends StatefulWidget {
   const PrimaryActionButton({
     super.key,
     required this.label,
@@ -89,6 +133,7 @@ class PrimaryActionButton extends StatelessWidget {
     this.icon,
     this.loading = false,
     this.loadingLabel,
+    this.color,
     this.gradientColors,
     this.foreground = Colors.white,
   });
@@ -98,103 +143,144 @@ class PrimaryActionButton extends StatelessWidget {
   final IconData? icon;
   final bool loading;
   final String? loadingLabel;
+
+  /// Solid fill (minimal). Defaults to the brand accent.
+  final Color? color;
+
+  /// Gradient fill (vibrant). Defaults to the hero gradient.
   final List<Color>? gradientColors;
   final Color foreground;
 
   @override
+  State<PrimaryActionButton> createState() => _PrimaryActionButtonState();
+}
+
+class _PrimaryActionButtonState extends State<PrimaryActionButton> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (_down != v) setState(() => _down = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final enabled = onPressed != null && !loading;
-    final colors = gradientColors ?? AppAccents.heroGradient(context);
+    final enabled = widget.onPressed != null && !widget.loading;
+    final vibrant = _vibrant(context);
+
+    final BoxDecoration decoration;
+    final Color glow;
+    if (vibrant) {
+      final stops = widget.gradientColors ?? AppAccents.heroGradient(context);
+      final pressedStops = _down
+          ? stops.map((c) => Color.lerp(c, Colors.white, 0.16)!).toList()
+          : stops;
+      glow = stops.last;
+      decoration = BoxDecoration(
+        gradient: LinearGradient(
+          colors: pressedStops,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        boxShadow: [
+          BoxShadow(
+            color: glow.withValues(alpha: _down ? 0.45 : 0.32),
+            blurRadius: _down ? 28 : 20,
+            offset: Offset(0, _down ? 12 : 10),
+          ),
+        ],
+      );
+    } else {
+      final fill = widget.color ?? AppTheme.primary;
+      glow = fill;
+      decoration = BoxDecoration(
+        color: _down ? Color.lerp(fill, Colors.white, 0.16)! : fill,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        boxShadow: [
+          BoxShadow(
+            color: fill.withValues(alpha: _down ? 0.40 : 0.22),
+            blurRadius: _down ? 28 : 16,
+            offset: Offset(0, _down ? 12 : 8),
+          ),
+        ],
+      );
+    }
+
+    final body = AnimatedScale(
+      scale: _down ? 0.98 : 1,
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        height: 54,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
+        decoration: decoration,
+        child: widget.loading
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(widget.foreground),
+                    ),
+                  ),
+                  const SizedBox(width: AppTheme.spaceSM),
+                  Text(widget.loadingLabel ?? widget.label,
+                      style: _labelStyle()),
+                ],
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.icon != null) ...[
+                    Icon(widget.icon, color: widget.foreground, size: 20),
+                    const SizedBox(width: AppTheme.spaceSM),
+                  ],
+                  Text(widget.label, style: _labelStyle()),
+                ],
+              ),
+      ),
+    );
 
     return Semantics(
       button: true,
       enabled: enabled,
-      label: label,
+      label: widget.label,
       child: Opacity(
-        opacity: enabled ? 1 : 0.55,
-        child: Material(
-          color: Colors.transparent,
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: colors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-              boxShadow: enabled
-                  ? [
-                      BoxShadow(
-                        color: colors.last.withValues(alpha: 0.35),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-              onTap: enabled
-                  ? () {
-                      HapticFeedback.mediumImpact();
-                      onPressed!();
-                    }
-                  : null,
-              child: Container(
-                height: 56,
-                alignment: Alignment.center,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
-                child: loading
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(foreground),
-                            ),
-                          ),
-                          const SizedBox(width: AppTheme.spaceSM),
-                          Text(
-                            loadingLabel ?? label,
-                            style: AppTheme.headingSmall
-                                .copyWith(color: foreground, fontSize: 16),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (icon != null) ...[
-                            Icon(icon, color: foreground, size: 20),
-                            const SizedBox(width: AppTheme.spaceSM),
-                          ],
-                          Text(
-                            label,
-                            style: AppTheme.headingSmall.copyWith(
-                              color: foreground,
-                              fontSize: 16,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
-          ),
+        opacity: enabled ? 1 : 0.5,
+        child: GestureDetector(
+          onTapDown: enabled ? (_) => _set(true) : null,
+          onTapUp: enabled ? (_) => _set(false) : null,
+          onTapCancel: enabled ? () => _set(false) : null,
+          onTap: enabled
+              ? () {
+                  HapticFeedback.mediumImpact();
+                  widget.onPressed!();
+                }
+              : null,
+          child: body,
         ),
       ),
     );
   }
+
+  TextStyle _labelStyle() => AppTheme.headingSmall.copyWith(
+        color: widget.foreground,
+        fontSize: 16,
+        letterSpacing: 0.1,
+      );
 }
 
-/// Tappable surface with a real ink ripple and an outlined card aesthetic
-/// (border, not shadow). Use for navigable entities.
-class PressableCard extends StatelessWidget {
+/// Tappable surface.
+/// Vibrant → outlined card with an ink ripple. Minimal → lights up brighter
+/// (and gently lifts) each time it's pressed.
+class PressableCard extends StatefulWidget {
   const PressableCard({
     super.key,
     required this.child,
@@ -211,99 +297,207 @@ class PressableCard extends StatelessWidget {
   final Color? accent;
 
   @override
+  State<PressableCard> createState() => _PressableCardState();
+}
+
+class _PressableCardState extends State<PressableCard> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (_down != v) setState(() => _down = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppTheme.radiusLG);
-    return Semantics(
-      button: onTap != null,
-      label: semanticLabel,
-      child: Material(
-        color: AppTheme.cardBackground(context).withValues(alpha: 0.92),
-        borderRadius: radius,
-        child: InkWell(
+    final accent = widget.accent ?? AppTheme.primary;
+    final interactive = widget.onTap != null;
+
+    if (_vibrant(context)) {
+      return Semantics(
+        button: interactive,
+        label: widget.semanticLabel,
+        child: Material(
+          color: AppTheme.cardBackground(context).withValues(alpha: 0.92),
           borderRadius: radius,
-          onTap: onTap == null
-              ? null
-              : () {
-                  HapticFeedback.lightImpact();
-                  onTap!();
-                },
-          child: Container(
-            padding: padding ?? AppTheme.cardPadding,
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              border: Border.all(
-                color: accent != null
-                    ? accent!.withValues(alpha: 0.30)
-                    : AppTheme.borderColor(context),
+          child: InkWell(
+            borderRadius: radius,
+            onTap: interactive
+                ? () {
+                    HapticFeedback.lightImpact();
+                    widget.onTap!();
+                  }
+                : null,
+            child: Container(
+              padding: widget.padding ?? AppTheme.cardPadding,
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: widget.accent != null
+                      ? accent.withValues(alpha: 0.30)
+                      : AppTheme.borderColor(context),
+                ),
               ),
+              child: widget.child,
             ),
-            child: child,
           ),
         ),
+      );
+    }
+
+    // Minimal: press-to-brighten.
+    final base = AppTheme.cardBackground(context)
+        .withValues(alpha: AppTheme.isDark(context) ? 0.92 : 1);
+    final pressed = _brighten(context, base);
+    final dark = AppTheme.isDark(context);
+
+    final restingShadow = <BoxShadow>[
+      BoxShadow(
+        color: Colors.black.withValues(alpha: dark ? 0.20 : 0.05),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ];
+    final pressedShadow = <BoxShadow>[
+      BoxShadow(
+        color: accent.withValues(alpha: dark ? 0.24 : 0.16),
+        blurRadius: 28,
+        offset: const Offset(0, 12),
+      ),
+    ];
+
+    final card = AnimatedScale(
+      scale: _down ? 0.985 : 1,
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: widget.padding ?? AppTheme.cardPadding,
+        decoration: BoxDecoration(
+          color: _down ? pressed : base,
+          borderRadius: radius,
+          border: Border.all(
+            color: _down
+                ? accent.withValues(alpha: 0.45)
+                : AppTheme.borderColor(context),
+          ),
+          boxShadow:
+              interactive ? (_down ? pressedShadow : restingShadow) : null,
+        ),
+        child: widget.child,
+      ),
+    );
+
+    if (!interactive) {
+      return Semantics(label: widget.semanticLabel, child: card);
+    }
+
+    return Semantics(
+      button: true,
+      label: widget.semanticLabel,
+      child: GestureDetector(
+        onTapDown: (_) => _set(true),
+        onTapUp: (_) => _set(false),
+        onTapCancel: () => _set(false),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          widget.onTap!();
+        },
+        child: card,
       ),
     );
   }
 }
 
-/// A square icon badge with a soft tonal background — the small, repeated
-/// "colour moments" that make the UI feel youthful without shouting.
+/// Icon tile.
+/// Vibrant → soft tonal colour fill. Minimal → neutral monochrome.
 class TonalIconBadge extends StatelessWidget {
   const TonalIconBadge({
     super.key,
     required this.icon,
-    required this.color,
+    this.color,
     this.size = 44,
   });
 
   final IconData icon;
-  final Color color;
+  final Color? color;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    if (_vibrant(context)) {
+      final c = color ?? AppTheme.primary;
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppAccents.tint(c),
+          borderRadius: BorderRadius.circular(size * 0.30),
+        ),
+        child: Icon(icon, color: c, size: size * 0.46),
+      );
+    }
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppAccents.tint(color),
+        color: AppTheme.elevatedBackground(context)
+            .withValues(alpha: AppTheme.isDark(context) ? 0.6 : 1),
         borderRadius: BorderRadius.circular(size * 0.30),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
-      child: Icon(icon, color: color, size: size * 0.46),
+      child: Icon(
+        icon,
+        color: color ?? AppTheme.textSecondaryColor(context),
+        size: size * 0.46,
+      ),
     );
   }
 }
 
-/// Small pill chip for status/metadata.
+/// Pill chip.
+/// Vibrant → soft tinted colour fill. Minimal → hairline outline (or [filled]).
 class TonalChip extends StatelessWidget {
   const TonalChip({
     super.key,
     required this.label,
-    required this.color,
+    this.color,
     this.icon,
+    this.filled = false,
   });
 
   final String label;
-  final Color color;
+  final Color? color;
   final IconData? icon;
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
+    final vibrant = _vibrant(context);
+    final c = color ?? AppTheme.textMutedColor(context);
+    final useFill = vibrant || filled;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppAccents.tint(color, alpha: 0.16),
+        color: useFill ? c.withValues(alpha: 0.16) : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: useFill ? Colors.transparent : AppTheme.borderColor(context),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: color),
+            Icon(icon, size: 13, color: c),
             const SizedBox(width: 5),
           ],
           Text(
             label,
-            style: AppTheme.label.copyWith(color: color, letterSpacing: 0.2),
+            style: AppTheme.label.copyWith(color: c, letterSpacing: 0.3),
           ),
         ],
       ),
@@ -311,8 +505,8 @@ class TonalChip extends StatelessWidget {
   }
 }
 
-/// A compact two/three option segmented control with an animated indicator.
-/// Immediate effect — use for view switching (not form input).
+/// Segmented control.
+/// Vibrant → gradient pill, white label. Minimal → floating elevated pill.
 class SegmentedTabs extends StatelessWidget {
   const SegmentedTabs({
     super.key,
@@ -327,12 +521,16 @@ class SegmentedTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vibrant = _vibrant(context);
+
     return Container(
       height: 44,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppTheme.elevatedBackground(context).withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(999),
+        color: AppTheme.elevatedBackground(context)
+            .withValues(alpha: vibrant ? 0.7 : 0.6),
+        borderRadius: BorderRadius.circular(
+            vibrant ? 999 : AppTheme.radiusMD),
         border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: LayoutBuilder(
@@ -352,17 +550,39 @@ class SegmentedTabs extends StatelessWidget {
                 child: Container(
                   width: segmentWidth,
                   height: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppAccents.heroGradient(context),
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
+                  decoration: vibrant
+                      ? BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: AppAccents.heroGradient(context),
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        )
+                      : BoxDecoration(
+                          color: AppTheme.cardBackground(context),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusSM + 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                  alpha: AppTheme.isDark(context) ? 0.25 : 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
                 ),
               ),
               Row(
                 children: List.generate(labels.length, (i) {
                   final selected = i == selectedIndex;
+                  final Color textColor;
+                  if (selected) {
+                    textColor = vibrant
+                        ? Colors.white
+                        : AppTheme.textPrimaryColor(context);
+                  } else {
+                    textColor = AppTheme.textMutedColor(context);
+                  }
                   return Expanded(
                     child: Semantics(
                       button: true,
@@ -378,9 +598,7 @@ class SegmentedTabs extends StatelessWidget {
                           child: Text(
                             labels[i],
                             style: AppTheme.label.copyWith(
-                              color: selected
-                                  ? Colors.white
-                                  : AppTheme.textMutedColor(context),
+                              color: textColor,
                               fontWeight:
                                   selected ? FontWeight.w700 : FontWeight.w600,
                               letterSpacing: 0.2,
@@ -400,8 +618,7 @@ class SegmentedTabs extends StatelessWidget {
   }
 }
 
-/// A shimmering skeleton block for loading states (preferred over spinners
-/// where the layout is predictable).
+/// A shimmering skeleton block for loading states (preferred over spinners).
 class SkeletonBox extends StatefulWidget {
   const SkeletonBox({
     super.key,
@@ -447,7 +664,7 @@ class _SkeletonBoxState extends State<SkeletonBox>
           width: widget.width ?? double.infinity,
           height: widget.height,
           decoration: BoxDecoration(
-            color: base.withValues(alpha: 0.45 + (_controller.value * 0.35)),
+            color: base.withValues(alpha: 0.35 + (_controller.value * 0.3)),
             borderRadius: BorderRadius.circular(widget.radius),
           ),
         );
@@ -456,7 +673,7 @@ class _SkeletonBoxState extends State<SkeletonBox>
   }
 }
 
-/// Section header: a strong title with an optional trailing action.
+/// Section header: a title with an optional trailing text action.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -474,7 +691,11 @@ class SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: AppTheme.headingSmallThemed(context)),
+        Text(
+          title,
+          style: AppTheme.headingSmallThemed(context)
+              .copyWith(letterSpacing: -0.2),
+        ),
         if (actionLabel != null && onAction != null)
           TextButton(
             onPressed: () {

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../services/ui_style_service.dart';
 import '../services/court_service.dart';
 import '../services/purchase_service.dart';
 import '../services/player_profile_service.dart';
@@ -31,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = Provider.of<AuthService>(context);
     final themeService = Provider.of<ThemeService>(context);
+    final uiStyleService = Provider.of<UiStyleService>(context);
     final courtService = Provider.of<CourtService>(context);
     final purchaseService = Provider.of<PurchaseService>(context);
     final profileService = Provider.of<PlayerProfileService>(context);
@@ -97,6 +99,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Theme',
               subtitle: _getThemeLabel(themeService.themeMode),
               onTap: () => _showThemePicker(themeService),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              isDark: isDark,
+            ),
+            _buildSettingsTile(
+              icon: uiStyleService.isVibrant
+                  ? Icons.auto_awesome_rounded
+                  : Icons.crop_square_rounded,
+              iconColor: AppTheme.primary,
+              title: 'App style',
+              subtitle: uiStyleService.isVibrant
+                  ? 'Vibrant — colourful & bold'
+                  : 'Minimal — Apple-style, monochrome',
+              onTap: () => _showUiStylePicker(uiStyleService),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -329,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.workspace_premium,
                     size: 14,
                     color: Colors.amber,
@@ -558,6 +573,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUiStylePicker(UiStyleService uiStyleService) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'App Style',
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Switch the whole look instantly. Your choice is remembered.',
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.crop_square_rounded),
+              title: Text('Minimal', style: GoogleFonts.poppins()),
+              subtitle: Text('Apple-style — monochrome, big type, cards light up',
+                  style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: uiStyleService.isMinimal
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                uiStyleService.setStyle(UiStyle.minimal);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_rounded),
+              title: Text('Vibrant', style: GoogleFonts.poppins()),
+              subtitle: Text('Colourful & bold — gradients and vivid accents',
+                  style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: uiStyleService.isVibrant
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                uiStyleService.setStyle(UiStyle.vibrant);
                 Navigator.pop(context);
               },
             ),

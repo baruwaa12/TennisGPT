@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
+import '../services/ui_style_service.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
-import '../services/court_service.dart';
 import '../models/match_performance.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
@@ -14,9 +14,8 @@ import 'quick_match_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 
-/// Home Screen — Performance Dashboard
-/// Direction: modern, youthful, colourful-but-sleek. One gradient hero as the
-/// single colour moment; neutral surfaces and tonal accents carry the rest.
+/// Home Screen — Apple-level minimal performance dashboard.
+/// Near-monochrome, big type, generous space. Cards light up on press.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -86,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool get _isGuest => Provider.of<AuthService>(context, listen: false).isGuest;
 
-  /// Shows a sign-in prompt when a guest taps a feature that requires auth.
   Future<bool> _requireSignIn() async {
     final result = await showDialog<bool>(
       context: context,
@@ -96,10 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
           side: BorderSide(color: AppTheme.borderColor(context)),
         ),
-        title: Text(
-          'Sign in to continue',
-          style: AppTheme.headingSmallThemed(context),
-        ),
+        title: Text('Sign in to continue',
+            style: AppTheme.headingSmallThemed(context)),
         content: Text(
           'Create a free account to log matches, get AI coaching, and track your progress.',
           style: AppTheme.bodyMediumThemed(context),
@@ -172,7 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final streakService = Provider.of<StreakService>(context);
-    final court = context.watch<CourtService>();
+    final vibrant =
+        context.watch<UiStyleService>().style == UiStyle.vibrant;
     final firstName = authService.isGuest
         ? 'Player'
         : (authService.userDisplayName?.split(' ').first ?? 'Player');
@@ -183,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: Stack(
         children: [
-          AmbientBackground(color: court.buttonColorLight),
+          AmbientBackground(color: vibrant ? AppTheme.primary : null),
           SafeArea(
             child: RefreshIndicator(
               onRefresh: _loadStats,
@@ -194,35 +191,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 slivers: [
                   SliverToBoxAdapter(child: _buildHeader(firstName)),
                   SliverPadding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceLG),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         if (showSkeleton)
-                          _buildHeroSkeleton()
+                          const SkeletonBox(
+                              height: 188, radius: AppTheme.radiusXL)
                         else if (_totalMatches == 0)
-                          _buildFirstMatchCard()
+                          _buildFirstMatchCard(vibrant)
                         else
-                          _buildHeroCard(streakService),
+                          _buildHeroCard(streakService, vibrant),
                         const SizedBox(height: AppTheme.spaceMD),
                         PrimaryActionButton(
                           label: 'Log a match',
                           icon: Icons.add_rounded,
-                          gradientColors: [
-                            court.buttonColorLight,
-                            court.buttonColorDark,
-                          ],
                           onPressed: _openQuickMatch,
                         ),
-                        const SizedBox(height: AppTheme.spaceXL),
+                        const SizedBox(height: AppTheme.spaceXXL),
                         if (showSkeleton) ...[
                           _buildListSkeleton(),
-                          const SizedBox(height: AppTheme.spaceXL),
+                          const SizedBox(height: AppTheme.spaceXXL),
                         ] else if (_recentMatches.isNotEmpty) ...[
-                          _buildRecentActivity(),
-                          const SizedBox(height: AppTheme.spaceXL),
+                          _buildRecentActivity(vibrant),
+                          const SizedBox(height: AppTheme.spaceXXL),
                         ],
-                        _buildCoachCard(),
+                        _buildCoachCard(vibrant),
                         const SizedBox(height: AppTheme.spaceXXL),
                       ]),
                     ),
@@ -248,10 +242,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader(String firstName) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceLG,
+        AppTheme.spaceLG,
         AppTheme.spaceMD,
-        AppTheme.spaceMD,
-        AppTheme.spaceSM,
-        AppTheme.spaceMD,
+        AppTheme.spaceLG,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -261,15 +255,15 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _getGreeting(),
+                  _getGreeting().toUpperCase(),
                   style: AppTheme.labelThemed(context)
-                      .copyWith(color: AppAccents.teal),
+                      .copyWith(letterSpacing: 1.4),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   firstName,
                   style: AppTheme.headingLargeThemed(context)
-                      .copyWith(height: 1.0),
+                      .copyWith(height: 1.0, letterSpacing: -0.8),
                 ),
               ],
             ),
@@ -287,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: IconButton.styleFrom(
               minimumSize: const Size(44, 44),
               backgroundColor:
-                  AppTheme.cardBackground(context).withValues(alpha: 0.85),
+                  AppTheme.cardBackground(context).withValues(alpha: 0.9),
               foregroundColor: AppTheme.textSecondaryColor(context),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD),
@@ -301,146 +295,138 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============ Hero KPI card (the colour moment) ============
+  // ============ Hero KPI card (calm, monochrome, big type) ============
 
-  Widget _buildHeroCard(StreakService streakService) {
+  Widget _buildHeroCard(StreakService streakService, bool vibrant) {
     final winPercentage = (_winRate * 100).round();
     final streakLabel = _currentStreak > 0
         ? 'On a roll'
         : _currentStreak < 0
             ? 'Bounce-back mode'
             : 'Fresh start';
-    final streakIcon = _currentStreak > 0
-        ? Icons.bolt_rounded
-        : _currentStreak < 0
-            ? Icons.replay_rounded
-            : Icons.spa_rounded;
+
+    // Colour treatment differs by style; layout is shared.
+    final onCard = vibrant ? Colors.white : AppTheme.textPrimaryColor(context);
+    final onCardMuted =
+        vibrant ? Colors.white70 : AppTheme.textMutedColor(context);
+    final divider = vibrant
+        ? Colors.white.withValues(alpha: 0.25)
+        : AppTheme.borderColor(context);
+
+    final decoration = vibrant
+        ? BoxDecoration(
+            gradient: LinearGradient(
+              colors: AppAccents.heroGradient(context),
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withValues(alpha: 0.32),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: AppTheme.cardBackground(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+            border: Border.all(color: AppTheme.borderColor(context)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black
+                    .withValues(alpha: AppTheme.isDark(context) ? 0.22 : 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          );
 
     return Container(
-      padding: AppTheme.cardPaddingLarge,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppAccents.heroGradient(context),
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.30),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
+      decoration: decoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'This season',
-                style: AppTheme.label.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(streakIcon, size: 13, color: Colors.white),
-                    const SizedBox(width: 5),
-                    Text(
-                      streakLabel,
-                      style: AppTheme.label.copyWith(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
+              Text('WIN RATE',
+                  style: AppTheme.labelThemed(context)
+                      .copyWith(letterSpacing: 1.4, color: onCardMuted)),
+              Text(streakLabel,
+                  style: AppTheme.bodySmallThemed(context)
+                      .copyWith(color: onCardMuted)),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceMD),
+          const SizedBox(height: AppTheme.spaceSM),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 '$winPercentage',
-                style: AppTheme.statLarge.copyWith(
-                  color: Colors.white,
-                  fontSize: 64,
+                style: AppTheme.statLargeThemed(context).copyWith(
+                  fontSize: 76,
                   height: 0.95,
+                  letterSpacing: -2.5,
+                  color: onCard,
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 10, left: 2),
-                child: Text(
-                  '%',
-                  style: AppTheme.statMedium.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
+                padding: const EdgeInsets.only(bottom: 14, left: 2),
+                child: Text('%',
+                    style: AppTheme.statMediumThemed(context)
+                        .copyWith(color: onCardMuted)),
+              ),
+              const Spacer(),
+              if (_recentMatches.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(
+                    children: _recentMatches.take(5).map((match) {
+                      final isWin = match.result.toLowerCase() == 'win';
+                      final Color dotColor;
+                      final Color dotBorder;
+                      if (vibrant) {
+                        dotColor =
+                            isWin ? AppAccents.green : Colors.transparent;
+                        dotBorder = isWin ? AppAccents.green : Colors.white70;
+                      } else {
+                        dotColor = isWin ? onCard : Colors.transparent;
+                        dotBorder = isWin ? onCard : onCardMuted;
+                      }
+                      return Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: dotColor,
+                          border: Border.all(color: dotBorder, width: 1.4),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppTheme.spaceSM),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  'win rate',
-                  style: AppTheme.bodySmall
-                      .copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                ),
-              ),
             ],
           ),
-          if (_recentMatches.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spaceSM),
-            Row(
-              children: [
-                Text(
-                  'Recent form',
-                  style: AppTheme.label
-                      .copyWith(color: Colors.white.withValues(alpha: 0.75)),
-                ),
-                const SizedBox(width: AppTheme.spaceMD),
-                ..._recentMatches.take(5).map((match) {
-                  final isWin = match.result.toLowerCase() == 'win';
-                  return Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: isWin
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ],
-          const SizedBox(height: AppTheme.spaceMD),
-          Container(
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.18),
-          ),
+          const SizedBox(height: AppTheme.spaceLG),
+          Container(height: 1, color: divider),
           const SizedBox(height: AppTheme.spaceMD),
           Row(
             children: [
-              _buildHeroStat('$_totalMatches', 'matches'),
+              _buildHeroStat('$_totalMatches', 'Matches', onCard, onCardMuted),
               if (_currentStreak != 0)
                 _buildHeroStat(
                   '${_currentStreak.abs()}',
-                  _currentStreak > 0 ? 'win streak' : 'to bounce back',
+                  _currentStreak > 0 ? 'Win streak' : 'To bounce back',
+                  onCard,
+                  onCardMuted,
                 ),
               if (streakService.currentStreak > 0)
-                _buildHeroStat('${streakService.currentStreak}', 'day streak'),
+                _buildHeroStat('${streakService.currentStreak}', 'Day streak',
+                    onCard, onCardMuted),
             ],
           ),
         ],
@@ -448,21 +434,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeroStat(String value, String label) {
+  Widget _buildHeroStat(
+      String value, String label, Color onCard, Color onCardMuted) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
-            style: AppTheme.statMedium.copyWith(color: Colors.white),
+            style: AppTheme.statMediumThemed(context)
+                .copyWith(fontSize: 24, letterSpacing: -0.5, color: onCard),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTheme.label
-                .copyWith(color: Colors.white.withValues(alpha: 0.8)),
-          ),
+          Text(label,
+              style: AppTheme.labelThemed(context).copyWith(color: onCardMuted)),
         ],
       ),
     );
@@ -470,28 +455,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ============ Empty state (new user) ============
 
-  Widget _buildFirstMatchCard() {
+  Widget _buildFirstMatchCard(bool vibrant) {
     return PressableCard(
       onTap: _openQuickMatch,
-      padding: AppTheme.cardPaddingLarge,
-      accent: AppTheme.primary,
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
       semanticLabel: 'Log your first match',
+      accent: vibrant ? AppAccents.teal : null,
       child: Row(
         children: [
-          const TonalIconBadge(
-            icon: Icons.sports_tennis_rounded,
-            color: AppAccents.teal,
-            size: 52,
-          ),
+          TonalIconBadge(
+              icon: Icons.sports_tennis_rounded,
+              size: 52,
+              color: vibrant ? AppAccents.teal : null),
           const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Log your first match',
-                  style: AppTheme.headingSmallThemed(context),
-                ),
+                Text('Log your first match',
+                    style: AppTheme.headingSmallThemed(context)),
                 const SizedBox(height: 4),
                 Text(
                   'Takes 30 seconds. Your win rate, form and coaching unlock from here.',
@@ -509,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ============ Recent activity ============
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(bool vibrant) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -518,21 +500,22 @@ class _HomeScreenState extends State<HomeScreen> {
           actionLabel: 'View all',
           onAction: _openMatchHistory,
         ),
-        const SizedBox(height: AppTheme.spaceSM),
+        const SizedBox(height: AppTheme.spaceMD),
         ...List.generate(
           _recentMatches.take(3).length,
           (index) => Padding(
             padding: const EdgeInsets.only(bottom: AppTheme.spaceSM),
-            child: _buildMatchItem(_recentMatches[index]),
+            child: _buildMatchItem(_recentMatches[index], vibrant),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMatchItem(MatchPerformance match) {
+  Widget _buildMatchItem(MatchPerformance match, bool vibrant) {
     final isWin = match.result.toLowerCase() == 'win';
-    final accent = isWin ? AppAccents.green : AppAccents.coral;
+    final winColor = vibrant ? AppAccents.green : AppTheme.textPrimaryColor(context);
+    final lossColor = vibrant ? AppAccents.coral : AppTheme.textMutedColor(context);
 
     return PressableCard(
       onTap: _openMatchHistory,
@@ -543,7 +526,9 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 4,
             height: 38,
             decoration: BoxDecoration(
-              color: accent,
+              color: isWin
+                  ? winColor
+                  : lossColor.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -560,7 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.headingSmallThemed(context)
-                            .copyWith(fontSize: 17),
+                            .copyWith(fontSize: 17, letterSpacing: -0.2),
                       ),
                     ),
                     const SizedBox(width: AppTheme.spaceSM),
@@ -583,7 +568,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: AppTheme.spaceSM),
           TonalChip(
             label: isWin ? 'Win' : 'Loss',
-            color: accent,
+            filled: isWin,
+            color: isWin ? winColor : lossColor,
           ),
         ],
       ),
@@ -592,24 +578,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ============ Coaching feature card ============
 
-  Widget _buildCoachCard() {
+  Widget _buildCoachCard(bool vibrant) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(title: 'Coaching'),
-        const SizedBox(height: AppTheme.spaceSM),
+        const SizedBox(height: AppTheme.spaceMD),
         PressableCard(
           onTap: _openCoach,
-          padding: AppTheme.cardPaddingLarge,
-          accent: AppAccents.violet,
+          padding: const EdgeInsets.all(AppTheme.spaceLG),
           semanticLabel: 'Open Tactical Coach',
+          accent: vibrant ? AppAccents.violet : null,
           child: Row(
             children: [
-              const TonalIconBadge(
-                icon: Icons.insights_rounded,
-                color: AppAccents.violet,
-                size: 52,
-              ),
+              TonalIconBadge(
+                  icon: Icons.insights_rounded,
+                  size: 52,
+                  color: vibrant ? AppAccents.violet : null),
               const SizedBox(width: AppTheme.spaceMD),
               Expanded(
                 child: Column(
@@ -617,12 +602,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          'Tactical Coach',
-                          style: AppTheme.headingSmallThemed(context),
-                        ),
+                        Text('Tactical Coach',
+                            style: AppTheme.headingSmallThemed(context)),
                         const SizedBox(width: AppTheme.spaceSM),
-                        const TonalChip(label: 'AI', color: AppAccents.violet),
+                        TonalChip(
+                          label: 'AI',
+                          filled: true,
+                          color: AppTheme.primary,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -644,19 +631,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ============ Skeletons ============
 
-  Widget _buildHeroSkeleton() {
-    return const SkeletonBox(height: 196, radius: AppTheme.radiusXL);
-  }
-
   Widget _buildListSkeleton() {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SkeletonBox(height: 18, width: 140, radius: AppTheme.radiusSM),
         SizedBox(height: AppTheme.spaceMD),
-        SkeletonBox(height: 68),
+        SkeletonBox(height: 70),
         SizedBox(height: AppTheme.spaceSM),
-        SkeletonBox(height: 68),
+        SkeletonBox(height: 70),
       ],
     );
   }
