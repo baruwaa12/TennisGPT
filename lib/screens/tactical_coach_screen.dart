@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ui_kit.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -18,15 +19,9 @@ import '../widgets/voice_input_button.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
-/// Coach Screen
-///
-/// Redesigned to display structured analytical output:
-/// - Summary Card
-/// - 3 Recommendation Cards (Title / Why / How)
-/// - Pattern Detected Highlight Card
-/// - Next Match Focus Banner
-///
-/// Clean, structured, analytical. No hype visuals.
+/// Coach Screen — modern, scannable, colour-coded analytical output.
+/// Each insight section gets a distinct tonal accent so the wall of text
+/// becomes glanceable without feeling loud.
 class TacticalCoachScreen extends StatefulWidget {
   const TacticalCoachScreen({super.key});
 
@@ -46,11 +41,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   bool _isLoading = true;
   bool _isGenerating = false;
   bool _isSaving = false;
-  bool _showSavedTab = false;
+  int _activeTab = 0; // 0 = Coach, 1 = Saved
   List<Map<String, dynamic>> _savedEntries = [];
   int? _expandedCardIndex;
 
-  // Calculated stats
   int _wins = 0;
   int _total = 0;
   String _formTrend = '';
@@ -80,12 +74,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             curve: Curves.easeOut,
             alignment: 0.1,
           );
-        } else if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOut,
-          );
         }
       });
     });
@@ -112,8 +100,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         }
       }
 
-      String topStrength = 'Serve';
-      String needsWork = 'Consistency';
+      String topStrength = '';
+      String needsWork = '';
 
       if (matches.isNotEmpty) {
         final strengthTotals = <String, int>{};
@@ -140,6 +128,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _recentMatches = matches;
         _wins = wins;
@@ -150,6 +139,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -192,9 +182,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     }
 
     final consented = await AiDisclosureConsent.ensureAccepted(context);
-    if (!consented) {
-      return;
-    }
+    if (!consented) return;
     if (!mounted) return;
 
     setState(() {
@@ -207,11 +195,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final response = await apiService.tacticalAnalysis(
-        query,
-        _recentMatches,
-      );
+      final response = await apiService.tacticalAnalysis(query, _recentMatches);
 
+      if (!mounted) return;
       setState(() {
         _isGenerating = false;
         _analysisResult = response;
@@ -258,6 +244,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isGenerating = false;
         _errorMessage = 'Something went wrong. Please try again.';
@@ -269,229 +256,230 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.translucent,
-        child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(color: AppTheme.primary),
-              )
-            : CustomScrollView(
-                controller: _scrollController,
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                slivers: [
-                  SliverAppBar(
-                    backgroundColor: AppTheme.scaffoldBackground(context),
-                    elevation: 0,
-                    pinned: true,
-                    centerTitle: true,
-                    leading: IconButton(
-                      icon: Icon(Icons.arrow_back,
-                          color: AppTheme.textSecondaryColor(context)),
-                      onPressed: () => Navigator.pop(context),
+      body: Stack(
+        children: [
+          const AmbientBackground(),
+          SafeArea(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              behavior: HitTestBehavior.translucent,
+              child: Column(
+                children: [
+                  _buildTopBar(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppTheme.spaceMD,
+                      0,
+                      AppTheme.spaceMD,
+                      AppTheme.spaceMD,
                     ),
-                    title: Text(
-                      'Coach',
-                      style: AppTheme.headingSmallThemed(context).copyWith(
-                        color: AppTheme.textSecondaryColor(context),
-                      ),
+                    child: SegmentedTabs(
+                      labels: const ['Coach', 'Saved'],
+                      selectedIndex: _activeTab,
+                      onChanged: (i) {
+                        setState(() => _activeTab = i);
+                        if (i == 1) _loadSavedEntries();
+                      },
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _showSavedTab = !_showSavedTab);
-                          if (_showSavedTab) _loadSavedEntries();
-                        },
-                        child: Text(
-                          _showSavedTab ? 'Coach' : 'Saved',
-                          style: AppTheme.labelThemed(context).copyWith(
-                            color: AppTheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
-                  if (_showSavedTab)
-                    SliverPadding(
-                      padding: AppTheme.screenPadding,
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          _buildSavedTab(),
-                          const SizedBox(height: AppTheme.spaceXXL),
-                        ]),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: AppTheme.screenPadding,
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          _buildCurrentFormCard(),
-                          const SizedBox(height: AppTheme.spaceLG),
-                          _buildOptionalContextInput(),
-                          const SizedBox(height: AppTheme.spaceMD),
-                          _buildReviewButton(),
-
-                          if (_isGenerating) ...[
-                            const SizedBox(height: AppTheme.spaceLG),
-                            _buildLoadingState(),
-                          ],
-
-                          if (_errorMessage != null && !_isGenerating) ...[
-                            const SizedBox(height: AppTheme.spaceLG),
-                            _buildErrorState(),
-                          ],
-
-                          // Structured analysis output
-                          if (_analysisResult != null && !_isGenerating) ...[
-                            const SizedBox(height: AppTheme.spaceLG),
-                            _buildStructuredAnalysis(),
-                          ],
-
-                          const SizedBox(height: AppTheme.spaceXXL),
-                        ]),
-                      ),
-                    ),
+                  Expanded(
+                    child: _activeTab == 1 ? _buildSavedView() : _buildCoachView(),
+                  ),
                 ],
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ============ Current Form Card ============
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceSM,
+        AppTheme.spaceSM,
+        AppTheme.spaceMD,
+        AppTheme.spaceSM,
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Back',
+            iconSize: 22,
+            style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+            color: AppTheme.textSecondaryColor(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(width: AppTheme.spaceXS),
+          Text('Coach', style: AppTheme.headingMediumThemed(context)),
+        ],
+      ),
+    );
+  }
+
+  // ============ Coach view ============
+
+  Widget _buildCoachView() {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMD,
+        0,
+        AppTheme.spaceMD,
+        AppTheme.spaceXXL,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isLoading)
+            const SkeletonBox(height: 150, radius: AppTheme.radiusXL)
+          else
+            _buildCurrentFormCard(),
+          const SizedBox(height: AppTheme.spaceLG),
+          _buildContextInput(),
+          const SizedBox(height: AppTheme.spaceMD),
+          PrimaryActionButton(
+            label: 'Review my matches',
+            icon: Icons.auto_awesome_rounded,
+            loading: _isGenerating,
+            loadingLabel: 'Reviewing…',
+            onPressed: _isLoading ? null : _reviewRecentMatchHistory,
+          ),
+          if (_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildAnalysisSkeleton(),
+          ],
+          if (_errorMessage != null && !_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildErrorState(),
+          ],
+          if (_analysisResult != null && !_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildStructuredAnalysis(),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _buildCurrentFormCard() {
     final winPercentage = _total > 0 ? ((_wins / _total) * 100).round() : 0;
     final hasMatches = _recentMatches.isNotEmpty;
+    final trendingUp = _formTrend.toLowerCase().contains('up');
+
+    if (!hasMatches) {
+      return Container(
+        padding: AppTheme.cardPaddingLarge,
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground(context).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+          border: Border.all(color: AppTheme.borderColor(context)),
+        ),
+        child: Row(
+          children: [
+            const TonalIconBadge(
+              icon: Icons.query_stats_rounded,
+              color: AppAccents.blue,
+              size: 48,
+            ),
+            const SizedBox(width: AppTheme.spaceMD),
+            Expanded(
+              child: Text(
+                'Log a few matches and your coach will spot the patterns.',
+                style: AppTheme.bodyMediumThemed(context),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
+        color: AppTheme.cardBackground(context).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.borderColor(context), width: 1),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.show_chart_rounded, color: AppTheme.primary, size: 20),
-              const SizedBox(width: AppTheme.spaceSM),
-              Text('Recent Match Trends',
-                  style: AppTheme.headingSmallThemed(context)),
+              Text('Recent trends',
+                  style: AppTheme.labelThemed(context)),
+              const Spacer(),
+              if (_formTrend.isNotEmpty)
+                TonalChip(
+                  label: _formTrend,
+                  color: trendingUp ? AppAccents.green : AppAccents.amber,
+                  icon: trendingUp
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_flat_rounded,
+                ),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceMD),
-          if (hasMatches) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$winPercentage%',
-                  style: AppTheme.statLargeThemed(context).copyWith(
-                    color: winPercentage >= 50
-                        ? AppTheme.win
-                        : AppTheme.textPrimaryColor(context),
-                  ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$winPercentage%',
+                style: AppTheme.statLargeThemed(context).copyWith(
+                  color: winPercentage >= 50
+                      ? AppAccents.green
+                      : AppTheme.textPrimaryColor(context),
                 ),
-                const SizedBox(width: AppTheme.spaceSM),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('win rate',
-                      style: AppTheme.bodySmallThemed(context)),
-                ),
-                if (_formTrend.isNotEmpty) ...[
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spaceSM,
-                      vertical: AppTheme.spaceXS,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _formTrend.contains('up')
-                          ? AppTheme.win.withValues(alpha: 0.15)
-                          : AppTheme.warning.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _formTrend.contains('up')
-                              ? Icons.trending_up_rounded
-                              : Icons.trending_flat_rounded,
-                          size: 14,
-                          color: _formTrend.contains('up')
-                              ? AppTheme.win
-                              : AppTheme.warning,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formTrend,
-                          style: AppTheme.labelThemed(context).copyWith(
-                            color: _formTrend.contains('up')
-                                ? AppTheme.win
-                                : AppTheme.warning,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-            Row(
-              children: [
-                Text('Last ${_recentMatches.take(5).length}',
-                    style: AppTheme.labelThemed(context)),
-                const SizedBox(width: AppTheme.spaceSM),
-                ..._recentMatches.take(5).map((match) {
-                  final isWin = match.result.toLowerCase() == 'win';
-                  return Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: isWin ? AppTheme.win : AppTheme.loss,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
-              ],
-            ),
-            const SizedBox(height: AppTheme.spaceMD),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildFormStat(
-                    label: 'Strength',
-                    value: _topStrength,
-                    color: AppTheme.win,
-                  ),
-                ),
-                const SizedBox(width: AppTheme.spaceMD),
-                Expanded(
-                  child: _buildFormStat(
-                    label: 'Needs work',
-                    value: _needsWork,
-                    color: AppTheme.warning,
-                  ),
-                ),
-              ],
-            ),
-          ] else
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-              child: Text(
-                'Log matches to see coaching trends',
-                style: AppTheme.bodyMediumThemed(context),
               ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child:
+                    Text('win rate', style: AppTheme.bodySmallThemed(context)),
+              ),
+              const Spacer(),
+              ..._recentMatches.take(5).map((match) {
+                final isWin = match.result.toLowerCase() == 'win';
+                return Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: isWin ? AppAccents.green : AppAccents.coral,
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ],
+          ),
+          if (_topStrength.isNotEmpty || _needsWork.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spaceMD),
+            Row(
+              children: [
+                if (_topStrength.isNotEmpty)
+                  Expanded(
+                    child: _buildFormStat(
+                      label: 'Strength',
+                      value: _topStrength,
+                      color: AppAccents.green,
+                    ),
+                  ),
+                if (_topStrength.isNotEmpty && _needsWork.isNotEmpty)
+                  const SizedBox(width: AppTheme.spaceMD),
+                if (_needsWork.isNotEmpty)
+                  Expanded(
+                    child: _buildFormStat(
+                      label: 'Needs work',
+                      value: _needsWork,
+                      color: AppAccents.amber,
+                    ),
+                  ),
+              ],
             ),
+          ],
         ],
       ),
     );
@@ -505,14 +493,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceSM),
       decoration: BoxDecoration(
-        color: AppTheme.elevatedBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        color: AppAccents.tint(color, alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
       ),
       child: Row(
         children: [
           Container(
             width: 3,
-            height: 24,
+            height: 26,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(2),
@@ -529,7 +517,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 Text(
                   value,
                   style: AppTheme.headingSmallThemed(context)
-                      .copyWith(fontSize: 13),
+                      .copyWith(fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -540,99 +528,31 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _buildReviewButton() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Review your tennis',
-            style: AppTheme.headingMediumThemed(context)),
-        const SizedBox(height: AppTheme.spaceXS),
-        Text(
-          'Insights based on your logged matches',
-          style: AppTheme.bodySmallThemed(context),
-        ),
-        const SizedBox(height: AppTheme.spaceMD),
-        GestureDetector(
-          onTap: _isGenerating ? null : _reviewRecentMatchHistory,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            decoration: BoxDecoration(
-              color: AppTheme.primary,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-            ),
-            child: Center(
-              child: _isGenerating
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            color: AppTheme.surfaceDark,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        const SizedBox(width: AppTheme.spaceSM),
-                        Text(
-                          'Reviewing history...',
-                          style: AppTheme.headingSmallThemed(context)
-                              .copyWith(color: AppTheme.surfaceDark),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      'Review recent match history',
-                      style: AppTheme.headingSmallThemed(context)
-                          .copyWith(color: AppTheme.surfaceDark),
-                    ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============ Optional Context Input ============
-
-  Widget _buildOptionalContextInput() {
+  Widget _buildContextInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Text(
-              'Add context',
-              style: AppTheme.labelThemed(context)
-                  .copyWith(color: AppTheme.textMutedColor(context)),
+            Text('Add context',
+                style: AppTheme.headingSmallThemed(context)),
+            const SizedBox(width: AppTheme.spaceSM),
+            const TonalChip(
+              label: 'Optional',
+              color: AppAccents.blue,
             ),
             const Spacer(),
-            Icon(Icons.mic,
-                size: 14,
-                color: AppTheme.textMutedColor(context).withValues(alpha: 0.5)),
+            Icon(Icons.mic_none_rounded,
+                size: 16, color: AppTheme.textMutedColor(context)),
             const SizedBox(width: 4),
-            Text(
-              'Voice enabled',
-              style: AppTheme.labelThemed(context).copyWith(
-                fontSize: 11,
-                color: AppTheme.textMutedColor(context).withValues(alpha: 0.5),
-              ),
-            ),
+            Text('Type or speak',
+                style: AppTheme.bodySmallThemed(context)),
           ],
-        ),
-        Text(
-          'Optional - type or speak',
-          style: AppTheme.labelThemed(context).copyWith(
-            fontSize: 11,
-            color: AppTheme.textMutedColor(context).withValues(alpha: 0.6),
-          ),
         ),
         const SizedBox(height: AppTheme.spaceSM),
         VoiceTextField(
           controller: _contextController,
-          hintText: 'e.g. I get tight serving for sets...',
+          hintText: 'e.g. I get tight serving for the set…',
           maxLines: 2,
           style: AppTheme.bodyMediumThemed(context)
               .copyWith(color: AppTheme.textPrimaryColor(context)),
@@ -641,40 +561,39 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  // ============ Loading State ============
-
-  Widget _buildLoadingState() {
-    return TGCard(
-      padding: AppTheme.cardPaddingLarge,
-      child: Column(
-        children: [
-          CircularProgressIndicator(color: AppTheme.primary),
-          const SizedBox(height: AppTheme.spaceMD),
-          Text('Reviewing your recent match history...',
-              style: AppTheme.bodyMediumThemed(context)),
-        ],
-      ),
+  Widget _buildAnalysisSkeleton() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SkeletonBox(height: 14, width: 180, radius: AppTheme.radiusSM),
+        SizedBox(height: AppTheme.spaceMD),
+        SkeletonBox(height: 96, radius: AppTheme.radiusLG),
+        SizedBox(height: AppTheme.spaceMD),
+        SkeletonBox(height: 96, radius: AppTheme.radiusLG),
+        SizedBox(height: AppTheme.spaceMD),
+        SkeletonBox(height: 96, radius: AppTheme.radiusLG),
+      ],
     );
   }
-
-  // ============ Error State ============
 
   Widget _buildErrorState() {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.loss.withValues(alpha: 0.1),
+        color: AppAccents.tint(AppAccents.coral, alpha: 0.10),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.loss.withValues(alpha: 0.3)),
+        border: Border.all(color: AppAccents.coral.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppTheme.loss, size: 40),
+          const TonalIconBadge(
+            icon: Icons.error_outline_rounded,
+            color: AppAccents.coral,
+          ),
           const SizedBox(height: AppTheme.spaceSM),
           Text(
-            'Unable to generate insight',
-            style: AppTheme.headingSmallThemed(context)
-                .copyWith(color: AppTheme.loss),
+            'Couldn\'t generate insight',
+            style: AppTheme.headingSmallThemed(context),
           ),
           const SizedBox(height: AppTheme.spaceXS),
           Text(
@@ -684,21 +603,17 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           ),
           const SizedBox(height: AppTheme.spaceMD),
           TextButton(
-            onPressed: () {
-              setState(() => _errorMessage = null);
-            },
-            child: Text(
-              'Dismiss',
-              style: AppTheme.headingSmallThemed(context)
-                  .copyWith(color: AppTheme.primary),
-            ),
+            onPressed: () => setState(() => _errorMessage = null),
+            style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+            child: Text('Dismiss',
+                style: AppTheme.label.copyWith(color: AppTheme.primary)),
           ),
         ],
       ),
     );
   }
 
-  // ============ Structured Coach Output ============
+  // ============ Structured analysis ============
 
   Widget _buildStructuredAnalysis() {
     final data = _analysisResult!;
@@ -735,48 +650,61 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       key: _insightCardKey,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Based on your last $matchesUsed logged matches',
-          style: AppTheme.labelThemed(context),
+        Row(
+          children: [
+            const Icon(Icons.auto_awesome_rounded,
+                size: 15, color: AppAccents.violet),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Based on your last $matchesUsed matches',
+                style: AppTheme.labelThemed(context),
+              ),
+            ),
+          ],
         ),
         if (scopeNote.isNotEmpty) ...[
           const SizedBox(height: AppTheme.spaceXS),
           Text(scopeNote, style: AppTheme.bodySmallThemed(context)),
         ],
         const SizedBox(height: AppTheme.spaceMD),
-        _buildCoachSectionCard(
-          title: 'WHAT KEEPS SHOWING UP',
+        _buildCoachSection(
+          title: 'What keeps showing up',
           text: whatKeepsShowingUp['text'] as String? ?? '',
           evidence: whatKeepsShowingUp['evidence'] as String?,
           confidence: whatKeepsShowingUp['confidence'] as String?,
           trend: whatKeepsShowingUp['trend'] as String?,
-          icon: Icons.visibility_outlined,
+          icon: Icons.radar_rounded,
+          color: AppAccents.blue,
           highlighted: true,
         ),
         const SizedBox(height: AppTheme.spaceMD),
-        _buildCoachSectionCard(
-          title: 'WHAT\'S HELPING YOU WIN',
+        _buildCoachSection(
+          title: 'What\'s helping you win',
           text: whatsHelpingYouWin['text'] as String? ?? '',
           evidence: whatsHelpingYouWin['evidence'] as String?,
           confidence: whatsHelpingYouWin['confidence'] as String?,
           trend: whatsHelpingYouWin['trend'] as String?,
           icon: Icons.trending_up_rounded,
+          color: AppAccents.green,
         ),
         const SizedBox(height: AppTheme.spaceMD),
-        _buildCoachSectionCard(
-          title: 'WHAT BREAKS UNDER PRESSURE',
+        _buildCoachSection(
+          title: 'What breaks under pressure',
           text: whatBreaksUnderPressure['text'] as String? ?? '',
           evidence: whatBreaksUnderPressure['evidence'] as String?,
           confidence: whatBreaksUnderPressure['confidence'] as String?,
           trend: whatBreaksUnderPressure['trend'] as String?,
           icon: Icons.warning_amber_rounded,
+          color: AppAccents.coral,
         ),
         const SizedBox(height: AppTheme.spaceMD),
-        _buildCoachSectionCard(
-          title: 'NEXT MATCH FOCUS',
+        _buildCoachSection(
+          title: 'Next match focus',
           text: _buildNextMatchFocusText(nextMatchFocus),
           confidence: nextMatchFocus['confidence'] as String?,
           icon: Icons.center_focus_strong_rounded,
+          color: AppAccents.violet,
         ),
         if (hasPracticePlan) ...[
           const SizedBox(height: AppTheme.spaceMD),
@@ -788,10 +716,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _buildCoachSectionCard({
+  Widget _buildCoachSection({
     required String title,
     required String text,
     required IconData icon,
+    required Color color,
     String? evidence,
     String? confidence,
     String? trend,
@@ -801,12 +730,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
         color: highlighted
-            ? AppTheme.primary.withValues(alpha: 0.05)
-            : AppTheme.cardBackground(context),
+            ? AppAccents.tint(color, alpha: 0.07)
+            : AppTheme.cardBackground(context).withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         border: Border.all(
           color: highlighted
-              ? AppTheme.primary.withValues(alpha: 0.25)
+              ? color.withValues(alpha: 0.35)
               : AppTheme.borderColor(context),
         ),
       ),
@@ -815,13 +744,13 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppTheme.primary, size: 18),
+              TonalIconBadge(icon: icon, color: color, size: 36),
               const SizedBox(width: AppTheme.spaceSM),
-              Text(
-                title,
-                style: AppTheme.labelThemed(context).copyWith(
-                  color: AppTheme.textSecondaryColor(context),
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTheme.headingSmallThemed(context)
+                      .copyWith(fontSize: 16),
                 ),
               ),
             ],
@@ -829,7 +758,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           const SizedBox(height: AppTheme.spaceSM),
           Text(
             text,
-            style: AppTheme.bodyLargeThemed(context).copyWith(height: 1.45),
+            style: AppTheme.bodyLargeThemed(context)
+                .copyWith(height: 1.5, fontSize: 16),
           ),
           if ((evidence ?? '').isNotEmpty ||
               (confidence ?? '').isNotEmpty ||
@@ -848,15 +778,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   String _buildEvidenceMeta(
       String? evidence, String? confidence, String? trend) {
     final parts = <String>[];
-    if ((evidence ?? '').isNotEmpty) {
-      parts.add(evidence!.trim());
-    }
+    if ((evidence ?? '').isNotEmpty) parts.add(evidence!.trim());
     if ((confidence ?? '').isNotEmpty) {
       parts.add('Confidence: ${confidence!.trim()}');
     }
-    if ((trend ?? '').isNotEmpty) {
-      parts.add('Trend: ${trend!.trim()}');
-    }
+    if ((trend ?? '').isNotEmpty) parts.add('Trend: ${trend!.trim()}');
     return parts.join(' • ');
   }
 
@@ -874,51 +800,51 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        color: AppTheme.elevatedBackground(context),
+        color: AppAccents.tint(AppAccents.amber, alpha: 0.10),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: AppTheme.borderColor(context)),
+        border: Border.all(color: AppAccents.amber.withValues(alpha: 0.30)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.fitness_center_rounded,
-                  color: AppTheme.textSecondaryColor(context), size: 18),
+              const TonalIconBadge(
+                icon: Icons.fitness_center_rounded,
+                color: AppAccents.amber,
+                size: 36,
+              ),
               const SizedBox(width: AppTheme.spaceSM),
               Text(
-                'OPTIONAL PRACTICE PLAN',
-                style: AppTheme.labelThemed(context).copyWith(
-                  color: AppTheme.textSecondaryColor(context),
-                  fontWeight: FontWeight.w700,
-                ),
+                'Practice plan',
+                style:
+                    AppTheme.headingSmallThemed(context).copyWith(fontSize: 16),
               ),
             ],
           ),
           if (drillName.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceSM),
-            Text(drillName, style: AppTheme.headingSmallThemed(context)),
+            Text(drillName,
+                style: AppTheme.headingSmallThemed(context)
+                    .copyWith(fontSize: 15)),
           ],
           if (objective.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceXS),
-            Text(
-              objective,
-              style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.45),
-            ),
+            Text(objective,
+                style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.5)),
           ],
         ],
       ),
     );
   }
 
-  /// Actions row (share + new focus)
   Widget _buildActionsRow(String shareText) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Save button
         TextButton.icon(
           onPressed: _isSaving ? null : () => _saveCurrentAdvice(shareText),
+          style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
           icon: _isSaving
               ? SizedBox(
                   width: 16,
@@ -931,10 +857,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               : Icon(Icons.bookmark_outline_rounded,
                   size: 18, color: AppTheme.primary),
           label: Text(
-            _isSaving ? 'Saving...' : 'Save',
-            style: AppTheme.headingSmallThemed(context).copyWith(
-              color: AppTheme.primary,
-            ),
+            _isSaving ? 'Saving…' : 'Save',
+            style: AppTheme.label.copyWith(color: AppTheme.primary),
           ),
         ),
         const SizedBox(width: AppTheme.spaceSM),
@@ -952,20 +876,20 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               _contextController.clear();
             });
           },
+          style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
           icon: Icon(Icons.refresh_rounded,
               size: 18, color: AppTheme.textSecondaryColor(context)),
           label: Text(
             'New review',
-            style: AppTheme.headingSmallThemed(context).copyWith(
-              color: AppTheme.textSecondaryColor(context),
-            ),
+            style:
+                AppTheme.label.copyWith(color: AppTheme.textSecondaryColor(context)),
           ),
         ),
       ],
     );
   }
 
-  // ============ Save + Saved Tab ============
+  // ============ Save + Saved view ============
 
   Future<void> _saveCurrentAdvice(String content) async {
     if (_isSaving) return;
@@ -981,11 +905,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'Saved (max 3 stored)' : 'Could not save. Try again.',
+              success ? 'Saved — keeps your latest 3' : 'Could not save. Try again.',
               style: AppTheme.bodyMediumThemed(context)
                   .copyWith(color: Colors.white),
             ),
-            backgroundColor: success ? AppTheme.win : AppTheme.loss,
+            backgroundColor: success ? AppAccents.green : AppAccents.coral,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 2),
             shape: RoundedRectangleBorder(
@@ -1002,55 +926,66 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   Future<void> _loadSavedEntries() async {
     final apiService = Provider.of<ApiService>(context, listen: false);
     final entries = await apiService.getSavedTactical();
-    if (mounted) {
-      setState(() => _savedEntries = entries);
-    }
+    if (mounted) setState(() => _savedEntries = entries);
   }
 
-  Widget _buildSavedTab() {
+  Widget _buildSavedView() {
     if (_savedEntries.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXL),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(Icons.bookmark_border_rounded,
-                  size: 48, color: AppTheme.textMutedColor(context)),
-              const SizedBox(height: AppTheme.spaceMD),
-              Text('No saved advice yet',
-                  style: AppTheme.headingSmallThemed(context)),
-              const SizedBox(height: AppTheme.spaceXS),
-              Text(
-                'Generate tactical advice and tap Save to keep it here.',
-                style: AppTheme.bodySmallThemed(context),
-                textAlign: TextAlign.center,
-              ),
-            ],
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(AppTheme.spaceLG),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceXXL),
+          child: Center(
+            child: Column(
+              children: [
+                const TonalIconBadge(
+                  icon: Icons.bookmark_border_rounded,
+                  color: AppAccents.violet,
+                  size: 60,
+                ),
+                const SizedBox(height: AppTheme.spaceMD),
+                Text('No saved advice yet',
+                    style: AppTheme.headingSmallThemed(context)),
+                const SizedBox(height: AppTheme.spaceXS),
+                Text(
+                  'Generate a review and tap Save to keep it here\n(your latest 3 are kept).',
+                  style: AppTheme.bodySmallThemed(context),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Saved Advice', style: AppTheme.headingMediumThemed(context)),
-        const SizedBox(height: AppTheme.spaceXS),
-        Text(
-          'Most recent first (max 3)',
-          style: AppTheme.bodySmallThemed(context),
-        ),
-        const SizedBox(height: AppTheme.spaceMD),
-        ...List.generate(_savedEntries.length, (index) {
-          final entry = _savedEntries[index];
-          final content = entry['content'] as String? ?? '';
-          final createdAt = entry['createdAtUtc'] as String? ?? '';
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
-            child: _buildExpandableSavedCard(index, content, createdAt),
-          );
-        }),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.spaceMD,
+        0,
+        AppTheme.spaceMD,
+        AppTheme.spaceXXL,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Saved advice', style: AppTheme.headingMediumThemed(context)),
+          const SizedBox(height: AppTheme.spaceXS),
+          Text('Most recent first · keeps your latest 3',
+              style: AppTheme.bodySmallThemed(context)),
+          const SizedBox(height: AppTheme.spaceMD),
+          ...List.generate(_savedEntries.length, (index) {
+            final entry = _savedEntries[index];
+            final content = entry['content'] as String? ?? '';
+            final createdAt = entry['createdAtUtc'] as String? ?? '';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+              child: _buildExpandableSavedCard(index, content, createdAt),
+            );
+          }),
+        ],
+      ),
     );
   }
 
@@ -1073,95 +1008,59 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       } catch (_) {}
     }
 
-    // Preview: first ~200 characters or full if short
     final needsExpansion = content.length > 200;
     final previewText =
         needsExpansion ? '${content.substring(0, 200).trimRight()}…' : content;
 
-    return GestureDetector(
+    return PressableCard(
+      padding: AppTheme.cardPaddingLarge,
+      accent: isExpanded ? AppAccents.violet : null,
       onTap: needsExpansion
           ? () {
               HapticFeedback.selectionClick();
-              setState(() {
-                _expandedCardIndex = isExpanded ? null : index;
-              });
+              setState(() => _expandedCardIndex = isExpanded ? null : index);
             }
           : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: AppTheme.cardPaddingLarge,
-        decoration: BoxDecoration(
-          color: AppTheme.cardBackground(context),
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          border: Border.all(
-            color: isExpanded
-                ? AppTheme.primary.withValues(alpha: 0.4)
-                : AppTheme.borderColor(context),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row: date + expand icon
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (dateLabel.isNotEmpty)
-                  Text(
-                    dateLabel,
-                    style: AppTheme.labelThemed(context).copyWith(
-                      color: AppTheme.textMutedColor(context),
-                    ),
-                  ),
-                if (needsExpansion)
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0.0,
-                    duration: const Duration(milliseconds: 250),
-                    child: Icon(
-                      Icons.expand_more_rounded,
-                      size: 20,
-                      color: AppTheme.textMutedColor(context),
-                    ),
-                  ),
-              ],
-            ),
-            if (dateLabel.isNotEmpty || needsExpansion)
-              const SizedBox(height: AppTheme.spaceSM),
-
-            // Content with animated expand/collapse
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              alignment: Alignment.topCenter,
-              child: isExpanded || !needsExpansion
-                  ? Text(
-                      content,
-                      style: AppTheme.bodyMediumThemed(context)
-                          .copyWith(height: 1.5),
-                    )
-                  : Text(
-                      previewText,
-                      style: AppTheme.bodyMediumThemed(context)
-                          .copyWith(height: 1.5),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-            ),
-
-            // Tap hint when collapsed
-            if (needsExpansion && !isExpanded) ...[
-              const SizedBox(height: AppTheme.spaceXS),
-              Text(
-                'Tap to read more',
-                style: AppTheme.labelThemed(context).copyWith(
-                  color: AppTheme.primary.withValues(alpha: 0.7),
-                  fontSize: 11,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (dateLabel.isNotEmpty)
+                TonalChip(label: dateLabel, color: AppAccents.violet)
+              else
+                const SizedBox.shrink(),
+              if (needsExpansion)
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: Icon(Icons.expand_more_rounded,
+                      size: 20, color: AppTheme.textMutedColor(context)),
                 ),
-              ),
             ],
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: Text(
+              isExpanded || !needsExpansion ? content : previewText,
+              style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.5),
+              maxLines: isExpanded || !needsExpansion ? null : 4,
+              overflow: isExpanded || !needsExpansion
+                  ? TextOverflow.clip
+                  : TextOverflow.ellipsis,
+            ),
+          ),
+          if (needsExpansion && !isExpanded) ...[
+            const SizedBox(height: AppTheme.spaceXS),
+            Text('Tap to read more',
+                style: AppTheme.label
+                    .copyWith(color: AppTheme.primary.withValues(alpha: 0.8))),
           ],
-        ),
+        ],
       ),
     );
   }

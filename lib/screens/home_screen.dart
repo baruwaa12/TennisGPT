@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ui_kit.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
@@ -13,10 +14,9 @@ import 'quick_match_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 
-/// Home Screen - Performance Dashboard
-/// Direction: calm tactical intelligence.
-/// Behavior is unchanged; only UI presentation is refined.
-
+/// Home Screen — Performance Dashboard
+/// Direction: modern, youthful, colourful-but-sleek. One gradient hero as the
+/// single colour moment; neutral surfaces and tonal accents carry the rest.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentStreak = 0;
   int _totalMatches = 0;
   bool _isLoading = true;
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
@@ -48,15 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
       final total = await _matchHistoryService.getTotalMatches();
       final streak = _calculateStreak(matches);
 
+      if (!mounted) return;
       setState(() {
         _recentMatches = matches;
         _winRate = winRate;
         _totalMatches = total;
         _currentStreak = streak;
         _isLoading = false;
+        _hasLoadedOnce = true;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasLoadedOnce = true;
+      });
     }
   }
 
@@ -80,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _isGuest => Provider.of<AuthService>(context, listen: false).isGuest;
 
   /// Shows a sign-in prompt when a guest taps a feature that requires auth.
-  /// Returns true if the user signed in, false if they cancelled.
   Future<bool> _requireSignIn() async {
     final result = await showDialog<bool>(
       context: context,
@@ -104,9 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text('Not now', style: AppTheme.bodyMediumThemed(context)),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx, true);
-            },
+            onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               'Sign in',
               style: AppTheme.bodyMediumThemed(context).copyWith(
@@ -131,19 +135,55 @@ class _HomeScreenState extends State<HomeScreen> {
     return false;
   }
 
+  void _openQuickMatch() {
+    if (_isGuest) {
+      _requireSignIn();
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const QuickMatchScreen()),
+    ).then((_) => _loadStats());
+  }
+
+  void _openMatchHistory() {
+    if (_isGuest) {
+      _requireSignIn();
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MatchHistoryScreen()),
+    ).then((_) => _loadStats());
+  }
+
+  void _openCoach() {
+    if (_isGuest) {
+      _requireSignIn();
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TacticalCoachScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final streakService = Provider.of<StreakService>(context);
+    final court = context.watch<CourtService>();
     final firstName = authService.isGuest
         ? 'Player'
         : (authService.userDisplayName?.split(' ').first ?? 'Player');
+
+    final showSkeleton = _isLoading && !_hasLoadedOnce;
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: Stack(
         children: [
-          _buildAtmosphericBackground(),
+          AmbientBackground(color: court.buttonColorLight),
           SafeArea(
             child: RefreshIndicator(
               onRefresh: _loadStats,
@@ -152,23 +192,37 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(
-                    child: _buildHeader(context, authService, firstName),
-                  ),
+                  SliverToBoxAdapter(child: _buildHeader(firstName)),
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spaceMD),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppTheme.spaceMD),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        _buildPerformanceCard(streakService),
-                        const SizedBox(height: AppTheme.spaceLG),
-                        _buildPrimaryAction(),
+                        if (showSkeleton)
+                          _buildHeroSkeleton()
+                        else if (_totalMatches == 0)
+                          _buildFirstMatchCard()
+                        else
+                          _buildHeroCard(streakService),
+                        const SizedBox(height: AppTheme.spaceMD),
+                        PrimaryActionButton(
+                          label: 'Log a match',
+                          icon: Icons.add_rounded,
+                          gradientColors: [
+                            court.buttonColorLight,
+                            court.buttonColorDark,
+                          ],
+                          onPressed: _openQuickMatch,
+                        ),
                         const SizedBox(height: AppTheme.spaceXL),
-                        if (_recentMatches.isNotEmpty) ...[
+                        if (showSkeleton) ...[
+                          _buildListSkeleton(),
+                          const SizedBox(height: AppTheme.spaceXL),
+                        ] else if (_recentMatches.isNotEmpty) ...[
                           _buildRecentActivity(),
                           const SizedBox(height: AppTheme.spaceXL),
                         ],
-                        _buildToolsSection(),
+                        _buildCoachCard(),
                         const SizedBox(height: AppTheme.spaceXXL),
                       ]),
                     ),
@@ -177,104 +231,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          if (_isLoading)
-            Positioned(
-              top: 18,
-              right: 18,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spaceSM,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceCard.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: AppTheme.borderColor(context)),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.8,
-                        color: AppTheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Refreshing', style: AppTheme.labelThemed(context)),
-                  ],
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  /// Get time-based greeting
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
-    } else if (hour < 17) {
-      return 'Good afternoon';
-    } else {
-      return 'Good evening';
-    }
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
-  Widget _buildAtmosphericBackground() {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              color: AppTheme.scaffoldBackground(context),
-            ),
-          ),
-          Positioned.fill(
-            child: Image.asset(
-              context.watch<CourtService>().backgroundAsset,
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-          ),
-          // Readability scrim: darkens top/bottom so text and cards stay legible
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppTheme.scaffoldBackground(context).withValues(alpha: 0.55),
-                    AppTheme.scaffoldBackground(context).withValues(alpha: 0.30),
-                    AppTheme.scaffoldBackground(context).withValues(alpha: 0.65),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ============ Header ============
 
-  /// Header with timed greeting + elite positioning tagline
-  Widget _buildHeader(
-      BuildContext context, AuthService authService, String firstName) {
+  Widget _buildHeader(String firstName) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.spaceMD,
         AppTheme.spaceMD,
-        AppTheme.spaceMD,
         AppTheme.spaceSM,
+        AppTheme.spaceMD,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
@@ -282,87 +262,74 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   _getGreeting(),
-                  style: AppTheme.labelThemed(context).copyWith(
-                    color: AppTheme.neutral.withValues(alpha: 0.9),
-                  ),
+                  style: AppTheme.labelThemed(context)
+                      .copyWith(color: AppAccents.teal),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   firstName,
-                  style: AppTheme.headingLargeThemed(context).copyWith(
-                    height: 1.0,
-                    color: AppTheme.textPrimaryColor(context),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceCard.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: AppTheme.borderColor(context)),
-                  ),
-                  child: Text(
-                    'TACTICAL INTELLIGENCE BOARD',
-                    style: AppTheme.labelThemed(context).copyWith(
-                      color: AppTheme.textSecondaryColor(context),
-                    ),
-                  ),
+                  style: AppTheme.headingLargeThemed(context)
+                      .copyWith(height: 1.0),
                 ),
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
+          IconButton(
+            onPressed: () {
               HapticFeedback.lightImpact();
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceCard.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor(context)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.tune_rounded,
-                color: AppTheme.textSecondaryColor(context),
-                size: 20,
+            tooltip: 'Settings',
+            iconSize: 22,
+            style: IconButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              backgroundColor:
+                  AppTheme.cardBackground(context).withValues(alpha: 0.85),
+              foregroundColor: AppTheme.textSecondaryColor(context),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                side: BorderSide(color: AppTheme.borderColor(context)),
               ),
             ),
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),
     );
   }
 
-  /// Performance Card - The visual anchor
-  /// Hierarchy: Primary stat → Secondary stats → Tertiary indicators
-  Widget _buildPerformanceCard(StreakService streakService) {
-    final winPercentage = (_winRate * 100).toStringAsFixed(0);
+  // ============ Hero KPI card (the colour moment) ============
+
+  Widget _buildHeroCard(StreakService streakService) {
+    final winPercentage = (_winRate * 100).round();
+    final streakLabel = _currentStreak > 0
+        ? 'On a roll'
+        : _currentStreak < 0
+            ? 'Bounce-back mode'
+            : 'Fresh start';
+    final streakIcon = _currentStreak > 0
+        ? Icons.bolt_rounded
+        : _currentStreak < 0
+            ? Icons.replay_rounded
+            : Icons.spa_rounded;
 
     return Container(
       padding: AppTheme.cardPaddingLarge,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        color: AppTheme.elevatedBackground(context).withValues(alpha: 0.96),
-        border: Border.all(color: AppTheme.borderColor(context)),
+        gradient: LinearGradient(
+          colors: AppAccents.heroGradient(context),
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.12),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            color: AppTheme.primary.withValues(alpha: 0.30),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
@@ -372,222 +339,186 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Season Pulse',
-                    style: AppTheme.labelThemed(context).copyWith(
-                      color: AppTheme.neutral,
-                    ),
-                  ),
-                  Text(
-                    '$winPercentage%',
-                    style: AppTheme.statLargeThemed(context).copyWith(
-                      fontSize: 56,
-                      color: AppTheme.textPrimaryColor(context),
-                    ),
-                  ),
-                ],
+              Text(
+                'This season',
+                style: AppTheme.label.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
               ),
-              Transform.rotate(
-                angle: -0.08,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.17),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: AppTheme.primary.withValues(alpha: 0.55)),
-                  ),
-                  child: Text(
-                    _currentStreak == 0
-                        ? 'RESET'
-                        : _currentStreak > 0
-                            ? 'ON FIRE'
-                            : 'REBUILD',
-                    style: AppTheme.labelThemed(context).copyWith(
-                      color: AppTheme.textPrimaryColor(context),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(streakIcon, size: 13, color: Colors.white),
+                    const SizedBox(width: 5),
+                    Text(
+                      streakLabel,
+                      style: AppTheme.label.copyWith(color: Colors.white),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spaceLG),
-          Container(height: 1, color: AppTheme.borderColor(context)),
           const SizedBox(height: AppTheme.spaceMD),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: _buildSecondaryStatItem(
-                  value: '$_totalMatches',
-                  label: 'matches logged',
+              Text(
+                '$winPercentage',
+                style: AppTheme.statLarge.copyWith(
+                  color: Colors.white,
+                  fontSize: 64,
+                  height: 0.95,
                 ),
               ),
-              if (_currentStreak != 0)
-                Expanded(
-                  child: _buildSecondaryStatItem(
-                    value: '${_currentStreak.abs()}',
-                    label: _currentStreak > 0 ? 'match streak' : 'bounce back',
-                    valueColor: _currentStreak > 0 ? AppTheme.win : null,
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10, left: 2),
+                child: Text(
+                  '%',
+                  style: AppTheme.statMedium.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
-              if (streakService.currentStreak > 0)
-                Expanded(
-                  child: _buildSecondaryStatItem(
-                    value: '${streakService.currentStreak}',
-                    label: 'day streak',
-                  ),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'win rate',
+                  style: AppTheme.bodySmall
+                      .copyWith(color: Colors.white.withValues(alpha: 0.85)),
                 ),
+              ),
             ],
           ),
           if (_recentMatches.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spaceMD),
-            Container(height: 1, color: AppTheme.borderColor(context)),
-            const SizedBox(height: AppTheme.spaceMD),
+            const SizedBox(height: AppTheme.spaceSM),
             Row(
               children: [
-                Text('Recent form', style: AppTheme.labelThemed(context)),
-                const SizedBox(width: AppTheme.spaceMD),
-                ...List.generate(
-                  _recentMatches.take(5).length,
-                  (index) {
-                    final isWin =
-                        _recentMatches[index].result.toLowerCase() == 'win';
-                    return Container(
-                      margin: const EdgeInsets.only(right: 6),
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: isWin
-                            ? AppTheme.win
-                            : AppTheme.loss.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    );
-                  },
+                Text(
+                  'Recent form',
+                  style: AppTheme.label
+                      .copyWith(color: Colors.white.withValues(alpha: 0.75)),
                 ),
+                const SizedBox(width: AppTheme.spaceMD),
+                ..._recentMatches.take(5).map((match) {
+                  final isWin = match.result.toLowerCase() == 'win';
+                  return Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isWin
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
               ],
             ),
           ],
+          const SizedBox(height: AppTheme.spaceMD),
+          Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.18),
+          ),
+          const SizedBox(height: AppTheme.spaceMD),
+          Row(
+            children: [
+              _buildHeroStat('$_totalMatches', 'matches'),
+              if (_currentStreak != 0)
+                _buildHeroStat(
+                  '${_currentStreak.abs()}',
+                  _currentStreak > 0 ? 'win streak' : 'to bounce back',
+                ),
+              if (streakService.currentStreak > 0)
+                _buildHeroStat('${streakService.currentStreak}', 'day streak'),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSecondaryStatItem({
-    required String value,
-    required String label,
-    Color? valueColor,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: AppTheme.statMediumThemed(context).copyWith(
-            color: valueColor ?? AppTheme.textPrimaryColor(context),
+  Widget _buildHeroStat(String value, String label) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: AppTheme.statMedium.copyWith(color: Colors.white),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: AppTheme.labelThemed(context)),
-      ],
-    );
-  }
-
-  /// Primary Action - Clear but not overpowering
-  Widget _buildPrimaryAction() {
-    final court = context.watch<CourtService>();
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        if (_isGuest) {
-          _requireSignIn();
-          return;
-        }
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const QuickMatchScreen()),
-        ).then((_) => _loadStats());
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spaceLG,
-          vertical: AppTheme.spaceLG,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [court.buttonColorLight, court.buttonColorDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTheme.label
+                .copyWith(color: Colors.white.withValues(alpha: 0.8)),
           ),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD + 2),
-          boxShadow: [
-            BoxShadow(
-              color: court.buttonGlow,
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.sports_tennis_rounded,
-              color: court.buttonForeground,
-              size: 20,
-            ),
-            const SizedBox(width: AppTheme.spaceSM),
-            Text(
-              'Quick Match Log',
-              style: AppTheme.headingSmall.copyWith(
-                color: court.buttonForeground,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  /// Recent Activity - lightweight match records
+  // ============ Empty state (new user) ============
+
+  Widget _buildFirstMatchCard() {
+    return PressableCard(
+      onTap: _openQuickMatch,
+      padding: AppTheme.cardPaddingLarge,
+      accent: AppTheme.primary,
+      semanticLabel: 'Log your first match',
+      child: Row(
+        children: [
+          const TonalIconBadge(
+            icon: Icons.sports_tennis_rounded,
+            color: AppAccents.teal,
+            size: 52,
+          ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Log your first match',
+                  style: AppTheme.headingSmallThemed(context),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Takes 30 seconds. Your win rate, form and coaching unlock from here.',
+                  style: AppTheme.bodySmallThemed(context),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded,
+              color: AppTheme.textMutedColor(context)),
+        ],
+      ),
+    );
+  }
+
+  // ============ Recent activity ============
+
   Widget _buildRecentActivity() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionTitle('Recent matches'),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                if (_isGuest) {
-                  _requireSignIn();
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const MatchHistoryScreen()),
-                );
-              },
-              child: Text(
-                'View all',
-                style: AppTheme.labelThemed(context)
-                    .copyWith(color: AppTheme.primary),
-              ),
-            ),
-          ],
+        SectionHeader(
+          title: 'Recent matches',
+          actionLabel: 'View all',
+          onAction: _openMatchHistory,
         ),
-
-        const SizedBox(height: AppTheme.spaceMD),
-
-        // Match list
+        const SizedBox(height: AppTheme.spaceSM),
         ...List.generate(
           _recentMatches.take(3).length,
           (index) => Padding(
@@ -599,159 +530,133 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Match item - clean match record
   Widget _buildMatchItem(MatchPerformance match) {
     final isWin = match.result.toLowerCase() == 'win';
-    final resultLabel = isWin ? 'Win' : 'Loss';
+    final accent = isWin ? AppAccents.green : AppAccents.coral;
 
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const MatchHistoryScreen()),
-        );
-      },
-      child: Container(
-        padding: AppTheme.cardPadding,
-        decoration: BoxDecoration(
-          color: AppTheme.cardBackground(context).withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: Border.all(color: AppTheme.borderColor(context)),
-        ),
-        child: Row(
-          children: [
-            // Result indicator - subtle
-            Container(
-              width: 4,
-              height: 36,
-              decoration: BoxDecoration(
-                color:
-                    isWin ? AppTheme.win : AppTheme.loss.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(2),
-              ),
+    return PressableCard(
+      onTap: _openMatchHistory,
+      semanticLabel: '${match.result} versus ${match.opponent}',
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 38,
+            decoration: BoxDecoration(
+              color: accent,
+              borderRadius: BorderRadius.circular(2),
             ),
-
-            const SizedBox(width: AppTheme.spaceMD),
-
-            // Match info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
+          ),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
                         match.opponent,
-                        style: AppTheme.headingSmallThemed(context).copyWith(
-                          color: AppTheme.textPrimaryColor(context),
-                          fontSize: 18,
-                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.headingSmallThemed(context)
+                            .copyWith(fontSize: 17),
                       ),
-                      const SizedBox(width: AppTheme.spaceSM),
-                      Text(
-                        match.scoreLine.isNotEmpty
-                            ? match.scoreLine
-                            : '${match.setsWon}-${match.setsLost}',
-                        style: AppTheme.bodySmallThemed(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$resultLabel - ${_formatDate(match.date)} - ${match.surface} - ${match.matchFormat}',
-                    style: AppTheme.bodySmallThemed(context),
-                  ),
-                ],
-              ),
+                    ),
+                    const SizedBox(width: AppTheme.spaceSM),
+                    Text(
+                      match.scoreLine.isNotEmpty
+                          ? match.scoreLine
+                          : '${match.setsWon}-${match.setsLost}',
+                      style: AppTheme.bodySmallThemed(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${_formatDate(match.date)} · ${match.surface} · ${match.matchFormat}',
+                  style: AppTheme.bodySmallThemed(context),
+                ),
+              ],
             ),
-
-            Icon(
-              Icons.chevron_right,
-              color: AppTheme.textMutedColor(context),
-              size: 18,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppTheme.spaceSM),
+          TonalChip(
+            label: isWin ? 'Win' : 'Loss',
+            color: accent,
+          ),
+        ],
       ),
     );
   }
 
-  /// Tools Section - Analytical positioning
-  Widget _buildToolsSection() {
+  // ============ Coaching feature card ============
+
+  Widget _buildCoachCard() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Coach tools'),
-        const SizedBox(height: AppTheme.spaceMD),
-        _buildToolItem(
-          icon: Icons.analytics_outlined,
-          label: 'Tactical Coach',
-          onTap: () {
-            if (_isGuest) {
-              _requireSignIn();
-              return;
-            }
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const TacticalCoachScreen()),
-            );
-          },
+        const SectionHeader(title: 'Coaching'),
+        const SizedBox(height: AppTheme.spaceSM),
+        PressableCard(
+          onTap: _openCoach,
+          padding: AppTheme.cardPaddingLarge,
+          accent: AppAccents.violet,
+          semanticLabel: 'Open Tactical Coach',
+          child: Row(
+            children: [
+              const TonalIconBadge(
+                icon: Icons.insights_rounded,
+                color: AppAccents.violet,
+                size: 52,
+              ),
+              const SizedBox(width: AppTheme.spaceMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Tactical Coach',
+                          style: AppTheme.headingSmallThemed(context),
+                        ),
+                        const SizedBox(width: AppTheme.spaceSM),
+                        const TonalChip(label: 'AI', color: AppAccents.violet),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Patterns, what wins you points, and your next-match focus.',
+                      style: AppTheme.bodySmallThemed(context),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded,
+                  color: AppTheme.textMutedColor(context)),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildToolItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spaceSM,
-          vertical: AppTheme.spaceLG,
-        ),
-        decoration: BoxDecoration(
-          color: AppTheme.cardBackground(context).withValues(alpha: 0.94),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: Border.all(color: AppTheme.borderColor(context)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 23, color: AppTheme.neutral),
-            const SizedBox(height: AppTheme.spaceSM),
-            Text(
-              label,
-              style: AppTheme.labelThemed(context).copyWith(
-                color: AppTheme.textSecondaryColor(context),
-                height: 1.25,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
+  // ============ Skeletons ============
+
+  Widget _buildHeroSkeleton() {
+    return const SkeletonBox(height: 196, radius: AppTheme.radiusXL);
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Row(
+  Widget _buildListSkeleton() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTheme.headingSmallThemed(context)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Container(
-            height: 1,
-            color: AppTheme.borderColor(context),
-          ),
-        ),
+        SkeletonBox(height: 18, width: 140, radius: AppTheme.radiusSM),
+        SizedBox(height: AppTheme.spaceMD),
+        SkeletonBox(height: 68),
+        SizedBox(height: AppTheme.spaceSM),
+        SkeletonBox(height: 68),
       ],
     );
   }
@@ -764,19 +669,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
 
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
