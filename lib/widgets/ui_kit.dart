@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -669,6 +670,193 @@ class _SkeletonBoxState extends State<SkeletonBox>
           ),
         );
       },
+    );
+  }
+}
+
+/// A circular progress gauge with a value in the middle.
+/// Vibrant → thick gradient stroke. Minimal → thin monochrome stroke.
+class StatRing extends StatelessWidget {
+  const StatRing({
+    super.key,
+    required this.progress,
+    required this.value,
+    this.label,
+    this.size = 120,
+    this.valueColor,
+  });
+
+  final double progress; // 0..1
+  final String value;
+  final String? label;
+  final double size;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final vibrant = _vibrant(context);
+    final stroke = vibrant ? size * 0.11 : size * 0.05;
+    final colors = vibrant
+        ? AppAccents.heroGradient(context)
+        : <Color>[
+            AppTheme.textPrimaryColor(context),
+            AppTheme.textPrimaryColor(context),
+          ];
+    final track = vibrant
+        ? Colors.white.withValues(alpha: 0.22)
+        : AppTheme.borderColor(context);
+    final textColor = valueColor ??
+        (vibrant ? Colors.white : AppTheme.textPrimaryColor(context));
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(size, size),
+            painter: _RingPainter(
+              progress: progress.clamp(0, 1),
+              strokeWidth: stroke,
+              colors: colors,
+              track: track,
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: AppTheme.statMediumThemed(context).copyWith(
+                  fontSize: size * 0.30,
+                  letterSpacing: -1,
+                  height: 1,
+                  color: textColor,
+                ),
+              ),
+              if (label != null)
+                Text(
+                  label!,
+                  style: AppTheme.labelThemed(context).copyWith(
+                    color: vibrant
+                        ? Colors.white70
+                        : AppTheme.textMutedColor(context),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.progress,
+    required this.strokeWidth,
+    required this.colors,
+    required this.track,
+  });
+
+  final double progress;
+  final double strokeWidth;
+  final List<Color> colors;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final trackPaint = Paint()
+      ..color = track
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, trackPaint);
+
+    if (progress <= 0) return;
+
+    const start = -math.pi / 2;
+    final sweep = progress * 2 * math.pi;
+    final progressPaint = Paint()
+      ..shader = SweepGradient(
+        startAngle: start,
+        endAngle: start + 2 * math.pi,
+        colors: colors.length == 1 ? [colors.first, colors.first] : colors,
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, start, sweep, false, progressPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.progress != progress ||
+      old.strokeWidth != strokeWidth ||
+      old.track != track ||
+      old.colors != colors;
+}
+
+/// A colourful stat tile for grid layouts (vibrant style).
+class StatTile extends StatelessWidget {
+  const StatTile({
+    super.key,
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppTheme.radiusLG);
+    final content = Container(
+      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: radius,
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            value,
+            style: AppTheme.statMediumThemed(context)
+                .copyWith(fontSize: 26, letterSpacing: -0.8),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: AppTheme.labelThemed(context)),
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: radius,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap!();
+        },
+        child: content,
+      ),
     );
   }
 }

@@ -102,19 +102,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
-            _buildSettingsTile(
-              icon: uiStyleService.isVibrant
-                  ? Icons.auto_awesome_rounded
-                  : Icons.crop_square_rounded,
-              iconColor: AppTheme.primary,
-              title: 'App style',
-              subtitle: uiStyleService.isVibrant
-                  ? 'Vibrant — colourful & bold'
-                  : 'Minimal — Apple-style, monochrome',
-              onTap: () => _showUiStylePicker(uiStyleService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
+            _buildStyleSelector(uiStyleService, isDark),
             _buildSettingsTile(
               icon: Icons.palette_outlined,
               iconColor: AppTheme.primary,
@@ -411,6 +399,123 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildStyleSelector(UiStyleService uiStyleService, bool isDark) {
+    Widget segment(
+        String label, IconData icon, bool selected, VoidCallback onTap) {
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppTheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: selected ? Colors.white : Colors.grey[500],
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: selected
+                        ? Colors.white
+                        : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.surfaceCard : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.style_outlined,
+                    color: AppTheme.primary, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'App style',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.grey[800],
+                      ),
+                    ),
+                    Text(
+                      'Switch the whole look instantly',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.surfaceElevated : Colors.grey[100],
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                segment(
+                  'Minimal',
+                  Icons.crop_square_rounded,
+                  uiStyleService.isMinimal,
+                  () => uiStyleService.setStyle(UiStyle.minimal),
+                ),
+                segment(
+                  'Vibrant',
+                  Icons.auto_awesome_rounded,
+                  uiStyleService.isVibrant,
+                  () => uiStyleService.setStyle(UiStyle.vibrant),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -573,58 +678,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.dark);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showUiStylePicker(UiStyleService uiStyleService) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'App Style',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Switch the whole look instantly. Your choice is remembered.',
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.crop_square_rounded),
-              title: Text('Minimal', style: GoogleFonts.poppins()),
-              subtitle: Text('Apple-style — monochrome, big type, cards light up',
-                  style: GoogleFonts.poppins(fontSize: 12)),
-              trailing: uiStyleService.isMinimal
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                uiStyleService.setStyle(UiStyle.minimal);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome_rounded),
-              title: Text('Vibrant', style: GoogleFonts.poppins()),
-              subtitle: Text('Colourful & bold — gradients and vivid accents',
-                  style: GoogleFonts.poppins(fontSize: 12)),
-              trailing: uiStyleService.isVibrant
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                uiStyleService.setStyle(UiStyle.vibrant);
                 Navigator.pop(context);
               },
             ),

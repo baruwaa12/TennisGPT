@@ -396,80 +396,154 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       );
     }
 
+    return _isVibrant
+        ? _buildVibrantFormCard(winPercentage)
+        : _buildMinimalFormCard(winPercentage);
+  }
+
+  // Vibrant: a bold gradient card fronted by a ring gauge.
+  Widget _buildVibrantFormCard(int winPercentage) {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('RECENT TRENDS',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(letterSpacing: 1.4)),
-              const Spacer(),
-              if (_formTrend.isNotEmpty) TonalChip(label: _formTrend),
-            ],
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: AppAccents.heroGradient(context),
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.32),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
-          const SizedBox(height: AppTheme.spaceSM),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$winPercentage%',
-                style: AppTheme.statLargeThemed(context)
-                    .copyWith(letterSpacing: -1.5),
-              ),
-              const SizedBox(width: AppTheme.spaceSM),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child:
-                    Text('win rate', style: AppTheme.bodySmallThemed(context)),
-              ),
-              const Spacer(),
-              ..._recentMatches.take(5).map((match) {
-                final isWin = match.result.toLowerCase() == 'win';
-                final winColor = _isVibrant
-                    ? AppAccents.green
-                    : AppTheme.textPrimaryColor(context);
-                final lossBorder = _isVibrant
-                    ? AppAccents.coral
-                    : AppTheme.textMutedColor(context);
-                return Container(
-                  margin: const EdgeInsets.only(left: 6),
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isWin ? winColor : Colors.transparent,
-                    border: Border.all(
-                      color: isWin ? winColor : lossBorder,
-                      width: 1.4,
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-          if (_topStrength.isNotEmpty || _needsWork.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spaceMD),
-            Container(height: 1, color: AppTheme.borderColor(context)),
-            const SizedBox(height: AppTheme.spaceMD),
-            Row(
-              children: [
-                if (_topStrength.isNotEmpty)
-                  Expanded(
-                    child: _buildFormStat('Strength', _topStrength),
-                  ),
-                if (_needsWork.isNotEmpty)
-                  Expanded(
-                    child: _buildFormStat('Needs work', _needsWork),
-                  ),
-              ],
-            ),
-          ],
         ],
       ),
+      child: Row(
+        children: [
+          StatRing(
+              progress: _total > 0 ? _wins / _total : 0,
+              value: '$winPercentage',
+              label: 'WIN %',
+              size: 108),
+          const SizedBox(width: AppTheme.spaceLG),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_formTrend.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(_formTrend,
+                        style: AppTheme.label.copyWith(color: Colors.white)),
+                  ),
+                if (_topStrength.isNotEmpty) ...[
+                  const SizedBox(height: AppTheme.spaceSM),
+                  _vibrantFormLine('Strength', _topStrength),
+                ],
+                if (_needsWork.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  _vibrantFormLine('Needs work', _needsWork),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _vibrantFormLine(String label, String value) {
+    return Row(
+      children: [
+        Text('${label.toUpperCase()}  ',
+            style: AppTheme.label.copyWith(color: Colors.white70)),
+        Expanded(
+          child: Text(value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.headingSmall
+                  .copyWith(color: Colors.white, fontSize: 15)),
+        ),
+      ],
+    );
+  }
+
+  // Minimal: an editorial typographic block — no card chrome.
+  Widget _buildMinimalFormCard(int winPercentage) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('RECENT TRENDS',
+                style: AppTheme.labelThemed(context)
+                    .copyWith(letterSpacing: 1.6)),
+            const Spacer(),
+            if (_formTrend.isNotEmpty) TonalChip(label: _formTrend),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spaceXS),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '$winPercentage',
+              style: AppTheme.statLargeThemed(context)
+                  .copyWith(fontSize: 64, height: 0.95, letterSpacing: -2),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, left: 2),
+              child: Text('% win rate',
+                  style: AppTheme.bodySmallThemed(context)),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppTheme.spaceMD),
+        Row(
+          children: _recentMatches.take(8).toList().reversed.map((match) {
+            final isWin = match.result.toLowerCase() == 'win';
+            return Expanded(
+              child: Container(
+                height: 6,
+                margin: const EdgeInsets.only(right: 4),
+                decoration: BoxDecoration(
+                  color: isWin
+                      ? AppTheme.textPrimaryColor(context)
+                      : AppTheme.borderColor(context),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        if (_topStrength.isNotEmpty || _needsWork.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.spaceLG),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                if (_topStrength.isNotEmpty)
+                  Expanded(child: _buildFormStat('Strength', _topStrength)),
+                if (_topStrength.isNotEmpty && _needsWork.isNotEmpty)
+                  Container(
+                    width: 1,
+                    color: AppTheme.borderColor(context),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spaceMD),
+                  ),
+                if (_needsWork.isNotEmpty)
+                  Expanded(child: _buildFormStat('Needs work', _needsWork)),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -615,6 +689,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         ],
         const SizedBox(height: AppTheme.spaceMD),
         _buildCoachSection(
+          step: '01',
           title: 'What keeps showing up',
           text: whatKeepsShowingUp['text'] as String? ?? '',
           evidence: whatKeepsShowingUp['evidence'] as String?,
@@ -623,8 +698,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           icon: Icons.radar_rounded,
           accentColor: AppAccents.blue,
         ),
-        const SizedBox(height: AppTheme.spaceMD),
+        const SizedBox(height: AppTheme.spaceLG),
         _buildCoachSection(
+          step: '02',
           title: 'What\'s helping you win',
           text: whatsHelpingYouWin['text'] as String? ?? '',
           evidence: whatsHelpingYouWin['evidence'] as String?,
@@ -633,8 +709,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           icon: Icons.trending_up_rounded,
           accentColor: AppAccents.green,
         ),
-        const SizedBox(height: AppTheme.spaceMD),
+        const SizedBox(height: AppTheme.spaceLG),
         _buildCoachSection(
+          step: '03',
           title: 'What breaks under pressure',
           text: whatBreaksUnderPressure['text'] as String? ?? '',
           evidence: whatBreaksUnderPressure['evidence'] as String?,
@@ -643,9 +720,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           icon: Icons.warning_amber_rounded,
           accentColor: AppAccents.coral,
         ),
-        const SizedBox(height: AppTheme.spaceMD),
+        const SizedBox(height: AppTheme.spaceLG),
         // The single accent moment — the one thing to act on next.
         _buildCoachSection(
+          step: '04',
           title: 'Next match focus',
           text: _buildNextMatchFocusText(nextMatchFocus),
           confidence: nextMatchFocus['confidence'] as String?,
@@ -667,6 +745,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     required String title,
     required String text,
     required IconData icon,
+    String? step,
     Color? accentColor,
     String? evidence,
     String? confidence,
@@ -674,10 +753,73 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     bool highlighted = false,
   }) {
     final vibrant = _isVibrant;
-    // Vibrant: every section carries its own colour. Minimal: mono, with the
-    // single accent reserved for the highlighted "Next match focus".
-    final Color? badgeColor =
-        vibrant ? accentColor : (highlighted ? AppTheme.primary : null);
+
+    // Minimal: editorial — a numbered block with no card chrome; the
+    // highlighted focus gets a thin accent rule on the left.
+    if (!vibrant) {
+      final hasMeta = (evidence ?? '').isNotEmpty ||
+          (confidence ?? '').isNotEmpty ||
+          (trend ?? '').isNotEmpty;
+      final block = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (step != null) ...[
+                Text(
+                  step,
+                  style: AppTheme.labelThemed(context).copyWith(
+                    letterSpacing: 1,
+                    color: highlighted
+                        ? AppTheme.primary
+                        : AppTheme.textMutedColor(context),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTheme.headingSmallThemed(context).copyWith(
+                    fontSize: 18,
+                    letterSpacing: -0.3,
+                    color: highlighted ? AppTheme.primary : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            text,
+            style: AppTheme.bodyLargeThemed(context)
+                .copyWith(height: 1.6, fontSize: 16),
+          ),
+          if (hasMeta) ...[
+            const SizedBox(height: AppTheme.spaceSM),
+            Text(_buildEvidenceMeta(evidence, confidence, trend),
+                style: AppTheme.labelThemed(context)),
+          ],
+        ],
+      );
+
+      if (highlighted) {
+        return Container(
+          padding: const EdgeInsets.only(left: AppTheme.spaceMD),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: AppTheme.primary, width: 2.5),
+            ),
+          ),
+          child: block,
+        );
+      }
+      return block;
+    }
+
+    // Vibrant: every section is its own colourful card.
+    final Color? badgeColor = accentColor;
     final borderAccent = accentColor ?? AppTheme.primary;
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceLG),
