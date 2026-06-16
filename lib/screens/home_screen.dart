@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final MatchHistoryService _matchHistoryService = MatchHistoryService();
 
   List<MatchPerformance> _recentMatches = [];
+  List<MatchPerformance> _allMatches = [];
   double _winRate = 0.0;
   int _currentStreak = 0;
   int _totalMatches = 0;
@@ -43,13 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final matches = await _matchHistoryService.getRecentMatches(10);
+      final all = await _matchHistoryService.getAllMatches();
+      final matches = all.take(10).toList();
       final winRate = await _matchHistoryService.getWinRate();
-      final total = await _matchHistoryService.getTotalMatches();
+      final total = all.length;
       final streak = _calculateStreak(matches);
 
       if (!mounted) return;
       setState(() {
+        _allMatches = all;
         _recentMatches = matches;
         _winRate = winRate;
         _totalMatches = total;
@@ -168,8 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final streakService = Provider.of<StreakService>(context);
-    final vibrant =
-        context.watch<UiStyleService>().style == UiStyle.vibrant;
+    final style = context.watch<UiStyleService>().style;
+    final vibrant = style == UiStyle.vibrant;
+    final authored = style == UiStyle.authored;
     final firstName = authService.isGuest
         ? 'Player'
         : (authService.userDisplayName?.split(' ').first ?? 'Player');
@@ -189,15 +193,21 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(child: _buildHeader(firstName, vibrant)),
+                  SliverToBoxAdapter(
+                    child: authored
+                        ? _buildAuthoredHeader(firstName)
+                        : _buildHeader(firstName, vibrant),
+                  ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppTheme.spaceLG),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate(
-                        vibrant
-                            ? _buildVibrantBody(streakService, showSkeleton)
-                            : _buildMinimalBody(streakService, showSkeleton),
+                        authored
+                            ? _buildAuthoredBody(streakService, showSkeleton)
+                            : vibrant
+                                ? _buildVibrantBody(streakService, showSkeleton)
+                                : _buildMinimalBody(streakService, showSkeleton),
                       ),
                     ),
                   ),
@@ -851,6 +861,465 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ====================================================================
+  //  AUTHORED — deliberately de-genericized.
+  //  Leads with the SCORELINE (mono), rivalries instead of a stat grid,
+  //  court-surface accents, a net-tick baseline, and demoted chrome.
+  //  Hand-composed spacing on the hero (off the 4px grid on purpose).
+  // ====================================================================
+
+  Widget _buildAuthoredHeader(String firstName) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceLG, AppTheme.spaceLG, AppTheme.spaceMD, AppTheme.spaceSM),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              firstName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTheme.bodyLargeThemed(context).copyWith(
+                color: AppTheme.textSecondaryColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            tooltip: 'Settings',
+            iconSize: 22,
+            style: IconButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              foregroundColor: AppTheme.textMutedColor(context),
+            ),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildAuthoredBody(
+      StreakService streakService, bool showSkeleton) {
+    if (showSkeleton) {
+      return const [
+        SkeletonBox(height: 196, radius: AppTheme.radiusLG),
+        SizedBox(height: 28),
+        SkeletonBox(height: 70),
+        SizedBox(height: AppTheme.spaceXXL),
+      ];
+    }
+
+    if (_totalMatches == 0) {
+      return [
+        _buildFirstMatchCard(false),
+        const SizedBox(height: AppTheme.spaceXXL),
+      ];
+    }
+
+    final rivalries = _rivalries();
+
+    return [
+      _buildLastMatchHero(_recentMatches.first),
+      const SizedBox(height: 18),
+      _buildAuthoredFormLine(),
+      const SizedBox(height: 34),
+      _authoredTextAction(
+        icon: Icons.add_rounded,
+        label: 'Log a match',
+        onTap: _openQuickMatch,
+      ),
+      const SizedBox(height: 36),
+      if (rivalries.isNotEmpty) ...[
+        _buildRivalryStrip(rivalries),
+        const SizedBox(height: 36),
+      ],
+      if (_recentMatches.length > 1) ...[
+        _buildAuthoredRecentList(),
+        const SizedBox(height: 30),
+      ],
+      _buildAuthoredCoachAction(),
+      const SizedBox(height: AppTheme.spaceXXL),
+    ];
+  }
+
+  /// The hero is the match, not a metric. The biggest object on screen is the
+  /// actual scoreline of the last match — lost sets dimmed — set in mono.
+  Widget _buildLastMatchHero(MatchPerformance m) {
+    final isWin = m.result.toLowerCase() == 'win';
+    final accent = AppTheme.surfaceAccent(m.surface);
+    final score = m.scoreLine.isNotEmpty
+        ? m.scoreLine
+        : '${m.setsWon}-${m.setsLost}';
+
+    return Padding(
+      // Hand-composed, off the spacing scale, no card chrome.
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'LAST MATCH',
+                style: AppTheme.labelThemed(context).copyWith(letterSpacing: 2),
+              ),
+              const Spacer(),
+              _surfaceTag(m.surface, accent),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                isWin ? 'Beat' : 'Lost to',
+                style: AppTheme.bodyMediumThemed(context)
+                    .copyWith(color: AppTheme.textMutedColor(context)),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  m.opponent,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.headingMediumThemed(context)
+                      .copyWith(letterSpacing: -0.6),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildScoreline(score, size: 46),
+          const SizedBox(height: 22),
+          _courtBaseline(),
+        ],
+      ),
+    );
+  }
+
+  /// The scoreline lockup — mono, large, lost sets dimmed. Pure typography
+  /// doing identity work: instantly, unmistakably tennis.
+  Widget _buildScoreline(String raw, {double size = 30}) {
+    final sets = raw.trim().isEmpty
+        ? const <String>[]
+        : raw.trim().split(RegExp(r'\s+'));
+    if (sets.isEmpty) {
+      return Text('—', style: AppTheme.scorelineThemed(context, size: size));
+    }
+    final won = AppTheme.textPrimaryColor(context);
+    final lost = AppTheme.textMutedColor(context).withValues(alpha: 0.5);
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final s in sets)
+          Padding(
+            padding: EdgeInsets.only(right: size * 0.32),
+            child: Text(
+              s,
+              style: AppTheme.scorelineThemed(
+                context,
+                size: size,
+                color: _playerWonSet(s) ? won : lost,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  bool _playerWonSet(String token) {
+    final clean = token.replaceAll(RegExp(r'\(.*?\)'), '');
+    final parts = clean.split('-');
+    if (parts.length < 2) return true;
+    final me = int.tryParse(parts[0].trim()) ?? 0;
+    final opp = int.tryParse(parts[1].trim()) ?? 0;
+    return me >= opp;
+  }
+
+  /// Court-colour language: a small accent dot + surface name. Not a theme.
+  Widget _surfaceTag(String surface, Color accent) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          surface.toUpperCase(),
+          style: AppTheme.labelThemed(context)
+              .copyWith(color: accent, letterSpacing: 1.2),
+        ),
+      ],
+    );
+  }
+
+  /// The only "decoration" — a thin rule with a center net tick, borrowed from
+  /// the court, not from a design library.
+  Widget _courtBaseline() {
+    final line = AppTheme.borderColor(context);
+    return SizedBox(
+      height: 8,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(child: Container(height: 1, color: line)),
+          Container(width: 1, height: 8, color: line),
+          Expanded(child: Container(height: 1, color: line)),
+        ],
+      ),
+    );
+  }
+
+  /// Win rate demoted: a quiet W L W L row instead of a hero ring.
+  Widget _buildAuthoredFormLine() {
+    final items = _recentMatches.take(8).toList().reversed.toList();
+    final winPct = (_winRate * 100).round();
+    final secondary = AppTheme.textSecondaryColor(context);
+    final muted = AppTheme.textMutedColor(context).withValues(alpha: 0.45);
+
+    return Row(
+      children: [
+        for (final m in items)
+          Padding(
+            padding: const EdgeInsets.only(right: 7),
+            child: Text(
+              m.result.toLowerCase() == 'win' ? 'W' : 'L',
+              style: AppTheme.scorelineThemed(
+                context,
+                size: 13,
+                color: m.result.toLowerCase() == 'win' ? secondary : muted,
+              ),
+            ),
+          ),
+        const Spacer(),
+        Text('$winPct% win rate', style: AppTheme.bodySmallThemed(context)),
+      ],
+    );
+  }
+
+  Widget _authoredTextAction({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: AppTheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(fontSize: 16, color: AppTheme.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Rivalries replaced the stat grid. A head-to-head strip can only exist in
+  /// a tennis app — structure that can't be ported is structure with identity.
+  Widget _buildRivalryStrip(List<_Rivalry> rivalries) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RIVALRIES',
+          style: AppTheme.labelThemed(context).copyWith(letterSpacing: 2),
+        ),
+        const SizedBox(height: 14),
+        for (int i = 0; i < rivalries.length; i++) ...[
+          _buildRivalryRow(rivalries[i]),
+          if (i != rivalries.length - 1) const SizedBox(height: 14),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRivalryRow(_Rivalry r) {
+    final leading = r.wins >= r.losses;
+    final primary = AppTheme.textPrimaryColor(context);
+    final muted = AppTheme.textMutedColor(context);
+
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _openMatchHistory();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                r.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.headingSmallThemed(context)
+                    .copyWith(fontSize: 17, letterSpacing: -0.2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Row(
+              children: [
+                Text('${r.wins}',
+                    style: AppTheme.scorelineThemed(context,
+                        size: 18, color: leading ? primary : muted)),
+                Text('–',
+                    style: AppTheme.scorelineThemed(context,
+                        size: 18, color: muted)),
+                Text('${r.losses}',
+                    style: AppTheme.scorelineThemed(context,
+                        size: 18, color: leading ? muted : primary)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<_Rivalry> _rivalries() {
+    final Map<String, _Rivalry> map = {};
+    for (final m in _allMatches) {
+      final name = m.opponent.trim();
+      if (name.isEmpty || name.toLowerCase() == 'unknown') continue;
+      final key = name.toLowerCase();
+      final r = map[key] ?? _Rivalry(name);
+      if (m.result.toLowerCase() == 'win') {
+        r.wins++;
+      } else {
+        r.losses++;
+      }
+      map[key] = r;
+    }
+    final list = map.values.toList()
+      ..sort((a, b) => b.total.compareTo(a.total));
+    return list.take(3).toList();
+  }
+
+  Widget _buildAuthoredRecentList() {
+    final items = _recentMatches.skip(1).take(4).toList();
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Earlier',
+          actionLabel: 'View all',
+          onAction: _openMatchHistory,
+        ),
+        const SizedBox(height: 6),
+        for (final m in items) _buildAuthoredMatchRow(m),
+      ],
+    );
+  }
+
+  Widget _buildAuthoredMatchRow(MatchPerformance m) {
+    final isWin = m.result.toLowerCase() == 'win';
+    final accent = AppTheme.surfaceAccent(m.surface);
+    final score = m.scoreLine.isNotEmpty
+        ? m.scoreLine
+        : '${m.setsWon}-${m.setsLost}';
+
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _openMatchHistory();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 32,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${isWin ? 'Beat' : 'Lost to'} ${m.opponent}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.bodyMediumThemed(context)
+                        .copyWith(color: AppTheme.textPrimaryColor(context)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text('${_formatDate(m.date)} · ${m.surface}',
+                      style: AppTheme.bodySmallThemed(context)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            _buildScoreline(score, size: 17),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthoredCoachAction() {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _openCoach();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: AppTheme.borderColor(context))),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Ask your Tactical Coach',
+                      style: AppTheme.headingSmallThemed(context)
+                          .copyWith(fontSize: 16)),
+                  const SizedBox(height: 2),
+                  Text('Patterns from your matches, your next-match focus',
+                      style: AppTheme.bodySmallThemed(context)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_rounded,
+                size: 18, color: AppTheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ============ Empty state (new user) ============
 
   Widget _buildFirstMatchCard(bool vibrant) {
@@ -916,4 +1385,15 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     return '${months[date.month - 1]} ${date.day}';
   }
+}
+
+/// Aggregated head-to-head record against one opponent (Authored style).
+class _Rivalry {
+  _Rivalry(this.name);
+
+  final String name;
+  int wins = 0;
+  int losses = 0;
+
+  int get total => wins + losses;
 }

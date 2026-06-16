@@ -426,14 +426,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: selected ? Colors.white : Colors.grey[500],
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: selected
-                        ? Colors.white
-                        : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: selected
+                          ? Colors.white
+                          : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                    ),
                   ),
                 ),
               ],
@@ -507,6 +511,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Icons.auto_awesome_rounded,
                   uiStyleService.isVibrant,
                   () => uiStyleService.setStyle(UiStyle.vibrant),
+                ),
+                segment(
+                  'Authored',
+                  Icons.sports_tennis_rounded,
+                  uiStyleService.isAuthored,
+                  () => uiStyleService.setStyle(UiStyle.authored),
                 ),
               ],
             ),

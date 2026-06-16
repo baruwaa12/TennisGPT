@@ -8,6 +8,10 @@ enum UiStyle {
 
   /// Apple-level minimal — near-monochrome, big type, press-to-brighten cards.
   minimal,
+
+  /// Authored — deliberately de-genericized. Leads with the scoreline (mono),
+  /// rivalries instead of a stat grid, court-surface accents, demoted chrome.
+  authored,
 }
 
 /// Persists and broadcasts the user's chosen UI style so the whole app can
@@ -20,6 +24,7 @@ class UiStyleService extends ChangeNotifier {
 
   bool get isVibrant => _style == UiStyle.vibrant;
   bool get isMinimal => _style == UiStyle.minimal;
+  bool get isAuthored => _style == UiStyle.authored;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -46,5 +51,9 @@ class UiStyleService extends ChangeNotifier {
     await setStyle(isVibrant ? UiStyle.minimal : UiStyle.vibrant);
   }
 
-  String get label => isVibrant ? 'Vibrant' : 'Minimal';
+  String get label => switch (_style) {
+        UiStyle.vibrant => 'Vibrant',
+        UiStyle.minimal => 'Minimal',
+        UiStyle.authored => 'Authored',
+      };
 }

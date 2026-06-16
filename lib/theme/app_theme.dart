@@ -99,6 +99,23 @@ class AppTheme {
   static Color get neutral => _activeAccent.neutral;
   static Color get warning => _activeAccent.warning;
 
+  /// Court-surface accent language (Authored style).
+  /// Surface becomes a small meaningful accent, never a full theme:
+  /// clay → terracotta, grass → green, carpet → violet, hard → court blue.
+  static Color surfaceAccent(String surface) {
+    switch (surface.trim().toLowerCase()) {
+      case 'clay':
+        return const Color(0xFFD8662E); // terracotta
+      case 'grass':
+        return const Color(0xFF3FA866); // grass green
+      case 'carpet':
+        return const Color(0xFF8B7CFF); // indoor violet
+      case 'hard':
+      default:
+        return const Color(0xFF3C82E6); // court blue
+    }
+  }
+
   // ============ LIGHT MODE COLORS ============
   static const Color _surfaceLight = Color(0xFFF3ECE3);
   static const Color _surfaceCardLight = Color(0xFFFFFBF5);
@@ -400,6 +417,23 @@ class AppTheme {
         color: textPrimaryColor(context),
         spacing: -0.4,
         height: 1.05,
+      );
+
+  /// Scoreline — the identity face for tennis scores (Authored style).
+  /// Monospace with tabular figures so "6-4 3-6 7-5" reads like a scoreboard.
+  /// This is pure typography doing identity work; nothing else looks like it.
+  static TextStyle scorelineThemed(
+    BuildContext context, {
+    double size = 30,
+    FontWeight weight = FontWeight.w700,
+    Color? color,
+  }) =>
+      GoogleFonts.spaceMono(
+        fontSize: size,
+        fontWeight: weight,
+        color: color ?? textPrimaryColor(context),
+        letterSpacing: -0.5,
+        height: 1.0,
       );
 
   /// Get theme-aware input decoration
