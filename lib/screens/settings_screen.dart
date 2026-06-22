@@ -18,6 +18,7 @@ import 'login_screen.dart';
 import 'help_faq_screen.dart';
 import 'feedback_screen.dart';
 import 'legal_screen.dart';
+import 'prototype/match_history_prototype.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -81,6 +82,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                     (route) => false,
+                  );
+                },
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // PROTOTYPE (debug builds only) — throwaway, remove when done.
+            if (kDebugMode) ...[
+              _buildSettingsTile(
+                icon: Icons.science_outlined,
+                iconColor: Colors.purple,
+                title: 'Match History prototype',
+                subtitle: '3 Authored layouts · debug only',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MatchHistoryPrototype()),
                   );
                 },
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
