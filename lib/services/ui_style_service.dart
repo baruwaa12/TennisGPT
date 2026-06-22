@@ -12,6 +12,14 @@ enum UiStyle {
   /// Authored — deliberately de-genericized. Leads with the scoreline (mono),
   /// rivalries instead of a stat grid, court-surface accents, demoted chrome.
   authored,
+
+  /// Broadcast — sports "match centre" energy: high-contrast scoreboard hero,
+  /// tabular numbers, accent rules, uppercase labels, fixtures-style lists.
+  broadcast,
+
+  /// Journal — warm coaching diary: serif headings, soft paper cards, generous
+  /// whitespace, prose-led stats, quiet dividers.
+  journal,
 }
 
 /// Persists and broadcasts the user's chosen UI style so the whole app can
@@ -55,5 +63,7 @@ class UiStyleService extends ChangeNotifier {
         UiStyle.vibrant => 'Vibrant',
         UiStyle.minimal => 'Minimal',
         UiStyle.authored => 'Authored',
+        UiStyle.broadcast => 'Broadcast',
+        UiStyle.journal => 'Journal',
       };
 }

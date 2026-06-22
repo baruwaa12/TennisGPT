@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -90,25 +90,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
             ],
 
-            // PROTOTYPE (debug builds only) — throwaway, remove when done.
-            if (kDebugMode) ...[
-              _buildSettingsTile(
-                icon: Icons.science_outlined,
-                iconColor: Colors.purple,
-                title: 'Match History prototype',
-                subtitle: '3 Authored layouts · debug only',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const MatchHistoryPrototype()),
-                  );
-                },
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                isDark: isDark,
-              ),
-              const SizedBox(height: 24),
-            ],
+            // PROTOTYPE — throwaway, temporarily visible in ALL builds for
+            // design review on-device. TODO: remove this tile (and the
+            // match_history_prototype.dart file) before launch.
+            _buildSettingsTile(
+              icon: Icons.science_outlined,
+              iconColor: Colors.purple,
+              title: 'Match History prototype',
+              subtitle: '3 Authored layouts · review only',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MatchHistoryPrototype()),
+                );
+              },
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              isDark: isDark,
+            ),
+            const SizedBox(height: 24),
 
             // Appearance Section
             _buildSectionTitle('Appearance', isDark),
@@ -421,48 +421,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildStyleSelector(UiStyleService uiStyleService, bool isDark) {
-    Widget segment(
-        String label, IconData icon, bool selected, VoidCallback onTap) {
-      return Expanded(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onTap();
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: selected ? AppTheme.primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
+    Widget chip(String label, IconData icon, bool selected, VoidCallback onTap) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? AppTheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? AppTheme.primary
+                  : (isDark ? AppTheme.surfaceBorder : Colors.grey[300]!),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 16,
-                  color: selected ? Colors.white : Colors.grey[500],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: selected
+                    ? Colors.white
+                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected
+                      ? Colors.white
+                      : (isDark ? Colors.grey[300] : Colors.grey[700]),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: selected
-                          ? Colors.white
-                          : (isDark ? Colors.grey[300] : Colors.grey[700]),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
@@ -513,34 +513,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.surfaceElevated : Colors.grey[100],
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                segment(
-                  'Minimal',
-                  Icons.crop_square_rounded,
-                  uiStyleService.isMinimal,
-                  () => uiStyleService.setStyle(UiStyle.minimal),
-                ),
-                segment(
-                  'Vibrant',
-                  Icons.auto_awesome_rounded,
-                  uiStyleService.isVibrant,
-                  () => uiStyleService.setStyle(UiStyle.vibrant),
-                ),
-                segment(
-                  'Authored',
-                  Icons.sports_tennis_rounded,
-                  uiStyleService.isAuthored,
-                  () => uiStyleService.setStyle(UiStyle.authored),
-                ),
-              ],
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              chip(
+                'Minimal',
+                Icons.crop_square_rounded,
+                uiStyleService.isMinimal,
+                () => uiStyleService.setStyle(UiStyle.minimal),
+              ),
+              chip(
+                'Vibrant',
+                Icons.auto_awesome_rounded,
+                uiStyleService.isVibrant,
+                () => uiStyleService.setStyle(UiStyle.vibrant),
+              ),
+              chip(
+                'Authored',
+                Icons.sports_tennis_rounded,
+                uiStyleService.isAuthored,
+                () => uiStyleService.setStyle(UiStyle.authored),
+              ),
+              chip(
+                'Broadcast',
+                Icons.scoreboard_outlined,
+                uiStyleService.style == UiStyle.broadcast,
+                () => uiStyleService.setStyle(UiStyle.broadcast),
+              ),
+              chip(
+                'Journal',
+                Icons.menu_book_outlined,
+                uiStyleService.style == UiStyle.journal,
+                () => uiStyleService.setStyle(UiStyle.journal),
+              ),
+            ],
           ),
         ],
       ),

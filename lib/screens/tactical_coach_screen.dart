@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
@@ -255,8 +256,20 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     }
   }
 
+  void _onTabChanged(int i) {
+    setState(() => _activeTab = i);
+    if (i == 1) _loadSavedEntries();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final style = context.watch<UiStyleService>().style;
+    if (style == UiStyle.broadcast) return _buildBroadcastCoachScreen();
+    if (style == UiStyle.journal) return _buildJournalCoachScreen();
+    return _buildClassicCoachScreen();
+  }
+
+  Widget _buildClassicCoachScreen() {
     final vibrant =
         context.watch<UiStyleService>().style == UiStyle.vibrant;
     return Scaffold(
@@ -323,6 +336,523 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               style: AppTheme.headingMediumThemed(context)
                   .copyWith(letterSpacing: -0.4)),
         ],
+      ),
+    );
+  }
+
+  // ====================================================================
+  //  BROADCAST coach — scoreboard chrome, uppercase tabs, bold CTA.
+  //  Reuses the structured-analysis + saved rendering for the body.
+  // ====================================================================
+
+  Widget _buildBroadcastCoachScreen() {
+    return Scaffold(
+      backgroundColor: AppTheme.scaffoldBackground(context),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Column(
+            children: [
+              _broadcastCoachTopBar(),
+              _broadcastCoachTabs(),
+              Expanded(
+                child: _activeTab == 1
+                    ? _buildSavedView()
+                    : _buildBroadcastCoachView(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _broadcastCoachTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppTheme.spaceSM, AppTheme.spaceSM,
+          AppTheme.spaceMD, AppTheme.spaceSM),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Back',
+            iconSize: 22,
+            style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+            color: AppTheme.textSecondaryColor(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(width: AppTheme.spaceXS),
+          Container(width: 4, height: 24, color: AppTheme.primary),
+          const SizedBox(width: 10),
+          Text('TACTICAL COACH',
+              style: AppTheme.labelThemed(context).copyWith(
+                  fontSize: 16,
+                  letterSpacing: 2,
+                  color: AppTheme.textPrimaryColor(context))),
+        ],
+      ),
+    );
+  }
+
+  Widget _broadcastCoachTabs() {
+    Widget tab(String label, int index) {
+      final selected = _activeTab == index;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            _onTabChanged(index);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceSM),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: selected ? AppTheme.primary : Colors.transparent,
+                  width: 2.5,
+                ),
+              ),
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTheme.labelThemed(context).copyWith(
+                letterSpacing: 1.5,
+                color: selected
+                    ? AppTheme.textPrimaryColor(context)
+                    : AppTheme.textMutedColor(context),
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceLG, 0, AppTheme.spaceLG, AppTheme.spaceSM),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: AppTheme.borderColor(context)),
+          ),
+        ),
+        child: Row(children: [tab('COACH', 0), tab('SAVED', 1)]),
+      ),
+    );
+  }
+
+  Widget _buildBroadcastCoachView() {
+    final winPct = _total > 0 ? ((_wins / _total) * 100).round() : 0;
+    return SingleChildScrollView(
+      controller: _scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceLG, AppTheme.spaceSM, AppTheme.spaceLG, AppTheme.spaceXXL),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isLoading)
+            const SkeletonBox(height: 130, radius: AppTheme.radiusSM)
+          else
+            _broadcastCoachForm(winPct),
+          const SizedBox(height: AppTheme.spaceLG),
+          _buildContextInput(),
+          const SizedBox(height: AppTheme.spaceMD),
+          _broadcastReviewCta(),
+          if (_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildAnalysisSkeleton(),
+          ],
+          if (_errorMessage != null && !_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildErrorState(),
+          ],
+          if (_analysisResult != null && !_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildStructuredAnalysis(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _broadcastCoachForm(int winPct) {
+    if (_recentMatches.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(AppTheme.spaceLG),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBackground(context),
+          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+          border: Border.all(color: AppTheme.borderColor(context)),
+        ),
+        child: Text(
+          'Log a few matches and your coach will spot the patterns.',
+          style: AppTheme.bodyMediumThemed(context),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+        border: Border(
+          left: BorderSide(color: AppTheme.primary, width: 3),
+          top: BorderSide(color: AppTheme.borderColor(context)),
+          right: BorderSide(color: AppTheme.borderColor(context)),
+          bottom: BorderSide(color: AppTheme.borderColor(context)),
+        ),
+      ),
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('FORM',
+                  style: AppTheme.labelThemed(context)
+                      .copyWith(color: AppTheme.primary, letterSpacing: 2)),
+              const SizedBox(height: 2),
+              Text('$winPct%',
+                  style: AppTheme.scorelineThemed(context, size: 46)),
+            ],
+          ),
+          const SizedBox(width: AppTheme.spaceLG),
+          Container(width: 1, height: 76, color: AppTheme.borderColor(context)),
+          const SizedBox(width: AppTheme.spaceLG),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_formTrend.isNotEmpty) ...[
+                  Text(_formTrend.toUpperCase(),
+                      style: AppTheme.labelThemed(context).copyWith(
+                          color: AppTheme.win, letterSpacing: 1.2)),
+                  const SizedBox(height: 8),
+                ],
+                if (_topStrength.isNotEmpty)
+                  _broadcastFormLine('STRENGTH', _topStrength),
+                if (_needsWork.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  _broadcastFormLine('NEEDS WORK', _needsWork),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _broadcastFormLine(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 92,
+          child: Text(label,
+              style: AppTheme.labelThemed(context).copyWith(letterSpacing: 1)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTheme.headingSmallThemed(context).copyWith(fontSize: 15),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _broadcastReviewCta() {
+    final disabled = _isLoading;
+    return Opacity(
+      opacity: disabled ? 0.5 : 1,
+      child: GestureDetector(
+        onTap: disabled
+            ? null
+            : () {
+                HapticFeedback.mediumImpact();
+                _reviewRecentMatchHistory();
+              },
+        child: Container(
+          height: 54,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isGenerating) ...[
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+              ] else ...[
+                const Icon(Icons.auto_awesome_rounded,
+                    color: Colors.white, size: 19),
+                const SizedBox(width: AppTheme.spaceSM),
+              ],
+              Text(
+                _isGenerating ? 'REVIEWING…' : 'REVIEW MY MATCHES',
+                style: AppTheme.headingSmall.copyWith(
+                    color: Colors.white, fontSize: 15, letterSpacing: 1.2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ====================================================================
+  //  JOURNAL coach — warm diary chrome, serif headings, prose form note.
+  //  Reuses the structured-analysis + saved rendering for the body.
+  // ====================================================================
+
+  TextStyle _coachSerif(
+    BuildContext context, {
+    double size = 24,
+    FontWeight weight = FontWeight.w600,
+    Color? color,
+    double height = 1.15,
+  }) {
+    return GoogleFonts.fraunces(
+      fontSize: size,
+      fontWeight: weight,
+      color: color ?? AppTheme.textPrimaryColor(context),
+      height: height,
+    );
+  }
+
+  Widget _buildJournalCoachScreen() {
+    return Scaffold(
+      backgroundColor: AppTheme.scaffoldBackground(context),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Column(
+            children: [
+              _journalCoachTopBar(),
+              _journalCoachTabs(),
+              Expanded(
+                child: _activeTab == 1
+                    ? _buildSavedView()
+                    : _buildJournalCoachView(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _journalCoachTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppTheme.spaceSM, AppTheme.spaceSM,
+          AppTheme.spaceMD, AppTheme.spaceSM),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            tooltip: 'Back',
+            iconSize: 22,
+            style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+            color: AppTheme.textSecondaryColor(context),
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(width: AppTheme.spaceXS),
+          Text('Coach', style: _coachSerif(context, size: 26)),
+        ],
+      ),
+    );
+  }
+
+  Widget _journalCoachTabs() {
+    Widget tab(String label, int index) {
+      final selected = _activeTab == index;
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          _onTabChanged(index);
+        },
+        child: Padding(
+          padding: const EdgeInsets.only(right: AppTheme.spaceLG),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: _coachSerif(context, size: 18).copyWith(
+                  color: selected
+                      ? AppTheme.textPrimaryColor(context)
+                      : AppTheme.textMutedColor(context),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 2,
+                width: 22,
+                color: selected ? AppTheme.primary : Colors.transparent,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceLG, 0, AppTheme.spaceLG, AppTheme.spaceSM),
+      child: Row(children: [tab('Coach', 0), tab('Saved', 1)]),
+    );
+  }
+
+  Widget _buildJournalCoachView() {
+    final winPct = _total > 0 ? ((_wins / _total) * 100).round() : 0;
+    return SingleChildScrollView(
+      controller: _scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.spaceLG, AppTheme.spaceSM, AppTheme.spaceLG, AppTheme.spaceXXL),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isLoading)
+            const SkeletonBox(height: 130, radius: AppTheme.radiusXL)
+          else
+            _journalCoachForm(winPct),
+          const SizedBox(height: AppTheme.spaceLG),
+          _buildContextInput(),
+          const SizedBox(height: AppTheme.spaceMD),
+          _journalReviewCta(),
+          if (_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildAnalysisSkeleton(),
+          ],
+          if (_errorMessage != null && !_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildErrorState(),
+          ],
+          if (_analysisResult != null && !_isGenerating) ...[
+            const SizedBox(height: AppTheme.spaceLG),
+            _buildStructuredAnalysis(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _journalCoachProse(int winPct) {
+    if (_recentMatches.isEmpty) {
+      return 'Log a few matches and your coach will read between the lines.';
+    }
+    final buffer = StringBuffer();
+    if (_formTrend.isNotEmpty) {
+      buffer.write('${_formTrend.trim()}. ');
+    }
+    buffer.write("You're winning $winPct% of late");
+    if (_topStrength.isNotEmpty) {
+      buffer.write(', with your ${_topStrength.toLowerCase()} carrying you');
+    }
+    buffer.write('.');
+    if (_needsWork.isNotEmpty) {
+      buffer.write(' Your ${_needsWork.toLowerCase()} is the thread to pull on next.');
+    }
+    return buffer.toString();
+  }
+
+  Widget _journalCoachForm(int winPct) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+        border: Border.all(color: AppTheme.borderColor(context)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black
+                .withValues(alpha: AppTheme.isDark(context) ? 0.18 : 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('WHERE YOUR GAME STANDS',
+              style:
+                  AppTheme.labelThemed(context).copyWith(letterSpacing: 1.8)),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            _journalCoachProse(winPct),
+            style: _coachSerif(context, size: 20, weight: FontWeight.w500)
+                .copyWith(height: 1.35),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _journalReviewCta() {
+    final disabled = _isLoading;
+    return Opacity(
+      opacity: disabled ? 0.5 : 1,
+      child: GestureDetector(
+        onTap: disabled
+            ? null
+            : () {
+                HapticFeedback.mediumImpact();
+                _reviewRecentMatchHistory();
+              },
+        child: Container(
+          height: 56,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isGenerating) ...[
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                ),
+                const SizedBox(width: AppTheme.spaceSM),
+              ] else ...[
+                const Icon(Icons.auto_stories_outlined,
+                    color: Colors.white, size: 18),
+                const SizedBox(width: AppTheme.spaceSM),
+              ],
+              Text(
+                _isGenerating ? 'Reading your matches…' : 'Ask your coach',
+                style: _coachSerif(context,
+                    size: 18, weight: FontWeight.w600, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
