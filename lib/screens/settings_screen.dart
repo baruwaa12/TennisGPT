@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../services/ui_style_service.dart';
 import '../services/court_service.dart';
 import '../services/purchase_service.dart';
 import '../services/player_profile_service.dart';
@@ -32,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = Provider.of<AuthService>(context);
     final themeService = Provider.of<ThemeService>(context);
+    final uiStyleService = Provider.of<UiStyleService>(context);
     final courtService = Provider.of<CourtService>(context);
     final purchaseService = Provider.of<PurchaseService>(context);
     final profileService = Provider.of<PlayerProfileService>(context);
@@ -127,6 +129,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Design direction',
               subtitle: _getBrandDirectionLabel(themeService.brandDirection),
               onTap: () => _showBrandDirectionPicker(themeService),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              isDark: isDark,
+            ),
+            _buildSettingsTile(
+              icon: Icons.scoreboard_outlined,
+              iconColor: AppTheme.primary,
+              title: 'Broadcast canvas (testing)',
+              subtitle: uiStyleService.canvas == BroadcastCanvas.fixedDark
+                  ? 'Dark — always TV-graphics'
+                  : 'Adaptive — follows light/dark',
+              onTap: () => _showCanvasPicker(uiStyleService),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -532,6 +545,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
       orElse: () => {'title': 'Not set'},
     );
     return option['title'] ?? 'Not set';
+  }
+
+  void _showCanvasPicker(UiStyleService uiStyleService) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Broadcast canvas',
+              style: GoogleFonts.poppins(
+                  fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Temporary — compare the two treatments, then we keep the winner.',
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: Text('Dark TV-graphics', style: GoogleFonts.poppins()),
+              subtitle: Text('Always near-black, ignores light/dark',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: Colors.grey[500])),
+              trailing: uiStyleService.canvas == BroadcastCanvas.fixedDark
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                uiStyleService.setCanvas(BroadcastCanvas.fixedDark);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: Text('Adaptive', style: GoogleFonts.poppins()),
+              subtitle: Text('Near-black in dark, clean white in light',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: Colors.grey[500])),
+              trailing: uiStyleService.canvas == BroadcastCanvas.adaptive
+                  ? Icon(Icons.check, color: AppTheme.primary)
+                  : null,
+              onTap: () {
+                uiStyleService.setCanvas(BroadcastCanvas.adaptive);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showThemePicker(ThemeService themeService) {

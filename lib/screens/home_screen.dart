@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/broadcast_theme.dart';
 import '../widgets/ui_kit.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
+import '../services/ui_style_service.dart';
 import '../models/match_performance.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
@@ -14,8 +16,9 @@ import 'settings_screen.dart';
 import 'login_screen.dart';
 
 /// Home Screen — Broadcast.
-/// A sports "match centre": high-contrast scoreboard hero, tabular numbers,
-/// accent rules, uppercase labels, and fixtures-style result lists.
+/// A sports "match centre" rendered on a dark TV-graphics canvas: high-contrast
+/// scoreboard hero, tabular numbers, electric-lime accent rules, uppercase
+/// labels, and fixtures-style result lists.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -32,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _totalMatches = 0;
   bool _isLoading = true;
   bool _hasLoadedOnce = false;
+
+  late BroadcastTheme _bc;
 
   @override
   void initState() {
@@ -176,6 +181,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canvas = context.watch<UiStyleService>().canvas;
+    _bc = BroadcastTheme.of(context, canvas);
+
     final authService = Provider.of<AuthService>(context);
     final streakService = Provider.of<StreakService>(context);
     final firstName = authService.isGuest
@@ -183,35 +191,48 @@ class _HomeScreenState extends State<HomeScreen> {
         : (authService.userDisplayName?.split(' ').first ?? 'Player');
     final showSkeleton = _isLoading && !_hasLoadedOnce;
 
-    return Scaffold(
-      backgroundColor: AppTheme.scaffoldBackground(context),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadStats,
-          color: AppTheme.primary,
-          backgroundColor: AppTheme.cardBackground(context),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: _broadcastHeader(firstName)),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG, 0,
-                    AppTheme.spaceLG, AppTheme.spaceXXL),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate(
-                    showSkeleton
-                        ? const [
-                            SkeletonBox(height: 150, radius: AppTheme.radiusSM),
-                            SizedBox(height: AppTheme.spaceMD),
-                            SkeletonBox(height: 84, radius: AppTheme.radiusSM),
-                          ]
-                        : _totalMatches == 0
-                            ? [_broadcastEmpty()]
-                            : _broadcastBody(streakService),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            _bc.dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: _bc.dark ? Brightness.dark : Brightness.light,
+      ),
+      child: Theme(
+        data: _bc.themeData,
+        child: Scaffold(
+          backgroundColor: _bc.bg,
+          body: SafeArea(
+            child: RefreshIndicator(
+              onRefresh: _loadStats,
+              color: _bc.accentInk,
+              backgroundColor: _bc.panel,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(child: _broadcastHeader(firstName)),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG, 0,
+                        AppTheme.spaceLG, AppTheme.spaceXXL),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate(
+                        showSkeleton
+                            ? const [
+                                SkeletonBox(
+                                    height: 150, radius: AppTheme.radiusSM),
+                                SizedBox(height: AppTheme.spaceMD),
+                                SkeletonBox(
+                                    height: 84, radius: AppTheme.radiusSM),
+                              ]
+                            : _totalMatches == 0
+                                ? [_broadcastEmpty()]
+                                : _broadcastBody(streakService),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -224,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppTheme.spaceMD, AppTheme.spaceMD),
       child: Row(
         children: [
-          Container(width: 4, height: 36, color: AppTheme.primary),
+          Container(width: 4, height: 36, color: _bc.accentInk),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -233,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'MATCH CENTRE',
                   style: AppTheme.labelThemed(context)
-                      .copyWith(color: AppTheme.primary, letterSpacing: 2.5),
+                      .copyWith(color: _bc.accentInk, letterSpacing: 2.5),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -241,7 +262,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.headingMediumThemed(context).copyWith(
-                      letterSpacing: -0.4, fontWeight: FontWeight.w700),
+                      letterSpacing: -0.4,
+                      fontWeight: FontWeight.w700,
+                      color: _bc.textPrimary),
                 ),
               ],
             ),
@@ -252,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
             iconSize: 22,
             style: IconButton.styleFrom(
               minimumSize: const Size(44, 44),
-              foregroundColor: AppTheme.textSecondaryColor(context),
+              foregroundColor: _bc.textMuted,
             ),
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -265,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       _broadcastHero(streakService),
       const SizedBox(height: AppTheme.spaceMD),
-      _broadcastStatStrip(streakService),
+      _broadcastStatStrip(),
       const SizedBox(height: AppTheme.spaceLG),
       _broadcastCta(),
       const SizedBox(height: AppTheme.spaceXL),
@@ -284,13 +307,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
+        color: _bc.panel,
         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
         border: Border(
-          left: BorderSide(color: AppTheme.primary, width: 3),
-          top: BorderSide(color: AppTheme.borderColor(context)),
-          right: BorderSide(color: AppTheme.borderColor(context)),
-          bottom: BorderSide(color: AppTheme.borderColor(context)),
+          left: BorderSide(color: _bc.accentInk, width: 3),
+          top: BorderSide(color: _bc.border),
+          right: BorderSide(color: _bc.border),
+          bottom: BorderSide(color: _bc.border),
         ),
       ),
       padding: const EdgeInsets.all(AppTheme.spaceLG),
@@ -303,21 +326,17 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text('WIN %',
                   style: AppTheme.labelThemed(context)
-                      .copyWith(color: AppTheme.primary, letterSpacing: 2)),
+                      .copyWith(color: _bc.accentInk, letterSpacing: 2)),
               const SizedBox(height: 2),
               Text(
                 '$winPct',
                 style: AppTheme.scorelineThemed(context, size: 68)
-                    .copyWith(height: 0.95),
+                    .copyWith(height: 0.95, color: _bc.textPrimary),
               ),
             ],
           ),
           const SizedBox(width: AppTheme.spaceLG),
-          Container(
-            width: 1,
-            height: 92,
-            color: AppTheme.borderColor(context),
-          ),
+          Container(width: 1, height: 92, color: _bc.border),
           const SizedBox(width: AppTheme.spaceLG),
           Expanded(
             child: Column(
@@ -343,8 +362,11 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: AppTheme.labelThemed(context).copyWith(letterSpacing: 1.5)),
-        Text(value, style: AppTheme.scorelineThemed(context, size: 18)),
+            style: AppTheme.labelThemed(context)
+                .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+        Text(value,
+            style: AppTheme.scorelineThemed(context, size: 18)
+                .copyWith(color: _bc.textPrimary)),
       ],
     );
   }
@@ -360,10 +382,10 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 14,
           margin: const EdgeInsets.only(right: 5),
           decoration: BoxDecoration(
-            color: isWin ? AppTheme.win : Colors.transparent,
+            color: isWin ? _bc.win : Colors.transparent,
             borderRadius: BorderRadius.circular(2),
             border: Border.all(
-              color: isWin ? AppTheme.win : AppTheme.loss,
+              color: isWin ? _bc.win : _bc.loss,
               width: 1.6,
             ),
           ),
@@ -372,13 +394,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastStatStrip(StreakService streakService) {
+  Widget _broadcastStatStrip() {
     final last5Wins = _recentMatches.take(5).where(_isWin).length;
     return IntrinsicHeight(
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border.all(color: AppTheme.borderColor(context)),
+          border: Border.all(color: _bc.border),
         ),
         child: Row(
           children: [
@@ -396,8 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastStripDivider() =>
-      Container(width: 1, color: AppTheme.borderColor(context));
+  Widget _broadcastStripDivider() => Container(width: 1, color: _bc.border);
 
   Widget _broadcastStatCell(String label, String value) {
     return Expanded(
@@ -405,11 +426,13 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
         child: Column(
           children: [
-            Text(value, style: AppTheme.scorelineThemed(context, size: 26)),
+            Text(value,
+                style: AppTheme.scorelineThemed(context, size: 26)
+                    .copyWith(color: _bc.textPrimary)),
             const SizedBox(height: 4),
             Text(label,
-                style:
-                    AppTheme.labelThemed(context).copyWith(letterSpacing: 1.2)),
+                style: AppTheme.labelThemed(context)
+                    .copyWith(letterSpacing: 1.2, color: _bc.textMuted)),
           ],
         ),
       ),
@@ -426,18 +449,21 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 54,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppTheme.primary,
+          color: BroadcastTheme.limeFill,
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+            const Icon(Icons.add_rounded,
+                color: BroadcastTheme.onLime, size: 20),
             const SizedBox(width: AppTheme.spaceSM),
             Text(
               'LOG A MATCH',
               style: AppTheme.headingSmall.copyWith(
-                  color: Colors.white, fontSize: 16, letterSpacing: 1.2),
+                  color: BroadcastTheme.onLime,
+                  fontSize: 16,
+                  letterSpacing: 1.2),
             ),
           ],
         ),
@@ -454,9 +480,8 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('RECENT RESULTS',
-                style: AppTheme.labelThemed(context).copyWith(
-                    letterSpacing: 2,
-                    color: AppTheme.textSecondaryColor(context))),
+                style: AppTheme.labelThemed(context)
+                    .copyWith(letterSpacing: 2, color: _bc.textMuted)),
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -464,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: Text('VIEW ALL',
                   style: AppTheme.labelThemed(context)
-                      .copyWith(color: AppTheme.primary, letterSpacing: 1.5)),
+                      .copyWith(color: _bc.accentInk, letterSpacing: 1.5)),
             ),
           ],
         ),
@@ -472,14 +497,14 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            border: Border.all(color: AppTheme.borderColor(context)),
+            border: Border.all(color: _bc.border),
           ),
           child: Column(
             children: [
               for (int i = 0; i < items.length; i++) ...[
                 _broadcastMatchRow(items[i]),
                 if (i != items.length - 1)
-                  Divider(height: 1, color: AppTheme.borderColor(context)),
+                  Divider(height: 1, color: _bc.border),
               ],
             ],
           ),
@@ -490,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _broadcastMatchRow(MatchPerformance m) {
     final isWin = _isWin(m);
-    final color = isWin ? AppTheme.win : AppTheme.loss;
+    final color = isWin ? _bc.win : _bc.loss;
     final score =
         m.scoreLine.isNotEmpty ? m.scoreLine : '${m.setsWon}-${m.setsLost}';
 
@@ -514,8 +539,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Text(
                 isWin ? 'W' : 'L',
-                style: AppTheme.label
-                    .copyWith(color: Colors.white, fontWeight: FontWeight.w800),
+                style: AppTheme.label.copyWith(
+                    color: Colors.white, fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: AppTheme.spaceMD),
@@ -528,16 +553,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.headingSmallThemed(context)
-                        .copyWith(fontSize: 16),
+                        .copyWith(fontSize: 16, color: _bc.textPrimary),
                   ),
                   const SizedBox(height: 2),
                   Text('${_formatDate(m.date)} · ${m.surface.toUpperCase()}',
-                      style: AppTheme.labelThemed(context)),
+                      style: AppTheme.labelThemed(context)
+                          .copyWith(color: _bc.textMuted)),
                 ],
               ),
             ),
             const SizedBox(width: AppTheme.spaceSM),
-            Text(score, style: AppTheme.scorelineThemed(context, size: 17)),
+            Text(score,
+                style: AppTheme.scorelineThemed(context, size: 17)
+                    .copyWith(color: _bc.textPrimary)),
           ],
         ),
       ),
@@ -553,18 +581,18 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(AppTheme.spaceLG),
         decoration: BoxDecoration(
-          color: AppTheme.elevatedBackground(context),
+          color: _bc.panelRaised,
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           border: Border(
-            left: BorderSide(color: AppTheme.primary, width: 3),
-            top: BorderSide(color: AppTheme.borderColor(context)),
-            right: BorderSide(color: AppTheme.borderColor(context)),
-            bottom: BorderSide(color: AppTheme.borderColor(context)),
+            left: BorderSide(color: _bc.accentInk, width: 3),
+            top: BorderSide(color: _bc.border),
+            right: BorderSide(color: _bc.border),
+            bottom: BorderSide(color: _bc.border),
           ),
         ),
         child: Row(
           children: [
-            Icon(Icons.insights_rounded, color: AppTheme.primary, size: 26),
+            Icon(Icons.insights_rounded, color: _bc.accentInk, size: 26),
             const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
@@ -573,16 +601,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('TACTICAL COACH',
                       style: AppTheme.labelThemed(context).copyWith(
                           letterSpacing: 2,
-                          color: AppTheme.textPrimaryColor(context),
+                          color: _bc.textPrimary,
                           fontSize: 14)),
                   const SizedBox(height: 3),
                   Text('AI breakdown of your match patterns',
-                      style: AppTheme.bodySmallThemed(context)),
+                      style: AppTheme.bodySmallThemed(context)
+                          .copyWith(color: _bc.textSecondary)),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_rounded,
-                color: AppTheme.primary, size: 20),
+            Icon(Icons.arrow_forward_rounded, color: _bc.accentInk, size: 20),
           ],
         ),
       ),
@@ -598,13 +626,13 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(AppTheme.spaceLG),
         decoration: BoxDecoration(
-          color: AppTheme.cardBackground(context),
+          color: _bc.panel,
           borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           border: Border(
-            left: BorderSide(color: AppTheme.primary, width: 3),
-            top: BorderSide(color: AppTheme.borderColor(context)),
-            right: BorderSide(color: AppTheme.borderColor(context)),
-            bottom: BorderSide(color: AppTheme.borderColor(context)),
+            left: BorderSide(color: _bc.accentInk, width: 3),
+            top: BorderSide(color: _bc.border),
+            right: BorderSide(color: _bc.border),
+            bottom: BorderSide(color: _bc.border),
           ),
         ),
         child: Column(
@@ -612,14 +640,16 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text('NO MATCHES YET',
                 style: AppTheme.labelThemed(context)
-                    .copyWith(color: AppTheme.primary, letterSpacing: 2)),
+                    .copyWith(color: _bc.accentInk, letterSpacing: 2)),
             const SizedBox(height: AppTheme.spaceSM),
             Text('Log your first match',
-                style: AppTheme.headingMediumThemed(context)),
+                style: AppTheme.headingMediumThemed(context)
+                    .copyWith(color: _bc.textPrimary)),
             const SizedBox(height: AppTheme.spaceXS),
             Text(
               'Your win rate, form and AI coaching all unlock from here.',
-              style: AppTheme.bodyMediumThemed(context),
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: _bc.textSecondary),
             ),
             const SizedBox(height: AppTheme.spaceLG),
             _broadcastCta(),
