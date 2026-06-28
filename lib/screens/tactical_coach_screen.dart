@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ui_kit.dart';
-import '../services/ui_style_service.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -21,8 +19,9 @@ import '../widgets/voice_input_button.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
-/// Coach Screen — Apple-level minimal. Monochrome, type-led hierarchy, with a
-/// single accent reserved for the "Next match focus" highlight.
+/// Coach Screen — Broadcast.
+/// Scoreboard chrome, uppercase tabs and a bold review CTA, fronting an
+/// AI tactical breakdown of the player's recent matches.
 class TacticalCoachScreen extends StatefulWidget {
   const TacticalCoachScreen({super.key});
 
@@ -51,9 +50,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   String _formTrend = '';
   String _topStrength = '';
   String _needsWork = '';
-
-  bool get _isVibrant =>
-      context.watch<UiStyleService>().style == UiStyle.vibrant;
 
   @override
   void initState() {
@@ -263,89 +259,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final style = context.watch<UiStyleService>().style;
-    if (style == UiStyle.broadcast) return _buildBroadcastCoachScreen();
-    if (style == UiStyle.journal) return _buildJournalCoachScreen();
-    return _buildClassicCoachScreen();
-  }
-
-  Widget _buildClassicCoachScreen() {
-    final vibrant =
-        context.watch<UiStyleService>().style == UiStyle.vibrant;
-    return Scaffold(
-      backgroundColor: AppTheme.scaffoldBackground(context),
-      body: Stack(
-        children: [
-          AmbientBackground(color: vibrant ? AppTheme.primary : null),
-          SafeArea(
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              behavior: HitTestBehavior.translucent,
-              child: Column(
-                children: [
-                  _buildTopBar(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppTheme.spaceLG,
-                      0,
-                      AppTheme.spaceLG,
-                      AppTheme.spaceMD,
-                    ),
-                    child: SegmentedTabs(
-                      labels: const ['Coach', 'Saved'],
-                      selectedIndex: _activeTab,
-                      onChanged: (i) {
-                        setState(() => _activeTab = i);
-                        if (i == 1) _loadSavedEntries();
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child:
-                        _activeTab == 1 ? _buildSavedView() : _buildCoachView(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceSM,
-        AppTheme.spaceSM,
-        AppTheme.spaceMD,
-        AppTheme.spaceSM,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Back',
-            iconSize: 22,
-            style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-            color: AppTheme.textSecondaryColor(context),
-            icon: const Icon(Icons.arrow_back_rounded),
-          ),
-          const SizedBox(width: AppTheme.spaceXS),
-          Text('Coach',
-              style: AppTheme.headingMediumThemed(context)
-                  .copyWith(letterSpacing: -0.4)),
-        ],
-      ),
-    );
-  }
-
-  // ====================================================================
-  //  BROADCAST coach — scoreboard chrome, uppercase tabs, bold CTA.
-  //  Reuses the structured-analysis + saved rendering for the body.
-  // ====================================================================
-
-  Widget _buildBroadcastCoachScreen() {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
@@ -354,12 +267,11 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           behavior: HitTestBehavior.translucent,
           child: Column(
             children: [
-              _broadcastCoachTopBar(),
-              _broadcastCoachTabs(),
+              _coachTopBar(),
+              _coachTabs(),
               Expanded(
-                child: _activeTab == 1
-                    ? _buildSavedView()
-                    : _buildBroadcastCoachView(),
+                child:
+                    _activeTab == 1 ? _buildSavedView() : _buildCoachView(),
               ),
             ],
           ),
@@ -368,7 +280,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _broadcastCoachTopBar() {
+  Widget _coachTopBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppTheme.spaceSM, AppTheme.spaceSM,
           AppTheme.spaceMD, AppTheme.spaceSM),
@@ -395,7 +307,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _broadcastCoachTabs() {
+  Widget _coachTabs() {
     Widget tab(String label, int index) {
       final selected = _activeTab == index;
       return Expanded(
@@ -445,24 +357,24 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _buildBroadcastCoachView() {
+  Widget _buildCoachView() {
     final winPct = _total > 0 ? ((_wins / _total) * 100).round() : 0;
     return SingleChildScrollView(
       controller: _scrollController,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(
-          AppTheme.spaceLG, AppTheme.spaceSM, AppTheme.spaceLG, AppTheme.spaceXXL),
+      padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG, AppTheme.spaceSM,
+          AppTheme.spaceLG, AppTheme.spaceXXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_isLoading)
             const SkeletonBox(height: 130, radius: AppTheme.radiusSM)
           else
-            _broadcastCoachForm(winPct),
+            _coachForm(winPct),
           const SizedBox(height: AppTheme.spaceLG),
           _buildContextInput(),
           const SizedBox(height: AppTheme.spaceMD),
-          _broadcastReviewCta(),
+          _reviewCta(),
           if (_isGenerating) ...[
             const SizedBox(height: AppTheme.spaceLG),
             _buildAnalysisSkeleton(),
@@ -480,7 +392,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _broadcastCoachForm(int winPct) {
+  Widget _coachForm(int winPct) {
     if (_recentMatches.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(AppTheme.spaceLG),
@@ -532,15 +444,15 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               children: [
                 if (_formTrend.isNotEmpty) ...[
                   Text(_formTrend.toUpperCase(),
-                      style: AppTheme.labelThemed(context).copyWith(
-                          color: AppTheme.win, letterSpacing: 1.2)),
+                      style: AppTheme.labelThemed(context)
+                          .copyWith(color: AppTheme.win, letterSpacing: 1.2)),
                   const SizedBox(height: 8),
                 ],
                 if (_topStrength.isNotEmpty)
-                  _broadcastFormLine('STRENGTH', _topStrength),
+                  _coachFormLine('STRENGTH', _topStrength),
                 if (_needsWork.isNotEmpty) ...[
                   const SizedBox(height: 6),
-                  _broadcastFormLine('NEEDS WORK', _needsWork),
+                  _coachFormLine('NEEDS WORK', _needsWork),
                 ],
               ],
             ),
@@ -550,7 +462,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _broadcastFormLine(String label, String value) {
+  Widget _coachFormLine(String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -571,7 +483,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
-  Widget _broadcastReviewCta() {
+  Widget _reviewCta() {
     final disabled = _isLoading;
     return Opacity(
       opacity: disabled ? 0.5 : 1,
@@ -615,481 +527,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  // ====================================================================
-  //  JOURNAL coach — warm diary chrome, serif headings, prose form note.
-  //  Reuses the structured-analysis + saved rendering for the body.
-  // ====================================================================
-
-  TextStyle _coachSerif(
-    BuildContext context, {
-    double size = 24,
-    FontWeight weight = FontWeight.w600,
-    Color? color,
-    double height = 1.15,
-  }) {
-    return GoogleFonts.fraunces(
-      fontSize: size,
-      fontWeight: weight,
-      color: color ?? AppTheme.textPrimaryColor(context),
-      height: height,
-    );
-  }
-
-  Widget _buildJournalCoachScreen() {
-    return Scaffold(
-      backgroundColor: AppTheme.scaffoldBackground(context),
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          behavior: HitTestBehavior.translucent,
-          child: Column(
-            children: [
-              _journalCoachTopBar(),
-              _journalCoachTabs(),
-              Expanded(
-                child: _activeTab == 1
-                    ? _buildSavedView()
-                    : _buildJournalCoachView(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _journalCoachTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppTheme.spaceSM, AppTheme.spaceSM,
-          AppTheme.spaceMD, AppTheme.spaceSM),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Back',
-            iconSize: 22,
-            style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-            color: AppTheme.textSecondaryColor(context),
-            icon: const Icon(Icons.arrow_back_rounded),
-          ),
-          const SizedBox(width: AppTheme.spaceXS),
-          Text('Coach', style: _coachSerif(context, size: 26)),
-        ],
-      ),
-    );
-  }
-
-  Widget _journalCoachTabs() {
-    Widget tab(String label, int index) {
-      final selected = _activeTab == index;
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          _onTabChanged(index);
-        },
-        child: Padding(
-          padding: const EdgeInsets.only(right: AppTheme.spaceLG),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: _coachSerif(context, size: 18).copyWith(
-                  color: selected
-                      ? AppTheme.textPrimaryColor(context)
-                      : AppTheme.textMutedColor(context),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                height: 2,
-                width: 22,
-                color: selected ? AppTheme.primary : Colors.transparent,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppTheme.spaceLG, 0, AppTheme.spaceLG, AppTheme.spaceSM),
-      child: Row(children: [tab('Coach', 0), tab('Saved', 1)]),
-    );
-  }
-
-  Widget _buildJournalCoachView() {
-    final winPct = _total > 0 ? ((_wins / _total) * 100).round() : 0;
-    return SingleChildScrollView(
-      controller: _scrollController,
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(
-          AppTheme.spaceLG, AppTheme.spaceSM, AppTheme.spaceLG, AppTheme.spaceXXL),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_isLoading)
-            const SkeletonBox(height: 130, radius: AppTheme.radiusXL)
-          else
-            _journalCoachForm(winPct),
-          const SizedBox(height: AppTheme.spaceLG),
-          _buildContextInput(),
-          const SizedBox(height: AppTheme.spaceMD),
-          _journalReviewCta(),
-          if (_isGenerating) ...[
-            const SizedBox(height: AppTheme.spaceLG),
-            _buildAnalysisSkeleton(),
-          ],
-          if (_errorMessage != null && !_isGenerating) ...[
-            const SizedBox(height: AppTheme.spaceLG),
-            _buildErrorState(),
-          ],
-          if (_analysisResult != null && !_isGenerating) ...[
-            const SizedBox(height: AppTheme.spaceLG),
-            _buildStructuredAnalysis(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _journalCoachProse(int winPct) {
-    if (_recentMatches.isEmpty) {
-      return 'Log a few matches and your coach will read between the lines.';
-    }
-    final buffer = StringBuffer();
-    if (_formTrend.isNotEmpty) {
-      buffer.write('${_formTrend.trim()}. ');
-    }
-    buffer.write("You're winning $winPct% of late");
-    if (_topStrength.isNotEmpty) {
-      buffer.write(', with your ${_topStrength.toLowerCase()} carrying you');
-    }
-    buffer.write('.');
-    if (_needsWork.isNotEmpty) {
-      buffer.write(' Your ${_needsWork.toLowerCase()} is the thread to pull on next.');
-    }
-    return buffer.toString();
-  }
-
-  Widget _journalCoachForm(int winPct) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.borderColor(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black
-                .withValues(alpha: AppTheme.isDark(context) ? 0.18 : 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('WHERE YOUR GAME STANDS',
-              style:
-                  AppTheme.labelThemed(context).copyWith(letterSpacing: 1.8)),
-          const SizedBox(height: AppTheme.spaceSM),
-          Text(
-            _journalCoachProse(winPct),
-            style: _coachSerif(context, size: 20, weight: FontWeight.w500)
-                .copyWith(height: 1.35),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _journalReviewCta() {
-    final disabled = _isLoading;
-    return Opacity(
-      opacity: disabled ? 0.5 : 1,
-      child: GestureDetector(
-        onTap: disabled
-            ? null
-            : () {
-                HapticFeedback.mediumImpact();
-                _reviewRecentMatchHistory();
-              },
-        child: Container(
-          height: 56,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppTheme.primary,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isGenerating) ...[
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                ),
-                const SizedBox(width: AppTheme.spaceSM),
-              ] else ...[
-                const Icon(Icons.auto_stories_outlined,
-                    color: Colors.white, size: 18),
-                const SizedBox(width: AppTheme.spaceSM),
-              ],
-              Text(
-                _isGenerating ? 'Reading your matches…' : 'Ask your coach',
-                style: _coachSerif(context,
-                    size: 18, weight: FontWeight.w600, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============ Coach view ============
-
-  Widget _buildCoachView() {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spaceLG,
-        0,
-        AppTheme.spaceLG,
-        AppTheme.spaceXXL,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (_isLoading)
-            const SkeletonBox(height: 150, radius: AppTheme.radiusXL)
-          else
-            _buildCurrentFormCard(),
-          const SizedBox(height: AppTheme.spaceLG),
-          _buildContextInput(),
-          const SizedBox(height: AppTheme.spaceMD),
-          PrimaryActionButton(
-            label: 'Review my matches',
-            icon: Icons.auto_awesome_rounded,
-            loading: _isGenerating,
-            loadingLabel: 'Reviewing…',
-            onPressed: _isLoading ? null : _reviewRecentMatchHistory,
-          ),
-          if (_isGenerating) ...[
-            const SizedBox(height: AppTheme.spaceLG),
-            _buildAnalysisSkeleton(),
-          ],
-          if (_errorMessage != null && !_isGenerating) ...[
-            const SizedBox(height: AppTheme.spaceLG),
-            _buildErrorState(),
-          ],
-          if (_analysisResult != null && !_isGenerating) ...[
-            const SizedBox(height: AppTheme.spaceLG),
-            _buildStructuredAnalysis(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCurrentFormCard() {
-    final winPercentage = _total > 0 ? ((_wins / _total) * 100).round() : 0;
-    final hasMatches = _recentMatches.isNotEmpty;
-
-    if (!hasMatches) {
-      return Container(
-        padding: const EdgeInsets.all(AppTheme.spaceLG),
-        decoration: _cardDecoration(),
-        child: Row(
-          children: [
-            const TonalIconBadge(icon: Icons.query_stats_rounded, size: 48),
-            const SizedBox(width: AppTheme.spaceMD),
-            Expanded(
-              child: Text(
-                'Log a few matches and your coach will spot the patterns.',
-                style: AppTheme.bodyMediumThemed(context),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return _isVibrant
-        ? _buildVibrantFormCard(winPercentage)
-        : _buildMinimalFormCard(winPercentage);
-  }
-
-  // Vibrant: a bold gradient card fronted by a ring gauge.
-  Widget _buildVibrantFormCard(int winPercentage) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppAccents.heroGradient(context),
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.32),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          StatRing(
-              progress: _total > 0 ? _wins / _total : 0,
-              value: '$winPercentage',
-              label: 'WIN %',
-              size: 108),
-          const SizedBox(width: AppTheme.spaceLG),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_formTrend.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(_formTrend,
-                        style: AppTheme.label.copyWith(color: Colors.white)),
-                  ),
-                if (_topStrength.isNotEmpty) ...[
-                  const SizedBox(height: AppTheme.spaceSM),
-                  _vibrantFormLine('Strength', _topStrength),
-                ],
-                if (_needsWork.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  _vibrantFormLine('Needs work', _needsWork),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _vibrantFormLine(String label, String value) {
-    return Row(
-      children: [
-        Text('${label.toUpperCase()}  ',
-            style: AppTheme.label.copyWith(color: Colors.white70)),
-        Expanded(
-          child: Text(value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTheme.headingSmall
-                  .copyWith(color: Colors.white, fontSize: 15)),
-        ),
-      ],
-    );
-  }
-
-  // Minimal: an editorial typographic block — no card chrome.
-  Widget _buildMinimalFormCard(int winPercentage) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('RECENT TRENDS',
-                style: AppTheme.labelThemed(context)
-                    .copyWith(letterSpacing: 1.6)),
-            const Spacer(),
-            if (_formTrend.isNotEmpty) TonalChip(label: _formTrend),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceXS),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '$winPercentage',
-              style: AppTheme.statLargeThemed(context)
-                  .copyWith(fontSize: 64, height: 0.95, letterSpacing: -2),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8, left: 2),
-              child: Text('% win rate',
-                  style: AppTheme.bodySmallThemed(context)),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.spaceMD),
-        Row(
-          children: _recentMatches.take(8).toList().reversed.map((match) {
-            final isWin = match.result.toLowerCase() == 'win';
-            return Expanded(
-              child: Container(
-                height: 6,
-                margin: const EdgeInsets.only(right: 4),
-                decoration: BoxDecoration(
-                  color: isWin
-                      ? AppTheme.textPrimaryColor(context)
-                      : AppTheme.borderColor(context),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        if (_topStrength.isNotEmpty || _needsWork.isNotEmpty) ...[
-          const SizedBox(height: AppTheme.spaceLG),
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                if (_topStrength.isNotEmpty)
-                  Expanded(child: _buildFormStat('Strength', _topStrength)),
-                if (_topStrength.isNotEmpty && _needsWork.isNotEmpty)
-                  Container(
-                    width: 1,
-                    color: AppTheme.borderColor(context),
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spaceMD),
-                  ),
-                if (_needsWork.isNotEmpty)
-                  Expanded(child: _buildFormStat('Needs work', _needsWork)),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildFormStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label.toUpperCase(),
-            style: AppTheme.labelThemed(context).copyWith(letterSpacing: 1.2)),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTheme.headingSmallThemed(context).copyWith(fontSize: 16),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
     );
   }
 
@@ -1139,7 +576,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   Widget _buildErrorState() {
-    final errorColor = _isVibrant ? AppAccents.coral : AppAccents.negative;
+    const errorColor = AppAccents.negative;
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceLG),
       decoration: BoxDecoration(
@@ -1149,7 +586,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       ),
       child: Column(
         children: [
-          TonalIconBadge(
+          const TonalIconBadge(
               icon: Icons.error_outline_rounded, color: errorColor),
           const SizedBox(height: AppTheme.spaceSM),
           Text('Couldn\'t generate insight',
@@ -1282,124 +719,67 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     String? trend,
     bool highlighted = false,
   }) {
-    final vibrant = _isVibrant;
-
-    // Minimal: editorial — a numbered block with no card chrome; the
-    // highlighted focus gets a thin accent rule on the left.
-    if (!vibrant) {
-      final hasMeta = (evidence ?? '').isNotEmpty ||
-          (confidence ?? '').isNotEmpty ||
-          (trend ?? '').isNotEmpty;
-      final block = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (step != null) ...[
-                Text(
-                  step,
-                  style: AppTheme.labelThemed(context).copyWith(
-                    letterSpacing: 1,
-                    color: highlighted
-                        ? AppTheme.primary
-                        : AppTheme.textMutedColor(context),
-                  ),
+    // Editorial: a numbered block with no card chrome; the highlighted focus
+    // gets a thin accent rule on the left.
+    final hasMeta = (evidence ?? '').isNotEmpty ||
+        (confidence ?? '').isNotEmpty ||
+        (trend ?? '').isNotEmpty;
+    final block = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (step != null) ...[
+              Text(
+                step,
+                style: AppTheme.labelThemed(context).copyWith(
+                  letterSpacing: 1,
+                  color: highlighted
+                      ? AppTheme.primary
+                      : AppTheme.textMutedColor(context),
                 ),
-                const SizedBox(width: AppTheme.spaceSM),
-              ],
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTheme.headingSmallThemed(context).copyWith(
-                    fontSize: 18,
-                    letterSpacing: -0.3,
-                    color: highlighted ? AppTheme.primary : null,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceSM),
-          Text(
-            text,
-            style: AppTheme.bodyLargeThemed(context)
-                .copyWith(height: 1.6, fontSize: 16),
-          ),
-          if (hasMeta) ...[
-            const SizedBox(height: AppTheme.spaceSM),
-            Text(_buildEvidenceMeta(evidence, confidence, trend),
-                style: AppTheme.labelThemed(context)),
-          ],
-        ],
-      );
-
-      if (highlighted) {
-        return Container(
-          padding: const EdgeInsets.only(left: AppTheme.spaceMD),
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(color: AppTheme.primary, width: 2.5),
-            ),
-          ),
-          child: block,
-        );
-      }
-      return block;
-    }
-
-    // Vibrant: every section is its own colourful card.
-    final Color? badgeColor = accentColor;
-    final borderAccent = accentColor ?? AppTheme.primary;
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(
-          color: highlighted
-              ? borderAccent.withValues(alpha: 0.5)
-              : AppTheme.borderColor(context),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              TonalIconBadge(
-                icon: icon,
-                size: 36,
-                color: badgeColor,
               ),
               const SizedBox(width: AppTheme.spaceSM),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTheme.headingSmallThemed(context)
-                      .copyWith(fontSize: 16, letterSpacing: -0.2),
+            ],
+            Expanded(
+              child: Text(
+                title,
+                style: AppTheme.headingSmallThemed(context).copyWith(
+                  fontSize: 18,
+                  letterSpacing: -0.3,
+                  color: highlighted ? AppTheme.primary : null,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spaceMD),
-          Text(
-            text,
-            style: AppTheme.bodyLargeThemed(context)
-                .copyWith(height: 1.55, fontSize: 16),
-          ),
-          if ((evidence ?? '').isNotEmpty ||
-              (confidence ?? '').isNotEmpty ||
-              (trend ?? '').isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spaceSM),
-            Text(
-              _buildEvidenceMeta(evidence, confidence, trend),
-              style: AppTheme.labelThemed(context),
             ),
           ],
+        ),
+        const SizedBox(height: AppTheme.spaceSM),
+        Text(
+          text,
+          style: AppTheme.bodyLargeThemed(context)
+              .copyWith(height: 1.6, fontSize: 16),
+        ),
+        if (hasMeta) ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(_buildEvidenceMeta(evidence, confidence, trend),
+              style: AppTheme.labelThemed(context)),
         ],
-      ),
+      ],
     );
+
+    if (highlighted) {
+      return Container(
+        padding: const EdgeInsets.only(left: AppTheme.spaceMD),
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(color: AppTheme.primary, width: 2.5),
+          ),
+        ),
+        child: block,
+      );
+    }
+    return block;
   }
 
   String _buildEvidenceMeta(
@@ -1436,10 +816,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         children: [
           Row(
             children: [
-              TonalIconBadge(
-                  icon: Icons.fitness_center_rounded,
-                  size: 36,
-                  color: _isVibrant ? AppAccents.amber : null),
+              const TonalIconBadge(
+                  icon: Icons.fitness_center_rounded, size: 36),
               const SizedBox(width: AppTheme.spaceSM),
               Text('Practice plan',
                   style: AppTheme.headingSmallThemed(context)
@@ -1689,12 +1067,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       ),
     );
   }
-
-  BoxDecoration _cardDecoration() => BoxDecoration(
-        color: AppTheme.cardBackground(context),
-        borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      );
 
   String _buildShareText(
     Map<String, dynamic> whatKeepsShowingUp,

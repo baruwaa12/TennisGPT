@@ -1,69 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// The two visual languages the app can switch between at runtime.
+/// The app's single visual language.
+///
+/// The app previously shipped several experimental styles; we've committed to
+/// [broadcast] — a sports "match centre" look: high-contrast scoreboard hero,
+/// tabular numbers, accent rules, uppercase labels, fixtures-style lists.
 enum UiStyle {
-  /// Bold, youthful, colourful — gradients, vivid accents, ink ripples.
-  vibrant,
-
-  /// Apple-level minimal — near-monochrome, big type, press-to-brighten cards.
-  minimal,
-
-  /// Authored — deliberately de-genericized. Leads with the scoreline (mono),
-  /// rivalries instead of a stat grid, court-surface accents, demoted chrome.
-  authored,
-
-  /// Broadcast — sports "match centre" energy: high-contrast scoreboard hero,
-  /// tabular numbers, accent rules, uppercase labels, fixtures-style lists.
   broadcast,
-
-  /// Journal — warm coaching diary: serif headings, soft paper cards, generous
-  /// whitespace, prose-led stats, quiet dividers.
-  journal,
 }
 
-/// Persists and broadcasts the user's chosen UI style so the whole app can
-/// re-render live when it changes.
+/// Broadcast is now the only style. This service is retained so the rest of the
+/// app keeps a single, stable hook for the active visual language (and so a new
+/// style could be reintroduced later without touching call sites).
 class UiStyleService extends ChangeNotifier {
-  static const String _key = 'ui_style';
+  UiStyle get style => UiStyle.broadcast;
 
-  UiStyle _style = UiStyle.minimal;
-  UiStyle get style => _style;
+  /// Kept for API compatibility; there is nothing to load now.
+  Future<void> init() async {}
 
-  bool get isVibrant => _style == UiStyle.vibrant;
-  bool get isMinimal => _style == UiStyle.minimal;
-  bool get isAuthored => _style == UiStyle.authored;
-
-  Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_key);
-    if (saved != null) {
-      _style = UiStyle.values.firstWhere(
-        (s) => s.name == saved,
-        orElse: () => UiStyle.minimal,
-      );
-    }
-    notifyListeners();
-  }
-
-  Future<void> setStyle(UiStyle style) async {
-    if (_style == style) return;
-    _style = style;
-    notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, style.name);
-  }
-
-  Future<void> toggle() async {
-    await setStyle(isVibrant ? UiStyle.minimal : UiStyle.vibrant);
-  }
-
-  String get label => switch (_style) {
-        UiStyle.vibrant => 'Vibrant',
-        UiStyle.minimal => 'Minimal',
-        UiStyle.authored => 'Authored',
-        UiStyle.broadcast => 'Broadcast',
-        UiStyle.journal => 'Journal',
-      };
+  String get label => 'Broadcast';
 }

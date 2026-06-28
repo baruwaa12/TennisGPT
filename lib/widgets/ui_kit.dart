@@ -1,26 +1,22 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../services/ui_style_service.dart';
 
 /// ============================================================
-/// UI Kit — dual style.
+/// UI Kit — Broadcast.
 ///
-/// Every component renders in one of two visual languages, chosen live via
-/// [UiStyleService] and remembered across launches:
+/// The app committed to a single visual language (Broadcast). These shared
+/// components render in the calm, near-monochrome base look that Broadcast
+/// screens build on top of.
 ///
-///  • Vibrant  — youthful & colourful: gradients, vivid accents, ink ripples.
-///  • Minimal  — Apple-level: near-monochrome, big type, press-to-brighten.
-///
-/// Shared rules (both styles): real affordances, 44px targets, semantic
-/// labels, AA contrast, skeletons over spinners.
+/// Shared rules: real affordances, 44px targets, semantic labels, AA contrast,
+/// skeletons over spinners.
 /// ============================================================
 
-/// Reads the active style. Subscribes so widgets rebuild on toggle.
-bool _vibrant(BuildContext context) =>
-    context.watch<UiStyleService>().style == UiStyle.vibrant;
+/// Retained so existing component branches compile unchanged. Broadcast is the
+/// only style now, so the colourful "vibrant" path is never taken.
+bool _vibrant(BuildContext context) => false;
 
 /// Accent palette. The vibrant fields are the rainbow "colour moments"; the
 /// minimal style mostly ignores them in favour of a single brand accent.

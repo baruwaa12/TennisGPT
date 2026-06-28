@@ -7,7 +7,7 @@ Tracks work completed in 3-task batches.
 ## Batch 1 (Tactical Coach Assessment Batch)
 
 ### Task 1 - Audit tactical coach flow
-- Reviewed tactical flow across:
+- Reviewed tactical flow across: 
   - `lib/screens/tactical_coach_screen.dart`
   - `lib/services/api_service.dart`
   - `lib/services/player_profile_service.dart`

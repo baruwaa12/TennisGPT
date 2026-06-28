@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
-import '../services/ui_style_service.dart';
 import '../services/court_service.dart';
 import '../services/purchase_service.dart';
 import '../services/player_profile_service.dart';
@@ -33,7 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = Provider.of<AuthService>(context);
     final themeService = Provider.of<ThemeService>(context);
-    final uiStyleService = Provider.of<UiStyleService>(context);
     final courtService = Provider.of<CourtService>(context);
     final purchaseService = Provider.of<PurchaseService>(context);
     final profileService = Provider.of<PlayerProfileService>(context);
@@ -123,7 +121,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
-            _buildStyleSelector(uiStyleService, isDark),
             _buildSettingsTile(
               icon: Icons.palette_outlined,
               iconColor: AppTheme.primary,
@@ -417,140 +414,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildStyleSelector(UiStyleService uiStyleService, bool isDark) {
-    Widget chip(String label, IconData icon, bool selected, VoidCallback onTap) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          decoration: BoxDecoration(
-            color: selected ? AppTheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: selected
-                  ? AppTheme.primary
-                  : (isDark ? AppTheme.surfaceBorder : Colors.grey[300]!),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: selected
-                    ? Colors.white
-                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: selected
-                      ? Colors.white
-                      : (isDark ? Colors.grey[300] : Colors.grey[700]),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceCard : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.style_outlined,
-                    color: AppTheme.primary, size: 20),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'App style',
-                      style: GoogleFonts.poppins(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : Colors.grey[800],
-                      ),
-                    ),
-                    Text(
-                      'Switch the whole look instantly',
-                      style: GoogleFonts.poppins(
-                          fontSize: 12, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              chip(
-                'Minimal',
-                Icons.crop_square_rounded,
-                uiStyleService.isMinimal,
-                () => uiStyleService.setStyle(UiStyle.minimal),
-              ),
-              chip(
-                'Vibrant',
-                Icons.auto_awesome_rounded,
-                uiStyleService.isVibrant,
-                () => uiStyleService.setStyle(UiStyle.vibrant),
-              ),
-              chip(
-                'Authored',
-                Icons.sports_tennis_rounded,
-                uiStyleService.isAuthored,
-                () => uiStyleService.setStyle(UiStyle.authored),
-              ),
-              chip(
-                'Broadcast',
-                Icons.scoreboard_outlined,
-                uiStyleService.style == UiStyle.broadcast,
-                () => uiStyleService.setStyle(UiStyle.broadcast),
-              ),
-              chip(
-                'Journal',
-                Icons.menu_book_outlined,
-                uiStyleService.style == UiStyle.journal,
-                () => uiStyleService.setStyle(UiStyle.journal),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
