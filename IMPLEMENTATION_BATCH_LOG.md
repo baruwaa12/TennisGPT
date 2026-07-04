@@ -211,3 +211,56 @@ Part of the premium-polish plan: A (shared kit) → B (Match History restyle) �
 - `flutter analyze` clean on changed file.
 - Next: Batch D — cleanup (prototype screen, canvas A/B toggle, unused
   vibrant paths, brand-direction system).
+
+---
+
+## Batch 8 (UI Polish Batch D — Design System Cleanup)
+
+Decision recorded: the Broadcast canvas is committed as **fixed dark**
+(TV-graphics identity), regardless of the app's light/dark toggle.
+
+### Task 1 - Delete the throwaway prototype
+- Deleted `lib/screens/prototype/match_history_prototype.dart` (its winning
+  ideas — mono scorelines with dimmed lost sets — shipped in Batches A/B).
+- Removed the prototype tile from Settings.
+
+### Task 2 - Commit the canvas: remove the A/B toggle
+- `lib/theme/broadcast_theme.dart` simplified to a single fixed-dark token
+  set; `BroadcastTheme.of(context)` no longer takes a canvas.
+- Deleted `lib/services/ui_style_service.dart`; removed its provider from
+  `main.dart`, the Settings picker, and the `context.watch` in all four
+  Broadcast screens (Home, Coach, Quick Match, History).
+
+### Task 3 - Strip dead styling systems
+- `lib/widgets/ui_kit.dart` rewritten to only what's used: `AppAccents`
+  (positive/negative), `TonalIconBadge`, `TonalChip`, `SkeletonBox`.
+  Removed the never-taken "vibrant" branches and unused components
+  (PrimaryActionButton, PressableCard, AmbientBackground, SegmentedTabs,
+  StatRing, StatTile, SectionHeader) — ~600 lines of dead paths.
+- Removed the three-way `BrandDirection` system: `app_theme.dart` now has a
+  single const accent palette; `theme_service.dart` no longer persists a
+  brand direction; deleted `lib/widgets/brand_direction_switcher.dart` and
+  the Settings "Design direction" picker.
+
+### Task 4 - Lint sweep
+- `dart fix --apply` for const constructors enabled by the now-const palette
+  (32 fixes across 10 files).
+- Analyzer findings reduced from 12 (pre-batch baseline) to 5, all
+  pre-existing and unrelated to UI work.
+
+### Files Changed
+- Deleted: `lib/screens/prototype/match_history_prototype.dart`,
+  `lib/services/ui_style_service.dart`,
+  `lib/widgets/brand_direction_switcher.dart`
+- `lib/theme/broadcast_theme.dart` (simplified)
+- `lib/widgets/ui_kit.dart` (rewritten, minimal)
+- `lib/theme/app_theme.dart`, `lib/services/theme_service.dart`
+- `lib/main.dart`, `lib/screens/settings_screen.dart`
+- `lib/screens/home_screen.dart`, `lib/screens/tactical_coach_screen.dart`,
+  `lib/screens/quick_match_screen.dart`, `lib/screens/match_history_screen.dart`
+- const fixes in 10 files via `dart fix`
+- `IMPLEMENTATION_BATCH_LOG.md`
+
+### Notes
+- Remaining polish candidates (future batches): Settings, Paywall, Login,
+  Onboarding screens still on the legacy card style.

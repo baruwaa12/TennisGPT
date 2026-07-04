@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/broadcast_theme.dart';
 import '../widgets/broadcast_kit.dart';
 import '../widgets/ui_kit.dart';
-import '../services/ui_style_service.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import 'quick_match_screen.dart';
@@ -129,8 +127,7 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canvas = context.watch<UiStyleService>().canvas;
-    _bc = BroadcastTheme.of(context, canvas);
+    _bc = BroadcastTheme.of(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(

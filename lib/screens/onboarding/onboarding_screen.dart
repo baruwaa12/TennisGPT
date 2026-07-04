@@ -424,7 +424,7 @@ Please provide a brief tactical insight to show the value of the app.
                       ),
                       const Spacer(),
                       if (isSelected)
-                        Icon(Icons.check_circle, color: AppTheme.primary),
+                        const Icon(Icons.check_circle, color: AppTheme.primary),
                     ],
                   ),
                 ),
@@ -671,7 +671,7 @@ Please provide a brief tactical insight to show the value of the app.
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(color: AppTheme.primary),
+                          const CircularProgressIndicator(color: AppTheme.primary),
                           const SizedBox(height: 16),
                           Text(
                             'Analyzing your match...',

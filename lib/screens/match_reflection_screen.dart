@@ -272,7 +272,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppTheme.primary, AppTheme.primaryDark],
                   ),
                   borderRadius: BorderRadius.circular(16),
@@ -362,7 +362,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                         color: AppTheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Icons.psychology, color: AppTheme.primary, size: 24),
+                      child: const Icon(Icons.psychology, color: AppTheme.primary, size: 24),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -392,7 +392,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [AppTheme.primary, AppTheme.primaryDark],
                   ),
                   borderRadius: BorderRadius.circular(16),
@@ -489,7 +489,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),

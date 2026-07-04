@@ -1,30 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-enum BrandDirection {
-  deepBlueIntelligence,
-  burntOrangeTactical,
-  copperBronzePremium,
-}
-
-class _BrandAccentPalette {
-  final Color primary;
-  final Color primaryLight;
-  final Color primaryDark;
-  final Color softGlow;
-  final Color neutral;
-  final Color warning;
-
-  const _BrandAccentPalette({
-    required this.primary,
-    required this.primaryLight,
-    required this.primaryDark,
-    required this.softGlow,
-    required this.neutral,
-    required this.warning,
-  });
-}
-
 /// TennisGPT Design System
 /// Direction: calm tactical intelligence.
 /// Clarity-first hierarchy, premium restraint, and pressure-ready readability.
@@ -33,51 +9,13 @@ class AppTheme {
   AppTheme._();
 
   // ============ COLORS ============
-  static BrandDirection _activeBrandDirection =
-      BrandDirection.deepBlueIntelligence;
-
-  static const Map<BrandDirection, _BrandAccentPalette> _accentPalettes = {
-    BrandDirection.deepBlueIntelligence: _BrandAccentPalette(
-      primary: Color(0xFF4DA3FF),
-      primaryLight: Color(0xFF7DC2FF),
-      primaryDark: Color(0xFF2E7DD6),
-      softGlow: Color(0xFF7DC2FF),
-      neutral: Color(0xFF27D3B2),
-      warning: Color(0xFFFFB547),
-    ),
-    BrandDirection.burntOrangeTactical: _BrandAccentPalette(
-      primary: Color(0xFFE6462E),
-      primaryLight: Color(0xFFFF6A4E),
-      primaryDark: Color(0xFFB92E1A),
-      softGlow: Color(0xFFFF7C58),
-      neutral: Color(0xFFFFA248),
-      warning: Color(0xFFF4C152),
-    ),
-    BrandDirection.copperBronzePremium: _BrandAccentPalette(
-      primary: Color(0xFFB87333),
-      primaryLight: Color(0xFFD6A063),
-      primaryDark: Color(0xFF8B5A2B),
-      softGlow: Color(0xFFE0B173),
-      neutral: Color(0xFFC8945A),
-      warning: Color(0xFFD9A441),
-    ),
-  };
-
-  static _BrandAccentPalette get _activeAccent =>
-      _accentPalettes[_activeBrandDirection]!;
-
-  static void setBrandDirection(BrandDirection direction) {
-    _activeBrandDirection = direction;
-  }
-
-  static BrandDirection get activeBrandDirection => _activeBrandDirection;
-
-  static Color get primary => _activeAccent.primary;
-  static Color get primaryLight => _activeAccent.primaryLight;
-  static Color get primaryDark => _activeAccent.primaryDark;
+  // Single committed accent palette (deep blue intelligence).
+  static const Color primary = Color(0xFF4DA3FF);
+  static const Color primaryLight = Color(0xFF7DC2FF);
+  static const Color primaryDark = Color(0xFF2E7DD6);
 
   /// Glow tone for highlighted surfaces
-  static Color get softGlow => _activeAccent.softGlow;
+  static const Color softGlow = Color(0xFF7DC2FF);
 
   /// Surface colors - layered depth system (DARK MODE DEFAULTS)
   /// Use the theme-aware getters below for actual usage
@@ -96,8 +34,8 @@ class AppTheme {
   /// Accent colors for data/stats
   static const Color win = Color(0xFF2ED47A);
   static const Color loss = Color(0xFFFF5C7A);
-  static Color get neutral => _activeAccent.neutral;
-  static Color get warning => _activeAccent.warning;
+  static const Color neutral = Color(0xFF27D3B2);
+  static const Color warning = Color(0xFFFFB547);
 
   /// Court-surface accent language (Authored style).
   /// Surface becomes a small meaningful accent, never a full theme:
@@ -465,7 +403,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMD),
-          borderSide: BorderSide(color: primary, width: 1.5),
+          borderSide: const BorderSide(color: primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,
@@ -561,7 +499,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMD),
-          borderSide: BorderSide(color: primary, width: 1.5),
+          borderSide: const BorderSide(color: primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,

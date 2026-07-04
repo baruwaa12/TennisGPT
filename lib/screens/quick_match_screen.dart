@@ -9,7 +9,6 @@ import '../services/match_history_service.dart';
 import '../config/app_config.dart';
 import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
-import '../services/ui_style_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
@@ -278,8 +277,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
   @override
   Widget build(BuildContext context) {
-    final canvas = context.watch<UiStyleService>().canvas;
-    _bc = BroadcastTheme.of(context, canvas);
+    _bc = BroadcastTheme.of(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(

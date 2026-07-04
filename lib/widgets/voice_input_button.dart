@@ -397,7 +397,7 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
               ),
               child: Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 12,
                     height: 12,
                     child: CircularProgressIndicator(

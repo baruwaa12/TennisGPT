@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
-import '../services/ui_style_service.dart';
 import '../services/court_service.dart';
 import '../services/purchase_service.dart';
 import '../services/player_profile_service.dart';
@@ -18,7 +17,6 @@ import 'login_screen.dart';
 import 'help_faq_screen.dart';
 import 'feedback_screen.dart';
 import 'legal_screen.dart';
-import 'prototype/match_history_prototype.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -33,7 +31,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = Provider.of<AuthService>(context);
     final themeService = Provider.of<ThemeService>(context);
-    final uiStyleService = Provider.of<UiStyleService>(context);
     final courtService = Provider.of<CourtService>(context);
     final purchaseService = Provider.of<PurchaseService>(context);
     final profileService = Provider.of<PlayerProfileService>(context);
@@ -90,26 +87,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
             ],
 
-            // PROTOTYPE — throwaway, temporarily visible in ALL builds for
-            // design review on-device. TODO: remove this tile (and the
-            // match_history_prototype.dart file) before launch.
-            _buildSettingsTile(
-              icon: Icons.science_outlined,
-              iconColor: Colors.purple,
-              title: 'Match History prototype',
-              subtitle: '3 Authored layouts · review only',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const MatchHistoryPrototype()),
-                );
-              },
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            const SizedBox(height: 24),
-
             // Appearance Section
             _buildSectionTitle('Appearance', isDark),
             _buildSettingsTile(
@@ -120,26 +97,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Theme',
               subtitle: _getThemeLabel(themeService.themeMode),
               onTap: () => _showThemePicker(themeService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            _buildSettingsTile(
-              icon: Icons.palette_outlined,
-              iconColor: AppTheme.primary,
-              title: 'Design direction',
-              subtitle: _getBrandDirectionLabel(themeService.brandDirection),
-              onTap: () => _showBrandDirectionPicker(themeService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
-            ),
-            _buildSettingsTile(
-              icon: Icons.scoreboard_outlined,
-              iconColor: AppTheme.primary,
-              title: 'Broadcast canvas (testing)',
-              subtitle: uiStyleService.canvas == BroadcastCanvas.fixedDark
-                  ? 'Dark — always TV-graphics'
-                  : 'Adaptive — follows light/dark',
-              onTap: () => _showCanvasPicker(uiStyleService),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               isDark: isDark,
             ),
@@ -322,7 +279,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: authService.userPhotoURL == null
                 ? Text(
                     (authService.userDisplayName ?? 'U')[0].toUpperCase(),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.primaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
@@ -520,17 +477,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _getBrandDirectionLabel(BrandDirection direction) {
-    switch (direction) {
-      case BrandDirection.deepBlueIntelligence:
-        return 'Deep Blue Intelligence';
-      case BrandDirection.burntOrangeTactical:
-        return 'Burnt Orange Tactical';
-      case BrandDirection.copperBronzePremium:
-        return 'Copper/Bronze Premium';
-    }
-  }
-
   String _getLevelLabel(String level) {
     final option = PlayerProfileService.levelOptions.firstWhere(
       (o) => o['id'] == level,
@@ -545,60 +491,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       orElse: () => {'title': 'Not set'},
     );
     return option['title'] ?? 'Not set';
-  }
-
-  void _showCanvasPicker(UiStyleService uiStyleService) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Broadcast canvas',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Temporary — compare the two treatments, then we keep the winner.',
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.dark_mode_outlined),
-              title: Text('Dark TV-graphics', style: GoogleFonts.poppins()),
-              subtitle: Text('Always near-black, ignores light/dark',
-                  style: GoogleFonts.poppins(
-                      fontSize: 12, color: Colors.grey[500])),
-              trailing: uiStyleService.canvas == BroadcastCanvas.fixedDark
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                uiStyleService.setCanvas(BroadcastCanvas.fixedDark);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.brightness_6_outlined),
-              title: Text('Adaptive', style: GoogleFonts.poppins()),
-              subtitle: Text('Near-black in dark, clean white in light',
-                  style: GoogleFonts.poppins(
-                      fontSize: 12, color: Colors.grey[500])),
-              trailing: uiStyleService.canvas == BroadcastCanvas.adaptive
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                uiStyleService.setCanvas(BroadcastCanvas.adaptive);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _showThemePicker(ThemeService themeService) {
@@ -620,7 +512,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.brightness_auto),
               title: Text('System', style: GoogleFonts.poppins()),
               trailing: themeService.themeMode == ThemeMode.system
-                  ? Icon(Icons.check, color: AppTheme.primary)
+                  ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.system);
@@ -631,7 +523,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.light_mode),
               title: Text('Light', style: GoogleFonts.poppins()),
               trailing: themeService.themeMode == ThemeMode.light
-                  ? Icon(Icons.check, color: AppTheme.primary)
+                  ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.light);
@@ -642,78 +534,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               leading: const Icon(Icons.dark_mode),
               title: Text('Dark', style: GoogleFonts.poppins()),
               trailing: themeService.themeMode == ThemeMode.dark
-                  ? Icon(Icons.check, color: AppTheme.primary)
+                  ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
               onTap: () {
                 themeService.setThemeMode(ThemeMode.dark);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showBrandDirectionPicker(ThemeService themeService) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Design Direction',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Preview each direction across Dashboard, Match Logger, Tactical Coach, Pre-Match Prep, and Post-Match Debrief.',
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.water_drop_outlined),
-              title:
-                  Text('Deep Blue Intelligence', style: GoogleFonts.poppins()),
-              trailing: themeService.brandDirection ==
-                      BrandDirection.deepBlueIntelligence
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                themeService
-                    .setBrandDirection(BrandDirection.deepBlueIntelligence);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.local_fire_department_outlined),
-              title:
-                  Text('Burnt Orange Tactical', style: GoogleFonts.poppins()),
-              trailing: themeService.brandDirection ==
-                      BrandDirection.burntOrangeTactical
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                themeService
-                    .setBrandDirection(BrandDirection.burntOrangeTactical);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.workspace_premium_outlined),
-              title:
-                  Text('Copper/Bronze Premium', style: GoogleFonts.poppins()),
-              trailing: themeService.brandDirection ==
-                      BrandDirection.copperBronzePremium
-                  ? Icon(Icons.check, color: AppTheme.primary)
-                  : null,
-              onTap: () {
-                themeService
-                    .setBrandDirection(BrandDirection.copperBronzePremium);
                 Navigator.pop(context);
               },
             ),
@@ -750,7 +574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text('Roland Garros - blue button',
                   style: GoogleFonts.poppins(fontSize: 12)),
               trailing: courtService.surface == CourtSurface.clay
-                  ? Icon(Icons.check, color: AppTheme.primary)
+                  ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
               onTap: () {
                 courtService.setSurface(CourtSurface.clay);
@@ -764,7 +588,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text('US / Australian Open - red button',
                   style: GoogleFonts.poppins(fontSize: 12)),
               trailing: courtService.surface == CourtSurface.hard
-                  ? Icon(Icons.check, color: AppTheme.primary)
+                  ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
               onTap: () {
                 courtService.setSurface(CourtSurface.hard);
@@ -778,7 +602,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: Text('Wimbledon - navy button',
                   style: GoogleFonts.poppins(fontSize: 12)),
               trailing: courtService.surface == CourtSurface.grass
-                  ? Icon(Icons.check, color: AppTheme.primary)
+                  ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
               onTap: () {
                 courtService.setSurface(CourtSurface.grass);
@@ -811,7 +635,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: Text(option['subtitle']!,
                       style: GoogleFonts.poppins(fontSize: 12)),
                   trailing: profileService.playerLevel == option['id']
-                      ? Icon(Icons.check, color: AppTheme.primary)
+                      ? const Icon(Icons.check, color: AppTheme.primary)
                       : null,
                   onTap: () {
                     profileService.setPlayerLevel(option['id']!);
@@ -844,7 +668,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: const TextStyle(fontSize: 24)),
                   title: Text(option['title']!, style: GoogleFonts.poppins()),
                   trailing: profileService.primaryGoal == option['id']
-                      ? Icon(Icons.check, color: AppTheme.primary)
+                      ? const Icon(Icons.check, color: AppTheme.primary)
                       : null,
                   onTap: () {
                     profileService.setPrimaryGoal(option['id']!);

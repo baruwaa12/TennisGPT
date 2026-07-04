@@ -8,7 +8,6 @@ import '../widgets/ui_kit.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../services/streak_service.dart';
-import '../services/ui_style_service.dart';
 import '../models/match_performance.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
@@ -182,8 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canvas = context.watch<UiStyleService>().canvas;
-    _bc = BroadcastTheme.of(context, canvas);
+    _bc = BroadcastTheme.of(context);
 
     final authService = Provider.of<AuthService>(context);
     final streakService = Provider.of<StreakService>(context);

@@ -263,23 +263,23 @@ class _PaywallScreenState extends State<PaywallScreen> {
   // ──────────────────────────────────────────────
   Widget _buildBenefits(bool isDark) {
     final benefits = [
-      _BenefitItem(
+      const _BenefitItem(
         icon: Icons.insights,
         text: 'Unlimited tactical analysis after every match',
       ),
-      _BenefitItem(
+      const _BenefitItem(
         icon: Icons.sports_tennis,
         text: 'Unlimited match logging & full history',
       ),
-      _BenefitItem(
+      const _BenefitItem(
         icon: Icons.trending_up,
         text: 'Trends & patterns (surface, opponent type, win rate)',
       ),
-      _BenefitItem(
+      const _BenefitItem(
         icon: Icons.fitness_center,
         text: 'Drills + next-match plan based on your data',
       ),
-      _BenefitItem(
+      const _BenefitItem(
         icon: Icons.star_outline,
         text: 'Early access to new features',
       ),
@@ -570,7 +570,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.shield_outlined, color: AppTheme.primary, size: 22),
+          const Icon(Icons.shield_outlined, color: AppTheme.primary, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

@@ -44,7 +44,7 @@ class HelpFaqScreen extends StatelessWidget {
                       color: AppTheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.help_outline_rounded,
                       color: AppTheme.primary,
                       size: 28,
@@ -98,7 +98,7 @@ class HelpFaqScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.mail_outline_rounded,
                     color: AppTheme.primary,
                     size: 32,

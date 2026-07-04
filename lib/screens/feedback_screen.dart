@@ -176,7 +176,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                         color: AppTheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.feedback_outlined,
                         color: AppTheme.primary,
                         size: 28,
@@ -317,7 +317,7 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.info_outline,
                       size: 16,
                       color: AppTheme.primary,

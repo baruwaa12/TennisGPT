@@ -12,7 +12,6 @@ import '../services/match_history_service.dart';
 import '../services/purchase_service.dart';
 import '../services/usage_service.dart';
 import '../services/player_profile_service.dart';
-import '../services/ui_style_service.dart';
 import '../models/match_performance.dart';
 import '../utils/tennis_validator.dart';
 import '../widgets/shareable_card.dart';
@@ -265,8 +264,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canvas = context.watch<UiStyleService>().canvas;
-    _bc = BroadcastTheme.of(context, canvas);
+    _bc = BroadcastTheme.of(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
