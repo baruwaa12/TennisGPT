@@ -116,3 +116,63 @@ Tracks work completed in 3-task batches.
 - `lib/screens/tactical_coach_screen.dart`
 - `TACTICAL_COACH_BATCH4_EVAL.md`
 - `IMPLEMENTATION_BATCH_LOG.md`
+
+---
+
+## Batch 5 (UI Polish Batch A — Shared Broadcast Kit)
+
+Part of the premium-polish plan: A (shared kit) → B (Match History restyle) → C (Quick Match restyle) → D (cleanup).
+
+### Task 1 - Create shared Broadcast component kit
+- Added `lib/widgets/broadcast_kit.dart` with reusable Broadcast-language components:
+  - `BroadcastCta` — lime CTA with pressed state (brighten + scale), glow, loading state, haptics, Semantics.
+  - `BroadcastPanel` — accent-rule panel (optionally raised/tappable) with press feedback; replaces three hand-rolled copies of the same decoration.
+  - `BroadcastSectionHeader` — uppercase section label with a ≥44px trailing action target.
+  - `BroadcastScoreline` — monospace scoreline with lost sets dimmed (promoted from the throwaway prototype).
+  - `BroadcastResultBadge` — compact W/L square for fixtures rows.
+
+### Task 2 - Wire Home screen to the kit
+- `lib/screens/home_screen.dart`: hero panel, stat strip CTA, recent-results header ("VIEW ALL" now has a proper tap target), match rows (scoreline now dims lost sets), coach card (now presses), and empty state all use the kit.
+
+### Task 3 - Wire Tactical Coach screen to the kit
+- `lib/screens/tactical_coach_screen.dart`: review CTA (pressed + loading states), form panel, empty-state panel, and expandable saved-advice cards all use the kit.
+
+### Files Changed
+- `lib/widgets/broadcast_kit.dart` (new)
+- `lib/screens/home_screen.dart`
+- `lib/screens/tactical_coach_screen.dart`
+- `IMPLEMENTATION_BATCH_LOG.md`
+
+### Notes
+- `flutter analyze` clean for all touched files (remaining 12 findings are pre-existing in untouched screens).
+- Next: Batch B — Match History rebuilt in Broadcast style with skeleton loading.
+
+---
+
+## Batch 6 (UI Polish Batch B — Match History in Broadcast)
+
+### Task 1 - Rebuild Match History screen on the Broadcast canvas
+- Rewrote `lib/screens/match_history_screen.dart` to match Home/Coach:
+  - Broadcast top bar (back, accent rule, uppercase title, lime add action).
+  - Summary strip panel (MATCHES / WIN % / BEST SURFACE) in scoreline type.
+  - Fixtures-style results list: W/L badge, opponent, date · surface,
+    mono scoreline with lost sets dimmed.
+  - Pull-to-refresh wired to the Broadcast palette.
+
+### Task 2 - Skeleton loading, empty state, error card
+- Spinner replaced with layout-matched skeleton (summary + rows).
+- Empty state is now a Broadcast panel with headline + lime CTA.
+- Error card restyled to panel-with-loss-border.
+
+### Task 3 - Detail sheet + delete flow in Broadcast language
+- Bottom sheet: W/L badge + result label, big dimmed-set scoreline,
+  uppercase section labels for summary/notes; themed to the canvas.
+- Delete confirm dialog restyled (Broadcast panel, 44px actions).
+
+### Files Changed
+- `lib/screens/match_history_screen.dart` (rewritten)
+- `IMPLEMENTATION_BATCH_LOG.md`
+
+### Notes
+- `flutter analyze` clean on changed files.
+- Next: Batch C — Quick Match Log + success screen in Broadcast style.

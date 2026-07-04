@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/broadcast_theme.dart';
+import '../widgets/broadcast_kit.dart';
 import '../widgets/ui_kit.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
@@ -408,13 +409,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   Widget _coachForm(int winPct) {
     if (_recentMatches.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(AppTheme.spaceLG),
-        decoration: BoxDecoration(
-          color: _bc.panel,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border.all(color: _bc.border),
-        ),
+      return BroadcastPanel(
+        bc: _bc,
+        accentRule: false,
         child: Text(
           'Log a few matches and your coach will spot the patterns.',
           style: AppTheme.bodyMediumThemed(context)
@@ -423,18 +420,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: _bc.panel,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        border: Border(
-          left: BorderSide(color: _bc.accentInk, width: 3),
-          top: BorderSide(color: _bc.border),
-          right: BorderSide(color: _bc.border),
-          bottom: BorderSide(color: _bc.border),
-        ),
-      ),
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
+    return BroadcastPanel(
+      bc: _bc,
+      semanticLabel: 'Current form: $winPct percent win rate',
       child: Row(
         children: [
           Column(
@@ -502,52 +490,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   Widget _reviewCta() {
-    final disabled = _isLoading;
-    return Opacity(
-      opacity: disabled ? 0.5 : 1,
-      child: GestureDetector(
-        onTap: disabled
-            ? null
-            : () {
-                HapticFeedback.mediumImpact();
-                _reviewRecentMatchHistory();
-              },
-        child: Container(
-          height: 54,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: BroadcastTheme.limeFill,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isGenerating) ...[
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          BroadcastTheme.onLime)),
-                ),
-                const SizedBox(width: AppTheme.spaceSM),
-              ] else ...[
-                const Icon(Icons.auto_awesome_rounded,
-                    color: BroadcastTheme.onLime, size: 19),
-                const SizedBox(width: AppTheme.spaceSM),
-              ],
-              Text(
-                _isGenerating ? 'REVIEWING…' : 'REVIEW MY MATCHES',
-                style: AppTheme.headingSmall.copyWith(
-                    color: BroadcastTheme.onLime,
-                    fontSize: 15,
-                    letterSpacing: 1.2),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return BroadcastCta(
+      label: 'REVIEW MY MATCHES',
+      loadingLabel: 'REVIEWING…',
+      icon: Icons.auto_awesome_rounded,
+      loading: _isGenerating,
+      onPressed: _isLoading ? null : _reviewRecentMatchHistory,
     );
   }
 
@@ -1033,61 +981,54 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     final previewText =
         needsExpansion ? '${content.substring(0, 200).trimRight()}…' : content;
 
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: BoxDecoration(
-        color: _bc.panel,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        border: Border.all(color: _bc.border),
-      ),
-      child: InkWell(
-        onTap: needsExpansion
-            ? () {
-                HapticFeedback.selectionClick();
-                setState(() => _expandedCardIndex = isExpanded ? null : index);
-              }
-            : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (dateLabel.isNotEmpty)
-                  TonalChip(label: dateLabel)
-                else
-                  const SizedBox.shrink(),
-                if (needsExpansion)
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0.0,
-                    duration: const Duration(milliseconds: 250),
-                    child: Icon(Icons.expand_more_rounded,
-                        size: 20, color: _bc.textMuted),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppTheme.spaceSM),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              alignment: Alignment.topCenter,
-              child: Text(
-                isExpanded || !needsExpansion ? content : previewText,
-                style: AppTheme.bodyMediumThemed(context)
-                    .copyWith(height: 1.55, color: _bc.textSecondary),
-                maxLines: isExpanded || !needsExpansion ? null : 4,
-                overflow: isExpanded || !needsExpansion
-                    ? TextOverflow.clip
-                    : TextOverflow.ellipsis,
-              ),
-            ),
-            if (needsExpansion && !isExpanded) ...[
-              const SizedBox(height: AppTheme.spaceXS),
-              Text('Tap to read more',
-                  style: AppTheme.label.copyWith(color: _bc.accentInk)),
+    return BroadcastPanel(
+      bc: _bc,
+      accentRule: false,
+      onTap: needsExpansion
+          ? () =>
+              setState(() => _expandedCardIndex = isExpanded ? null : index)
+          : null,
+      semanticLabel: 'Saved advice from $dateLabel',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (dateLabel.isNotEmpty)
+                TonalChip(label: dateLabel)
+              else
+                const SizedBox.shrink(),
+              if (needsExpansion)
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  child: Icon(Icons.expand_more_rounded,
+                      size: 20, color: _bc.textMuted),
+                ),
             ],
+          ),
+          const SizedBox(height: AppTheme.spaceSM),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: Text(
+              isExpanded || !needsExpansion ? content : previewText,
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(height: 1.55, color: _bc.textSecondary),
+              maxLines: isExpanded || !needsExpansion ? null : 4,
+              overflow: isExpanded || !needsExpansion
+                  ? TextOverflow.clip
+                  : TextOverflow.ellipsis,
+            ),
+          ),
+          if (needsExpansion && !isExpanded) ...[
+            const SizedBox(height: AppTheme.spaceXS),
+            Text('Tap to read more',
+                style: AppTheme.label.copyWith(color: _bc.accentInk)),
           ],
-        ),
+        ],
       ),
     );
   }

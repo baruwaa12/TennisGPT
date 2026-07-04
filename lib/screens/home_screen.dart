@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/broadcast_theme.dart';
+import '../widgets/broadcast_kit.dart';
 import '../widgets/ui_kit.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
@@ -305,18 +306,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final wins = (_winRate * _totalMatches).round();
     final losses = _totalMatches - wins;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: _bc.panel,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        border: Border(
-          left: BorderSide(color: _bc.accentInk, width: 3),
-          top: BorderSide(color: _bc.border),
-          right: BorderSide(color: _bc.border),
-          bottom: BorderSide(color: _bc.border),
-        ),
-      ),
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
+    return BroadcastPanel(
+      bc: _bc,
+      semanticLabel:
+          'Win rate $winPct percent, record $wins and $losses, day streak ${streakService.currentStreak}',
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -440,34 +433,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _broadcastCta() {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        _openQuickMatch();
-      },
-      child: Container(
-        height: 54,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: BroadcastTheme.limeFill,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.add_rounded,
-                color: BroadcastTheme.onLime, size: 20),
-            const SizedBox(width: AppTheme.spaceSM),
-            Text(
-              'LOG A MATCH',
-              style: AppTheme.headingSmall.copyWith(
-                  color: BroadcastTheme.onLime,
-                  fontSize: 16,
-                  letterSpacing: 1.2),
-            ),
-          ],
-        ),
-      ),
+    return BroadcastCta(
+      label: 'LOG A MATCH',
+      icon: Icons.add_rounded,
+      onPressed: _openQuickMatch,
     );
   }
 
@@ -476,24 +445,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('RECENT RESULTS',
-                style: AppTheme.labelThemed(context)
-                    .copyWith(letterSpacing: 2, color: _bc.textMuted)),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                _openMatchHistory();
-              },
-              child: Text('VIEW ALL',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(color: _bc.accentInk, letterSpacing: 1.5)),
-            ),
-          ],
+        BroadcastSectionHeader(
+          bc: _bc,
+          title: 'Recent results',
+          actionLabel: 'View all',
+          onAction: _openMatchHistory,
         ),
-        const SizedBox(height: AppTheme.spaceSM),
+        const SizedBox(height: AppTheme.spaceXS),
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusSM),
@@ -515,7 +473,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _broadcastMatchRow(MatchPerformance m) {
     final isWin = _isWin(m);
-    final color = isWin ? _bc.win : _bc.loss;
     final score =
         m.scoreLine.isNotEmpty ? m.scoreLine : '${m.setsWon}-${m.setsLost}';
 
@@ -529,20 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
             horizontal: AppTheme.spaceMD, vertical: AppTheme.spaceMD),
         child: Row(
           children: [
-            Container(
-              width: 26,
-              height: 26,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                isWin ? 'W' : 'L',
-                style: AppTheme.label.copyWith(
-                    color: Colors.white, fontWeight: FontWeight.w800),
-              ),
-            ),
+            BroadcastResultBadge(bc: _bc, isWin: isWin),
             const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
@@ -563,9 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: AppTheme.spaceSM),
-            Text(score,
-                style: AppTheme.scorelineThemed(context, size: 17)
-                    .copyWith(color: _bc.textPrimary)),
+            BroadcastScoreline(bc: _bc, raw: score),
           ],
         ),
       ),
@@ -573,88 +515,60 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _broadcastCoachCard() {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _openCoach();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.spaceLG),
-        decoration: BoxDecoration(
-          color: _bc.panelRaised,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border(
-            left: BorderSide(color: _bc.accentInk, width: 3),
-            top: BorderSide(color: _bc.border),
-            right: BorderSide(color: _bc.border),
-            bottom: BorderSide(color: _bc.border),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.insights_rounded, color: _bc.accentInk, size: 26),
-            const SizedBox(width: AppTheme.spaceMD),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('TACTICAL COACH',
-                      style: AppTheme.labelThemed(context).copyWith(
-                          letterSpacing: 2,
-                          color: _bc.textPrimary,
-                          fontSize: 14)),
-                  const SizedBox(height: 3),
-                  Text('AI breakdown of your match patterns',
-                      style: AppTheme.bodySmallThemed(context)
-                          .copyWith(color: _bc.textSecondary)),
-                ],
-              ),
+    return BroadcastPanel(
+      bc: _bc,
+      raised: true,
+      onTap: _openCoach,
+      semanticLabel: 'Open tactical coach',
+      child: Row(
+        children: [
+          Icon(Icons.insights_rounded, color: _bc.accentInk, size: 26),
+          const SizedBox(width: AppTheme.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('TACTICAL COACH',
+                    style: AppTheme.labelThemed(context).copyWith(
+                        letterSpacing: 2,
+                        color: _bc.textPrimary,
+                        fontSize: 14)),
+                const SizedBox(height: 3),
+                Text('AI breakdown of your match patterns',
+                    style: AppTheme.bodySmallThemed(context)
+                        .copyWith(color: _bc.textSecondary)),
+              ],
             ),
-            Icon(Icons.arrow_forward_rounded, color: _bc.accentInk, size: 20),
-          ],
-        ),
+          ),
+          Icon(Icons.arrow_forward_rounded, color: _bc.accentInk, size: 20),
+        ],
       ),
     );
   }
 
   Widget _broadcastEmpty() {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        _openQuickMatch();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.spaceLG),
-        decoration: BoxDecoration(
-          color: _bc.panel,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border(
-            left: BorderSide(color: _bc.accentInk, width: 3),
-            top: BorderSide(color: _bc.border),
-            right: BorderSide(color: _bc.border),
-            bottom: BorderSide(color: _bc.border),
+    return BroadcastPanel(
+      bc: _bc,
+      semanticLabel: 'No matches yet. Log your first match.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('NO MATCHES YET',
+              style: AppTheme.labelThemed(context)
+                  .copyWith(color: _bc.accentInk, letterSpacing: 2)),
+          const SizedBox(height: AppTheme.spaceSM),
+          Text('Log your first match',
+              style: AppTheme.headingMediumThemed(context)
+                  .copyWith(color: _bc.textPrimary)),
+          const SizedBox(height: AppTheme.spaceXS),
+          Text(
+            'Your win rate, form and AI coaching all unlock from here.',
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: _bc.textSecondary),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('NO MATCHES YET',
-                style: AppTheme.labelThemed(context)
-                    .copyWith(color: _bc.accentInk, letterSpacing: 2)),
-            const SizedBox(height: AppTheme.spaceSM),
-            Text('Log your first match',
-                style: AppTheme.headingMediumThemed(context)
-                    .copyWith(color: _bc.textPrimary)),
-            const SizedBox(height: AppTheme.spaceXS),
-            Text(
-              'Your win rate, form and AI coaching all unlock from here.',
-              style: AppTheme.bodyMediumThemed(context)
-                  .copyWith(color: _bc.textSecondary),
-            ),
-            const SizedBox(height: AppTheme.spaceLG),
-            _broadcastCta(),
-          ],
-        ),
+          const SizedBox(height: AppTheme.spaceLG),
+          _broadcastCta(),
+        ],
       ),
     );
   }
