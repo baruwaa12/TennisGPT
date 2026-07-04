@@ -264,3 +264,23 @@ Decision recorded: the Broadcast canvas is committed as **fixed dark**
 ### Notes
 - Remaining polish candidates (future batches): Settings, Paywall, Login,
   Onboarding screens still on the legacy card style.
+
+---
+
+## Batch 9 (Home Hero Simplification — Form Delta)
+
+### Change
+- `lib/screens/home_screen.dart` hero decluttered:
+  - Removed the DAY STREAK line (engagement metric, not a tennis metric;
+    still available in Settings' stats card).
+  - Removed the W/L form squares (duplicated the stat strip's WIN RUN /
+    LAST 5 and the Recent Results badges).
+  - Added a FORM delta line: win rate over the last 5 matches vs overall,
+    shown as ↑/↓ signed % (green up, red down, muted flat). Hidden until
+    6+ matches exist so small samples never show a misleading number.
+- Home no longer watches `StreakService` (recording streaks on save is
+  unchanged elsewhere).
+
+### Files Changed
+- `lib/screens/home_screen.dart`
+- `IMPLEMENTATION_BATCH_LOG.md`

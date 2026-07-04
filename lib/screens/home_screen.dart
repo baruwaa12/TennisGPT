@@ -7,7 +7,6 @@ import '../widgets/broadcast_kit.dart';
 import '../widgets/ui_kit.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
-import '../services/streak_service.dart';
 import '../models/match_performance.dart';
 import 'tactical_coach_screen.dart';
 import 'match_history_screen.dart';
@@ -184,7 +183,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _bc = BroadcastTheme.of(context);
 
     final authService = Provider.of<AuthService>(context);
-    final streakService = Provider.of<StreakService>(context);
     final firstName = authService.isGuest
         ? 'Player'
         : (authService.userDisplayName?.split(' ').first ?? 'Player');
@@ -225,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ]
                             : _totalMatches == 0
                                 ? [_broadcastEmpty()]
-                                : _broadcastBody(streakService),
+                                : _broadcastBody(),
                       ),
                     ),
                   ),
@@ -283,9 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<Widget> _broadcastBody(StreakService streakService) {
+  List<Widget> _broadcastBody() {
     return [
-      _broadcastHero(streakService),
+      _broadcastHero(),
       const SizedBox(height: AppTheme.spaceMD),
       _broadcastStatStrip(),
       const SizedBox(height: AppTheme.spaceLG),
@@ -299,15 +297,32 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  Widget _broadcastHero(StreakService streakService) {
+  /// Form delta: win rate over the last 5 matches vs overall win rate.
+  /// Positive means the player is trending above their baseline.
+  /// Returns null when there isn't enough history for it to mean anything.
+  int? _formDeltaPct() {
+    if (_totalMatches < 6 || _recentMatches.isEmpty) return null;
+    final window = _recentMatches.take(5).toList();
+    final windowRate = window.where(_isWin).length / window.length;
+    return ((windowRate - _winRate) * 100).round();
+  }
+
+  Widget _broadcastHero() {
     final winPct = (_winRate * 100).round();
     final wins = (_winRate * _totalMatches).round();
     final losses = _totalMatches - wins;
+    final formDelta = _formDeltaPct();
+
+    final semantics = StringBuffer(
+        'Win rate $winPct percent, record $wins and $losses');
+    if (formDelta != null) {
+      semantics.write(
+          ', form ${formDelta >= 0 ? "up" : "down"} ${formDelta.abs()} percent');
+    }
 
     return BroadcastPanel(
       bc: _bc,
-      semanticLabel:
-          'Win rate $winPct percent, record $wins and $losses, day streak ${streakService.currentStreak}',
+      semanticLabel: semantics.toString(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -335,11 +350,10 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _broadcastHeroLine('RECORD', '$wins–$losses'),
-                const SizedBox(height: 10),
-                _broadcastHeroLine(
-                    'DAY STREAK', '${streakService.currentStreak}'),
-                const SizedBox(height: 14),
-                _broadcastFormSquares(),
+                if (formDelta != null) ...[
+                  const SizedBox(height: 12),
+                  _broadcastFormLine(formDelta),
+                ],
               ],
             ),
           ),
@@ -362,26 +376,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastFormSquares() {
-    final items = _recentMatches.take(8).toList().reversed.toList();
-    if (items.isEmpty) return const SizedBox.shrink();
+  Widget _broadcastFormLine(int delta) {
+    final Color color;
+    final IconData arrow;
+    if (delta > 0) {
+      color = _bc.win;
+      arrow = Icons.arrow_upward_rounded;
+    } else if (delta < 0) {
+      color = _bc.loss;
+      arrow = Icons.arrow_downward_rounded;
+    } else {
+      color = _bc.textMuted;
+      arrow = Icons.arrow_forward_rounded;
+    }
+    final sign = delta > 0 ? '+' : (delta < 0 ? '−' : '');
+
     return Row(
-      children: items.map((m) {
-        final isWin = _isWin(m);
-        return Container(
-          width: 14,
-          height: 14,
-          margin: const EdgeInsets.only(right: 5),
-          decoration: BoxDecoration(
-            color: isWin ? _bc.win : Colors.transparent,
-            borderRadius: BorderRadius.circular(2),
-            border: Border.all(
-              color: isWin ? _bc.win : _bc.loss,
-              width: 1.6,
-            ),
-          ),
-        );
-      }).toList(),
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text('FORM',
+            style: AppTheme.labelThemed(context)
+                .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(arrow, size: 15, color: color),
+            const SizedBox(width: 3),
+            Text('$sign${delta.abs()}%',
+                style: AppTheme.scorelineThemed(context, size: 18)
+                    .copyWith(color: color)),
+          ],
+        ),
+      ],
     );
   }
 
