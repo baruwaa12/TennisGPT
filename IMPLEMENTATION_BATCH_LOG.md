@@ -176,3 +176,38 @@ Part of the premium-polish plan: A (shared kit) → B (Match History restyle) �
 ### Notes
 - `flutter analyze` clean on changed files.
 - Next: Batch C — Quick Match Log + success screen in Broadcast style.
+
+---
+
+## Batch 7 (UI Polish Batch C — Quick Match Log in Broadcast)
+
+### Task 1 - Move Quick Match Log onto the Broadcast canvas
+- `lib/screens/quick_match_screen.dart` now renders on the Broadcast canvas
+  (status bar, themed wrapper, `_bc` palette) like Home/Coach/History.
+- Broadcast top bar: close, accent rule, uppercase "LOG A MATCH".
+- Uppercase section labels (MATCH FORMAT / RESULT / SCORE / OPTIONAL).
+- Format and result selectors share one Broadcast selection tile:
+  hairline border at rest, accent border + raised panel when selected,
+  W/L badges on the result options, Semantics for screen readers.
+- Sets tally now reads like a scoreboard (mono YOU–OPP readout) instead of
+  disabled stepper buttons; removed ~110 lines of dead stepper widgets.
+
+### Task 2 - Primary/secondary actions
+- Save button is now the shared `BroadcastCta` (pressed + loading states,
+  disabled until the score parses valid).
+- "Add detailed match log" demoted to a quiet outlined secondary action
+  with a ≥48px target; extracted `_openDetailedLog()` from the inline closure.
+
+### Task 3 - Success view as a "FULL TIME" panel
+- Result presented in a Broadcast accent-rule panel: FULL TIME · MATCH SAVED
+  label, W/L badge, large mono scoreline, opponent line.
+- Share stays as a quiet panel action; DONE is the lime CTA.
+
+### Files Changed
+- `lib/screens/quick_match_screen.dart`
+- `IMPLEMENTATION_BATCH_LOG.md`
+
+### Notes
+- `flutter analyze` clean on changed file.
+- Next: Batch D — cleanup (prototype screen, canvas A/B toggle, unused
+  vibrant paths, brand-direction system).

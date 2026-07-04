@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/broadcast_theme.dart';
+import '../widgets/broadcast_kit.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../config/app_config.dart';
 import '../services/auth_service.dart';
 import '../services/purchase_service.dart';
+import '../services/ui_style_service.dart';
 import '../services/usage_service.dart';
 import '../services/celebration_service.dart';
 import '../services/streak_service.dart';
@@ -26,12 +29,12 @@ class _SetScore {
         opp = 0;
 }
 
-/// Quick Match Log - Stage 1
+/// Quick Match Log — Broadcast.
 ///
 /// Design Philosophy:
 /// - Speed first: Log in under 30 seconds
 /// - Minimal inputs: Result + Score only required
-/// - Calm aesthetic: No emojis, no loud colors
+/// - Broadcast canvas: scoreboard chrome, uppercase labels, lime CTA
 /// - Clear hierarchy: One decision at a time
 ///
 /// Flow:
@@ -73,6 +76,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   late AnimationController _successController;
   late Animation<double> _fadeAnimation;
 
+  late BroadcastTheme _bc;
+
   @override
   void initState() {
     super.initState();
@@ -100,8 +105,10 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(scoreError, style: AppTheme.bodyMediumThemed(context)),
-          backgroundColor: AppTheme.elevatedBackground(context),
+          content: Text(scoreError,
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: _bc.textPrimary)),
+          backgroundColor: _bc.panelRaised,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -271,12 +278,25 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_showSuccess) {
-      return _buildSuccessView();
-    }
+    final canvas = context.watch<UiStyleService>().canvas;
+    _bc = BroadcastTheme.of(context, canvas);
 
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: _bc.dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: _bc.dark ? Brightness.dark : Brightness.light,
+      ),
+      child: Theme(
+        data: _bc.themeData,
+        child: _showSuccess ? _buildSuccessView() : _buildFormView(),
+      ),
+    );
+  }
+
+  Widget _buildFormView() {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBackground(context),
+      backgroundColor: _bc.bg,
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -288,7 +308,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
               // Form
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppTheme.spaceMD),
+                  padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG,
+                      AppTheme.spaceSM, AppTheme.spaceLG, AppTheme.spaceXL),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -327,40 +348,44 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(AppTheme.spaceMD),
+      padding: const EdgeInsets.fromLTRB(AppTheme.spaceSM, AppTheme.spaceSM,
+          AppTheme.spaceMD, AppTheme.spaceSM),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {
+          IconButton(
+            onPressed: () {
               HapticFeedback.lightImpact();
               Navigator.pop(context);
             },
-            child: Container(
-              padding: const EdgeInsets.all(AppTheme.spaceSM),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground(context),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-              ),
-              child: Icon(
-                Icons.close,
-                color: AppTheme.textSecondaryColor(context),
-                size: 20,
-              ),
-            ),
+            tooltip: 'Close',
+            iconSize: 22,
+            style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+            color: _bc.textSecondary,
+            icon: const Icon(Icons.close_rounded),
           ),
-          const SizedBox(width: AppTheme.spaceMD),
-          Text('Quick Match Log', style: AppTheme.headingMediumThemed(context)),
+          const SizedBox(width: AppTheme.spaceXS),
+          Container(width: 4, height: 24, color: _bc.accentInk),
+          const SizedBox(width: 10),
+          Text('LOG A MATCH',
+              style: AppTheme.labelThemed(context).copyWith(
+                  fontSize: 16, letterSpacing: 2, color: _bc.textPrimary)),
         ],
       ),
     );
+  }
+
+  Widget _sectionLabel(String text) {
+    return Text(text.toUpperCase(),
+        style: AppTheme.labelThemed(context)
+            .copyWith(letterSpacing: 2, color: _bc.textMuted));
   }
 
   Widget _buildFormatSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Match format', style: AppTheme.headingSmallThemed(context)),
-        const SizedBox(height: AppTheme.spaceMD),
+        _sectionLabel('Match format'),
+        const SizedBox(height: AppTheme.spaceSM),
         Row(
           children: [
             Expanded(
@@ -403,48 +428,66 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return _selectOption(
+      isSelected: isSelected,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primary.withValues(alpha: 0.15)
-              : AppTheme.cardBackground(context),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: Border.all(
-            color:
-                isSelected ? AppTheme.primary : AppTheme.borderColor(context),
-            width: isSelected ? 2 : 1,
+      semanticLabel: 'Match format: $label',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              fontSize: 18,
+              color: isSelected ? _bc.textPrimary : _bc.textSecondary,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: AppTheme.headingMediumThemed(context).copyWith(
-                  color: isSelected
-                      ? AppTheme.primary
-                      : AppTheme.textSecondaryColor(context),
-                ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle.toUpperCase(),
+              style: AppTheme.labelThemed(context).copyWith(
+                letterSpacing: 1,
+                color: isSelected ? _bc.accentInk : _bc.textMuted,
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppTheme.labelThemed(context).copyWith(
-                    color: isSelected
-                        ? AppTheme.primary
-                        : AppTheme.textMutedColor(context),
-                  ),
-                ),
-              ],
-            ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Shared Broadcast selection tile: hairline border at rest, accent border +
+  /// raised panel when selected, subtle press feedback.
+  Widget _selectOption({
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Widget child,
+    String? semanticLabel,
+  }) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(
+              vertical: AppTheme.spaceMD, horizontal: AppTheme.spaceSM),
+          decoration: BoxDecoration(
+            color: isSelected ? _bc.panelRaised : _bc.panel,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            border: Border.all(
+              color: isSelected ? _bc.accentInk : _bc.border,
+              width: isSelected ? 2 : 1,
+            ),
           ),
+          child: Center(child: child),
         ),
       ),
     );
@@ -454,8 +497,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Result', style: AppTheme.headingSmallThemed(context)),
-        const SizedBox(height: AppTheme.spaceMD),
+        _sectionLabel('Result'),
+        const SizedBox(height: AppTheme.spaceSM),
         Row(
           children: [
             Expanded(
@@ -490,32 +533,26 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    final isWin = label == 'Win';
+    return _selectOption(
+      isSelected: isSelected,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primary.withValues(alpha: 0.15)
-              : AppTheme.cardBackground(context),
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-          border: Border.all(
-            color:
-                isSelected ? AppTheme.primary : AppTheme.borderColor(context),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AppTheme.headingMediumThemed(context).copyWith(
-              color: isSelected
-                  ? AppTheme.primary
-                  : AppTheme.textSecondaryColor(context),
+      semanticLabel: 'Result: $label',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          BroadcastResultBadge(bc: _bc, isWin: isWin),
+          const SizedBox(width: AppTheme.spaceSM),
+          Text(
+            label.toUpperCase(),
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              fontSize: 17,
+              letterSpacing: 1,
+              color: isSelected ? _bc.textPrimary : _bc.textSecondary,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -527,25 +564,35 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Score', style: AppTheme.headingSmallThemed(context)),
-        const SizedBox(height: AppTheme.spaceMD),
-        Container(
-          padding: AppTheme.cardPaddingLarge,
-          decoration: AppTheme.cardDecorationThemed(context),
+        _sectionLabel('Score'),
+        const SizedBox(height: AppTheme.spaceSM),
+        BroadcastPanel(
+          bc: _bc,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildMainScoreHeaderRow(),
-              const SizedBox(height: AppTheme.spaceSM),
-              _buildMainScoreRow(
-                youValue: setsWon,
-                oppValue: setsLost,
+              // Sets tally rendered as a scoreboard readout.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _setsTallyColumn('YOU', setsWon),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
+                    child: Text('–',
+                        style: AppTheme.scorelineThemed(context, size: 34)
+                            .copyWith(color: _bc.textMuted)),
+                  ),
+                  _setsTallyColumn('OPP', setsLost),
+                ],
               ),
               const SizedBox(height: AppTheme.spaceMD),
-              Divider(color: AppTheme.borderColor(context)),
+              Divider(color: _bc.border),
               const SizedBox(height: AppTheme.spaceMD),
-              Text('Set scores (shared editor)',
-                  style: AppTheme.labelThemed(context)),
+              Text('SET SCORES',
+                  style: AppTheme.labelThemed(context)
+                      .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
               const SizedBox(height: AppTheme.spaceSM),
               GuidedSetScoreEditor(
                 key: ValueKey(_matchFormat),
@@ -571,7 +618,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 Text(
                   _guidedScoreError!,
                   style: AppTheme.bodySmallThemed(context)
-                      .copyWith(color: AppTheme.loss),
+                      .copyWith(color: _bc.loss),
                 ),
               ],
             ],
@@ -581,36 +628,60 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     );
   }
 
+  Widget _setsTallyColumn(String label, int value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label,
+            style: AppTheme.labelThemed(context)
+                .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+        const SizedBox(height: 4),
+        Text('$value',
+            style: AppTheme.scorelineThemed(context, size: 40)
+                .copyWith(color: _bc.textPrimary)),
+      ],
+    );
+  }
+
   Widget _buildOptionalSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Optional', style: AppTheme.labelThemed(context)),
-        const SizedBox(height: AppTheme.spaceMD),
+        _sectionLabel('Optional'),
+        const SizedBox(height: AppTheme.spaceSM),
         Container(
-          decoration: AppTheme.cardDecorationThemed(context),
+          decoration: BoxDecoration(
+            color: _bc.panel,
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            border: Border.all(color: _bc.border),
+          ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
                 controller: _opponentController,
                 style: AppTheme.bodyMediumThemed(context)
-                    .copyWith(color: AppTheme.textPrimaryColor(context)),
+                    .copyWith(color: _bc.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Opponent name (optional)',
                   hintStyle: AppTheme.bodyMediumThemed(context)
-                      .copyWith(color: AppTheme.textMutedColor(context)),
+                      .copyWith(color: _bc.textMuted),
+                  filled: false,
                   border: InputBorder.none,
-                  contentPadding: AppTheme.cardPadding,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
                 ),
                 textInputAction: TextInputAction.next,
               ),
-              Divider(color: AppTheme.borderColor(context), height: 1),
+              Divider(color: _bc.border, height: 1),
               const SizedBox(height: AppTheme.spaceSM),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Quick Reflection (1–2 sentences)',
-                  style: AppTheme.labelThemed(context),
+                  'QUICK REFLECTION (1–2 SENTENCES)',
+                  style: AppTheme.labelThemed(context)
+                      .copyWith(letterSpacing: 1.2, color: _bc.textMuted),
                 ),
               ),
               const SizedBox(height: AppTheme.spaceXS),
@@ -618,15 +689,16 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 constraints: const BoxConstraints(minHeight: 140),
                 child: TextField(
                   controller: _quickNoteController,
-                  style: AppTheme.bodyMediumThemed(context).copyWith(
-                    color: AppTheme.textPrimaryColor(context),
-                  ),
+                  style: AppTheme.bodyMediumThemed(context)
+                      .copyWith(color: _bc.textPrimary),
                   decoration: InputDecoration(
                     hintText: 'What actually happened out there?',
-                    hintStyle: AppTheme.bodyMediumThemed(context).copyWith(
-                      color: AppTheme.textMutedColor(context),
-                    ),
+                    hintStyle: AppTheme.bodyMediumThemed(context)
+                        .copyWith(color: _bc.textMuted),
+                    filled: false,
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding: const EdgeInsets.all(16),
                   ),
                   textInputAction: TextInputAction.newline,
@@ -651,9 +723,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.scaffoldBackground(context),
+        color: _bc.bg,
         border: Border(
-          top: BorderSide(color: AppTheme.borderColor(context)),
+          top: BorderSide(color: _bc.border),
         ),
       ),
       child: SafeArea(
@@ -661,99 +733,37 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            GestureDetector(
-              onTap: _isSaving
-                  ? null
-                  : () async {
-                      HapticFeedback.lightImpact();
-                      final draft = await _saveOrRefreshQuickDraft();
-                      if (draft == null) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Enter a valid score before opening detailed log.',
-                              style: AppTheme.bodyMediumThemed(context),
-                            ),
-                            backgroundColor:
-                                AppTheme.elevatedBackground(context),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        return;
-                      }
-                      if (!mounted) return;
-
-                      final detailedSaved = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddMatchScreen(
-                            existingMatchId: draft.id,
-                            existingMatchDate: draft.date,
-                            initialMatchFormat: _matchFormat,
-                            initialScoreLine: _guidedScoreLine,
-                            initialOpponentLevelSeed: '',
-                            initialOpponentName:
-                                _opponentController.text.trim(),
-                            initialNotes: _quickNoteController.text.trim(),
-                          ),
-                        ),
-                      );
-
-                      if (detailedSaved == true && mounted) {
-                        Navigator.pop(context, true);
-                      }
-                    },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardBackground(context),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  border: Border.all(color: AppTheme.borderColor(context)),
-                ),
-                child: Center(
+            Semantics(
+              button: true,
+              label: 'Add detailed match log',
+              child: GestureDetector(
+                onTap: _isSaving ? null : _openDetailedLog,
+                child: Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(minHeight: 48),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _bc.panel,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                    border: Border.all(color: _bc.border),
+                  ),
                   child: Text(
-                    'Add Detailed Match Log',
-                    style: AppTheme.headingSmallThemed(context).copyWith(
-                      color: AppTheme.textSecondaryColor(context),
+                    'ADD DETAILED MATCH LOG',
+                    style: AppTheme.labelThemed(context).copyWith(
+                      letterSpacing: 1.2,
+                      color: _bc.textSecondary,
                     ),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: AppTheme.spaceSM),
-            GestureDetector(
-              onTap: _isSaving ? null : _saveMatch,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-                decoration: BoxDecoration(
-                  color: isValid
-                      ? AppTheme.primary
-                      : AppTheme.cardBackground(context),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                ),
-                child: Center(
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: AppTheme.surfaceDark,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          'Save Match',
-                          style: AppTheme.headingSmallThemed(context).copyWith(
-                            color: isValid
-                                ? AppTheme.surfaceDark
-                                : AppTheme.textMutedColor(context),
-                          ),
-                        ),
-                ),
-              ),
+            BroadcastCta(
+              label: 'SAVE MATCH',
+              loadingLabel: 'SAVING…',
+              icon: Icons.check_rounded,
+              loading: _isSaving,
+              onPressed: isValid && !_isSaving ? _saveMatch : null,
             ),
           ],
         ),
@@ -761,112 +771,44 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     );
   }
 
-  Widget _buildMainScoreHeaderRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: Center(
-            child: Text('You', style: AppTheme.labelThemed(context)),
+  Future<void> _openDetailedLog() async {
+    HapticFeedback.lightImpact();
+    final draft = await _saveOrRefreshQuickDraft();
+    if (draft == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Enter a valid score before opening detailed log.',
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: _bc.textPrimary),
           ),
+          backgroundColor: _bc.panelRaised,
+          behavior: SnackBarBehavior.floating,
         ),
-        const SizedBox(width: 28),
-        Expanded(
-          child: Center(
-            child: Text('Opp', style: AppTheme.labelThemed(context)),
-          ),
-        ),
-      ],
-    );
-  }
+      );
+      return;
+    }
+    if (!mounted) return;
 
-  Widget _buildMainScoreRow({
-    required int youValue,
-    required int oppValue,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStepper(
-            value: youValue,
-            onMinus: null,
-            onPlus: null,
-            compact: false,
-          ),
-        ),
-        const SizedBox(width: 28, child: Center(child: Text('–'))),
-        Expanded(
-          child: _buildStepper(
-            value: oppValue,
-            onMinus: null,
-            onPlus: null,
-            compact: false,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStepper({
-    required int value,
-    required VoidCallback? onMinus,
-    required VoidCallback? onPlus,
-    required bool compact,
-  }) {
-    final buttonSize = compact ? 28.0 : 36.0;
-    final valueStyle = compact
-        ? AppTheme.bodyMediumThemed(context)
-        : AppTheme.headingMediumThemed(context);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildStepperButton(
-          icon: Icons.remove,
-          size: buttonSize,
-          onTap: onMinus,
-        ),
-        SizedBox(
-          width: compact ? 28 : 36,
-          child: Center(
-            child: Text('$value', style: valueStyle),
-          ),
-        ),
-        _buildStepperButton(
-          icon: Icons.add,
-          size: buttonSize,
-          onTap: onPlus,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStepperButton({
-    required IconData icon,
-    required double size,
-    required VoidCallback? onTap,
-  }) {
-    final isEnabled = onTap != null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: isEnabled
-              ? AppTheme.cardBackground(context)
-              : AppTheme.cardBackground(context).withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border.all(color: AppTheme.borderColor(context)),
-        ),
-        child: Icon(
-          icon,
-          size: size * 0.6,
-          color: isEnabled
-              ? AppTheme.textSecondaryColor(context)
-              : AppTheme.textMutedColor(context),
+    final detailedSaved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddMatchScreen(
+          existingMatchId: draft.id,
+          existingMatchDate: draft.date,
+          initialMatchFormat: _matchFormat,
+          initialScoreLine: _guidedScoreLine,
+          initialOpponentLevelSeed: '',
+          initialOpponentName: _opponentController.text.trim(),
+          initialNotes: _quickNoteController.text.trim(),
         ),
       ),
     );
+
+    if (detailedSaved == true && mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   void _clearIrrelevantTiebreaksAll() {
@@ -875,127 +817,102 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     }
   }
 
-  /// Success View - Calm confirmation, not celebration
+  /// Success View — a "FULL TIME" result panel, not a celebration.
   Widget _buildSuccessView() {
     final isWin = _savedMatch?.result == 'Win';
     final scoreDisplay = _savedMatch?.scoreLine ?? '';
+    final opponent = _savedMatch?.opponent ?? 'Opponent';
 
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBackground(context),
+      backgroundColor: _bc.bg,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: Padding(
-            padding: const EdgeInsets.all(AppTheme.spaceMD),
+            padding: const EdgeInsets.all(AppTheme.spaceLG),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Close button
                 Align(
                   alignment: Alignment.topLeft,
-                  child: GestureDetector(
-                    onTap: () {
+                  child: IconButton(
+                    onPressed: () {
                       HapticFeedback.lightImpact();
                       Navigator.pop(context, true);
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(AppTheme.spaceSM),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardBackground(context),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        color: AppTheme.textSecondaryColor(context),
-                        size: 20,
-                      ),
-                    ),
+                    tooltip: 'Close',
+                    iconSize: 22,
+                    style:
+                        IconButton.styleFrom(minimumSize: const Size(44, 44)),
+                    color: _bc.textSecondary,
+                    icon: const Icon(Icons.close_rounded),
                   ),
                 ),
 
                 const Spacer(),
 
-                // Confirmation
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: (isWin ? AppTheme.win : AppTheme.primary)
-                        .withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.check,
-                    size: 32,
-                    color: isWin ? AppTheme.win : AppTheme.primary,
-                  ),
-                ),
-
-                const SizedBox(height: AppTheme.spaceLG),
-
-                Text(
-                  'Match Saved',
-                  style: AppTheme.headingLargeThemed(context),
-                ),
-
-                const SizedBox(height: AppTheme.spaceSM),
-
-                Text(
-                  '${isWin == true ? "Win" : "Loss"} · $scoreDisplay',
-                  style: AppTheme.bodyLargeThemed(context),
-                ),
-
-                const SizedBox(height: AppTheme.spaceXL),
-
-                const SizedBox(height: AppTheme.spaceMD),
-
-                // Actions
-                Row(
-                  children: [
-                    // Share
-                    Expanded(
-                      child: Container(
-                        decoration: AppTheme.cardDecorationThemed(context),
-                        child: ShareButton(
-                          shareText: ShareTextGenerator.matchResult(
-                            result: _savedMatch?.result ?? 'Win',
-                            opponent: _savedMatch?.opponent ?? 'Opponent',
-                            setsWon: _savedMatch?.setsWon ?? 0,
-                            setsLost: _savedMatch?.setsLost ?? 0,
-                            scoreLine: _savedMatch?.scoreLine,
-                            insight: null,
+                BroadcastPanel(
+                  bc: _bc,
+                  semanticLabel:
+                      'Match saved. ${isWin ? "Win" : "Loss"} $scoreDisplay against $opponent',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('FULL TIME · MATCH SAVED',
+                          style: AppTheme.labelThemed(context).copyWith(
+                              color: _bc.accentInk, letterSpacing: 2)),
+                      const SizedBox(height: AppTheme.spaceMD),
+                      Row(
+                        children: [
+                          BroadcastResultBadge(bc: _bc, isWin: isWin),
+                          const SizedBox(width: AppTheme.spaceSM),
+                          Text(
+                            isWin ? 'WIN' : 'LOSS',
+                            style: AppTheme.labelThemed(context).copyWith(
+                              letterSpacing: 2,
+                              color: isWin ? _bc.win : _bc.loss,
+                            ),
                           ),
-                          subject: 'My tennis match',
-                          color: AppTheme.textSecondaryColor(context),
-                        ),
+                        ],
                       ),
+                      const SizedBox(height: AppTheme.spaceSM),
+                      BroadcastScoreline(
+                          bc: _bc, raw: scoreDisplay, size: 40),
+                      const SizedBox(height: AppTheme.spaceXS),
+                      Text('vs $opponent',
+                          style: AppTheme.bodyMediumThemed(context)
+                              .copyWith(color: _bc.textSecondary)),
+                    ],
+                  ),
+                ),
+
+                const Spacer(),
+
+                Container(
+                  decoration: BoxDecoration(
+                    color: _bc.panel,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                    border: Border.all(color: _bc.border),
+                  ),
+                  child: ShareButton(
+                    shareText: ShareTextGenerator.matchResult(
+                      result: _savedMatch?.result ?? 'Win',
+                      opponent: opponent,
+                      setsWon: _savedMatch?.setsWon ?? 0,
+                      setsLost: _savedMatch?.setsLost ?? 0,
+                      scoreLine: _savedMatch?.scoreLine,
+                      insight: null,
                     ),
-                  ],
+                    subject: 'My tennis match',
+                    color: _bc.textSecondary,
+                  ),
                 ),
 
                 const SizedBox(height: AppTheme.spaceSM),
 
-                // Done - Primary
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.pop(context, true);
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Done',
-                        style: AppTheme.headingSmallThemed(context)
-                            .copyWith(color: AppTheme.surfaceDark),
-                      ),
-                    ),
-                  ),
+                BroadcastCta(
+                  label: 'DONE',
+                  onPressed: () => Navigator.pop(context, true),
                 ),
               ],
             ),
