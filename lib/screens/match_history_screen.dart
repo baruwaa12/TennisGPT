@@ -264,17 +264,10 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
         (_performanceTrends['favoriteSurface'] ?? '—') as String;
 
     return IntrinsicHeight(
-      child: Container(
-        decoration: BoxDecoration(
-          color: _bc.panel,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border(
-            left: BorderSide(color: _bc.accentInk, width: 3),
-            top: BorderSide(color: _bc.border),
-            right: BorderSide(color: _bc.border),
-            bottom: BorderSide(color: _bc.border),
-          ),
-        ),
+      child: BroadcastPanel(
+        bc: _bc,
+        accentRule: true,
+        padding: EdgeInsets.zero,
         child: Row(
           children: [
             _summaryCell('MATCHES', '$totalMatches'),
@@ -312,11 +305,9 @@ class _MatchHistoryScreenState extends State<MatchHistoryScreen> {
   }
 
   Widget _fixturesList() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        border: Border.all(color: _bc.border),
-      ),
+    return BroadcastPanel(
+      bc: _bc,
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           for (int i = 0; i < _matches.length; i++) ...[

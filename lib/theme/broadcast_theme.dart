@@ -23,10 +23,11 @@ class BroadcastTheme {
   /// Forced dark base theme so reused widgets render at the canvas brightness.
   ThemeData get themeData => ThemeService.darkTheme;
 
-  // ---- Signature electric lime accent ----
-  /// Filled accent (CTA, badges). Pairs with [onLime] text.
-  static const Color limeFill = Color(0xFFCCFF00);
-  static const Color onLime = Color(0xFF0A0C0A);
+  // ---- Signature accent (deep blue intelligence) ----
+  /// Accent used for CTA outlines, labels, rules and badges.
+  /// Pairs with [onAccent] text when used as a solid fill.
+  static const Color accentFill = AppTheme.primary;
+  static const Color onAccent = Color(0xFFFFFFFF);
 
   // ---- Surfaces ----
   Color get bg => const Color(0xFF07090C);
@@ -34,13 +35,23 @@ class BroadcastTheme {
   Color get panelRaised => const Color(0xFF161B24);
   Color get border => const Color(0xFF262B35);
 
+  /// Soft elevation for floating panels — separates a panel from the canvas
+  /// without leaning on a hard border.
+  List<BoxShadow> get panelShadow => const [
+        BoxShadow(
+          color: Color(0x66000000),
+          blurRadius: 18,
+          offset: Offset(0, 8),
+        ),
+      ];
+
   // ---- Text ----
   Color get textPrimary => const Color(0xFFFFFFFF);
   Color get textSecondary => const Color(0xFFC4CAD4);
   Color get textMuted => const Color(0xFF888F9C);
 
   /// Accent for thin rules, labels and active states.
-  Color get accentInk => limeFill;
+  Color get accentInk => accentFill;
 
   // ---- Reserved result colors ----
   Color get win => AppTheme.win;

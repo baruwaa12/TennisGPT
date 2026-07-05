@@ -420,6 +420,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
     return BroadcastPanel(
       bc: _bc,
+      accentRule: true,
       semanticLabel: 'Current form: $winPct percent win rate',
       child: Row(
         children: [

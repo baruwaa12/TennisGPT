@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<MatchPerformance> _recentMatches = [];
   double _winRate = 0.0;
-  int _currentStreak = 0;
   int _totalMatches = 0;
   bool _isLoading = true;
   bool _hasLoadedOnce = false;
@@ -50,14 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final all = await _matchHistoryService.getAllMatches();
       final matches = all.take(10).toList();
       final winRate = await _matchHistoryService.getWinRate();
-      final streak = _calculateStreak(matches);
 
       if (!mounted) return;
       setState(() {
         _recentMatches = matches;
         _winRate = winRate;
         _totalMatches = all.length;
-        _currentStreak = streak;
         _isLoading = false;
         _hasLoadedOnce = true;
       });
@@ -68,23 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _hasLoadedOnce = true;
       });
     }
-  }
-
-  int _calculateStreak(List<MatchPerformance> matches) {
-    if (matches.isEmpty) return 0;
-
-    int streak = 0;
-    final bool isWinStreak = matches.first.result.toLowerCase() == 'win';
-
-    for (final match in matches) {
-      if ((match.result.toLowerCase() == 'win') == isWinStreak) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    return isWinStreak ? streak : -streak;
   }
 
   bool get _isGuest => Provider.of<AuthService>(context, listen: false).isGuest;
@@ -284,8 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _broadcastBody() {
     return [
       _broadcastHero(),
-      const SizedBox(height: AppTheme.spaceMD),
-      _broadcastStatStrip(),
       const SizedBox(height: AppTheme.spaceLG),
       _broadcastCta(),
       const SizedBox(height: AppTheme.spaceXL),
@@ -322,6 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return BroadcastPanel(
       bc: _bc,
+      accentRule: true,
       semanticLabel: semantics.toString(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -411,51 +390,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastStatStrip() {
-    final last5Wins = _recentMatches.take(5).where(_isWin).length;
-    return IntrinsicHeight(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          border: Border.all(color: _bc.border),
-        ),
-        child: Row(
-          children: [
-            _broadcastStatCell('MATCHES', '$_totalMatches'),
-            _broadcastStripDivider(),
-            _broadcastStatCell(
-              _currentStreak >= 0 ? 'WIN RUN' : 'SKID',
-              '${_currentStreak.abs()}',
-            ),
-            _broadcastStripDivider(),
-            _broadcastStatCell('LAST 5', '$last5Wins/5'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _broadcastStripDivider() => Container(width: 1, color: _bc.border);
-
-  Widget _broadcastStatCell(String label, String value) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
-        child: Column(
-          children: [
-            Text(value,
-                style: AppTheme.scorelineThemed(context, size: 26)
-                    .copyWith(color: _bc.textPrimary)),
-            const SizedBox(height: 4),
-            Text(label,
-                style: AppTheme.labelThemed(context)
-                    .copyWith(letterSpacing: 1.2, color: _bc.textMuted)),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _broadcastCta() {
     return BroadcastCta(
       label: 'LOG A MATCH',
@@ -476,11 +410,9 @@ class _HomeScreenState extends State<HomeScreen> {
           onAction: _openMatchHistory,
         ),
         const SizedBox(height: AppTheme.spaceXS),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            border: Border.all(color: _bc.border),
-          ),
+        BroadcastPanel(
+          bc: _bc,
+          padding: EdgeInsets.zero,
           child: Column(
             children: [
               for (int i = 0; i < items.length; i++) ...[

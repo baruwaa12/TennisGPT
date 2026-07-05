@@ -43,9 +43,11 @@ class _BroadcastCtaState extends State<BroadcastCta> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null && !widget.loading;
-    final fill = _down
-        ? Color.lerp(BroadcastTheme.limeFill, Colors.white, 0.25)!
-        : BroadcastTheme.limeFill;
+    const accent = BroadcastTheme.accentFill;
+    final fill = _down ? accent.withValues(alpha: 0.10) : Colors.transparent;
+    final borderColor = _down
+        ? Color.lerp(accent, Colors.white, 0.25)!
+        : accent;
 
     final body = AnimatedScale(
       scale: _down ? 0.98 : 1,
@@ -58,15 +60,8 @@ class _BroadcastCtaState extends State<BroadcastCta> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-          boxShadow: [
-            BoxShadow(
-              color: BroadcastTheme.limeFill
-                  .withValues(alpha: _down ? 0.35 : 0.18),
-              blurRadius: _down ? 24 : 14,
-              offset: Offset(0, _down ? 8 : 5),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+          border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -77,19 +72,18 @@ class _BroadcastCtaState extends State<BroadcastCta> {
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(BroadcastTheme.onLime),
+                  valueColor: AlwaysStoppedAnimation<Color>(accent),
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSM),
             ] else if (widget.icon != null) ...[
-              Icon(widget.icon, color: BroadcastTheme.onLime, size: 20),
+              Icon(widget.icon, color: accent, size: 20),
               const SizedBox(width: AppTheme.spaceSM),
             ],
             Text(
               widget.loading ? (widget.loadingLabel ?? widget.label) : widget.label,
               style: AppTheme.headingSmall.copyWith(
-                color: BroadcastTheme.onLime,
+                color: accent,
                 fontSize: 15,
                 letterSpacing: 1.2,
               ),
@@ -131,7 +125,7 @@ class BroadcastPanel extends StatefulWidget {
     required this.child,
     this.onTap,
     this.raised = false,
-    this.accentRule = true,
+    this.accentRule = false,
     this.padding,
     this.semanticLabel,
   });
@@ -174,7 +168,8 @@ class _BroadcastPanelState extends State<BroadcastPanel> {
         padding: widget.padding ?? const EdgeInsets.all(AppTheme.spaceLG),
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+          boxShadow: bc.panelShadow,
           border: widget.accentRule
               ? Border(
                   left: BorderSide(color: bc.accentInk, width: 3),
