@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../theme/broadcast_theme.dart';
-import '../widgets/broadcast_kit.dart';
+import '../widgets/composure_kit.dart';
 import '../models/match_performance.dart';
 import '../services/match_history_service.dart';
 import '../config/app_config.dart';
@@ -28,12 +27,12 @@ class _SetScore {
         opp = 0;
 }
 
-/// Quick Match Log — Broadcast.
+/// Quick Match Log — ComposureDesign1.
 ///
 /// Design Philosophy:
 /// - Speed first: Log in under 30 seconds
 /// - Minimal inputs: Result + Score only required
-/// - Broadcast canvas: scoreboard chrome, uppercase labels, lime CTA
+/// - Calm tactical canvas: token surfaces, tracked labels, brand CTA
 /// - Clear hierarchy: One decision at a time
 ///
 /// Flow:
@@ -75,8 +74,6 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   late AnimationController _successController;
   late Animation<double> _fadeAnimation;
 
-  late BroadcastTheme _bc;
-
   @override
   void initState() {
     super.initState();
@@ -106,8 +103,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         SnackBar(
           content: Text(scoreError,
               style: AppTheme.bodyMediumThemed(context)
-                  .copyWith(color: _bc.textPrimary)),
-          backgroundColor: _bc.panelRaised,
+                  .copyWith(color: AppTheme.textPrimaryColor(context))),
+          backgroundColor: AppTheme.elevatedBackground(context),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -277,24 +274,21 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
 
   @override
   Widget build(BuildContext context) {
-    _bc = BroadcastTheme.of(context);
+    final dark = AppTheme.isDark(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: _bc.dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: _bc.dark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
       ),
-      child: Theme(
-        data: _bc.themeData,
-        child: _showSuccess ? _buildSuccessView() : _buildFormView(),
-      ),
+      child: _showSuccess ? _buildSuccessView() : _buildFormView(),
     );
   }
 
   Widget _buildFormView() {
     return Scaffold(
-      backgroundColor: _bc.bg,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
@@ -358,15 +352,24 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
             tooltip: 'Close',
             iconSize: 22,
             style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-            color: _bc.textSecondary,
+            color: AppTheme.textSecondaryColor(context),
             icon: const Icon(Icons.close_rounded),
           ),
           const SizedBox(width: AppTheme.spaceXS),
-          Container(width: 4, height: 24, color: _bc.accentInk),
+          Container(
+            width: 4,
+            height: 24,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+            ),
+          ),
           const SizedBox(width: 10),
           Text('LOG A MATCH',
               style: AppTheme.labelThemed(context).copyWith(
-                  fontSize: 16, letterSpacing: 2, color: _bc.textPrimary)),
+                  fontSize: 16,
+                  letterSpacing: 2,
+                  color: AppTheme.textPrimaryColor(context))),
         ],
       ),
     );
@@ -375,7 +378,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
   Widget _sectionLabel(String text) {
     return Text(text.toUpperCase(),
         style: AppTheme.labelThemed(context)
-            .copyWith(letterSpacing: 2, color: _bc.textMuted));
+            .copyWith(letterSpacing: 2, color: AppTheme.textMutedColor(context)));
   }
 
   Widget _buildFormatSection() {
@@ -438,7 +441,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
             textAlign: TextAlign.center,
             style: AppTheme.headingSmallThemed(context).copyWith(
               fontSize: 18,
-              color: isSelected ? _bc.textPrimary : _bc.textSecondary,
+              color: isSelected
+                  ? AppTheme.textPrimaryColor(context)
+                  : AppTheme.textSecondaryColor(context),
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -448,7 +453,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
               subtitle.toUpperCase(),
               style: AppTheme.labelThemed(context).copyWith(
                 letterSpacing: 1,
-                color: isSelected ? _bc.accentInk : _bc.textMuted,
+                color: isSelected
+                    ? AppTheme.primary
+                    : AppTheme.textMutedColor(context),
               ),
             ),
           ],
@@ -457,8 +464,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     );
   }
 
-  /// Shared Broadcast selection tile: hairline border at rest, accent border +
-  /// raised panel when selected, subtle press feedback.
+  /// Shared selection tile: hairline border at rest, brand border +
+  /// elevated surface when selected, subtle press feedback.
   Widget _selectOption({
     required bool isSelected,
     required VoidCallback onTap,
@@ -478,10 +485,14 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           padding: const EdgeInsets.symmetric(
               vertical: AppTheme.spaceMD, horizontal: AppTheme.spaceSM),
           decoration: BoxDecoration(
-            color: isSelected ? _bc.panelRaised : _bc.panel,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+            color: isSelected
+                ? AppTheme.elevatedBackground(context)
+                : AppTheme.cardBackground(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
             border: Border.all(
-              color: isSelected ? _bc.accentInk : _bc.border,
+              color: isSelected
+                  ? AppTheme.primary
+                  : AppTheme.borderColor(context),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -539,14 +550,16 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          BroadcastResultBadge(bc: _bc, isWin: isWin),
+          CResultBadge(isWin: isWin),
           const SizedBox(width: AppTheme.spaceSM),
           Text(
             label.toUpperCase(),
             style: AppTheme.headingSmallThemed(context).copyWith(
               fontSize: 17,
               letterSpacing: 1,
-              color: isSelected ? _bc.textPrimary : _bc.textSecondary,
+              color: isSelected
+                  ? AppTheme.textPrimaryColor(context)
+                  : AppTheme.textSecondaryColor(context),
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -564,8 +577,8 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       children: [
         _sectionLabel('Score'),
         const SizedBox(height: AppTheme.spaceSM),
-        BroadcastPanel(
-          bc: _bc,
+        TGCard(
+          padding: AppTheme.cardPaddingLarge,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -580,17 +593,18 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                         const EdgeInsets.symmetric(horizontal: AppTheme.spaceLG),
                     child: Text('–',
                         style: AppTheme.scorelineThemed(context, size: 34)
-                            .copyWith(color: _bc.textMuted)),
+                            .copyWith(color: AppTheme.textMutedColor(context))),
                   ),
                   _setsTallyColumn('OPP', setsLost),
                 ],
               ),
               const SizedBox(height: AppTheme.spaceMD),
-              Divider(color: _bc.border),
+              Divider(color: AppTheme.borderColor(context)),
               const SizedBox(height: AppTheme.spaceMD),
               Text('SET SCORES',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+                  style: AppTheme.labelThemed(context).copyWith(
+                      letterSpacing: 1.5,
+                      color: AppTheme.textMutedColor(context))),
               const SizedBox(height: AppTheme.spaceSM),
               GuidedSetScoreEditor(
                 key: ValueKey(_matchFormat),
@@ -616,7 +630,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 Text(
                   _guidedScoreError!,
                   style: AppTheme.bodySmallThemed(context)
-                      .copyWith(color: _bc.loss),
+                      .copyWith(color: AppTheme.loss),
                 ),
               ],
             ],
@@ -631,12 +645,12 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label,
-            style: AppTheme.labelThemed(context)
-                .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+            style: AppTheme.labelThemed(context).copyWith(
+                letterSpacing: 1.5, color: AppTheme.textMutedColor(context))),
         const SizedBox(height: 4),
         Text('$value',
             style: AppTheme.scorelineThemed(context, size: 40)
-                .copyWith(color: _bc.textPrimary)),
+                .copyWith(color: AppTheme.textPrimaryColor(context))),
       ],
     );
   }
@@ -648,22 +662,18 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         _sectionLabel('Optional'),
         const SizedBox(height: AppTheme.spaceSM),
         Container(
-          decoration: BoxDecoration(
-            color: _bc.panel,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-            border: Border.all(color: _bc.border),
-          ),
+          decoration: AppTheme.cardDecorationThemed(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
                 controller: _opponentController,
                 style: AppTheme.bodyMediumThemed(context)
-                    .copyWith(color: _bc.textPrimary),
+                    .copyWith(color: AppTheme.textPrimaryColor(context)),
                 decoration: InputDecoration(
                   hintText: 'Opponent name (optional)',
                   hintStyle: AppTheme.bodyMediumThemed(context)
-                      .copyWith(color: _bc.textMuted),
+                      .copyWith(color: AppTheme.textMutedColor(context)),
                   filled: false,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -672,14 +682,15 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 ),
                 textInputAction: TextInputAction.next,
               ),
-              Divider(color: _bc.border, height: 1),
+              Divider(color: AppTheme.borderColor(context), height: 1),
               const SizedBox(height: AppTheme.spaceSM),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   'QUICK REFLECTION (1–2 SENTENCES)',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(letterSpacing: 1.2, color: _bc.textMuted),
+                  style: AppTheme.labelThemed(context).copyWith(
+                      letterSpacing: 1.2,
+                      color: AppTheme.textMutedColor(context)),
                 ),
               ),
               const SizedBox(height: AppTheme.spaceXS),
@@ -688,11 +699,11 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                 child: TextField(
                   controller: _quickNoteController,
                   style: AppTheme.bodyMediumThemed(context)
-                      .copyWith(color: _bc.textPrimary),
+                      .copyWith(color: AppTheme.textPrimaryColor(context)),
                   decoration: InputDecoration(
                     hintText: 'What actually happened out there?',
                     hintStyle: AppTheme.bodyMediumThemed(context)
-                        .copyWith(color: _bc.textMuted),
+                        .copyWith(color: AppTheme.textMutedColor(context)),
                     filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -721,9 +732,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceMD),
       decoration: BoxDecoration(
-        color: _bc.bg,
+        color: AppTheme.scaffoldBackground(context),
         border: Border(
-          top: BorderSide(color: _bc.border),
+          top: BorderSide(color: AppTheme.borderColor(context)),
         ),
       ),
       child: SafeArea(
@@ -731,34 +742,15 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Semantics(
-              button: true,
+            CSecondaryButton(
               label: 'Add detailed match log',
-              child: GestureDetector(
-                onTap: _isSaving ? null : _openDetailedLog,
-                child: Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(minHeight: 48),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _bc.panel,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                    border: Border.all(color: _bc.border),
-                  ),
-                  child: Text(
-                    'ADD DETAILED MATCH LOG',
-                    style: AppTheme.labelThemed(context).copyWith(
-                      letterSpacing: 1.2,
-                      color: _bc.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
+              icon: Icons.tune_rounded,
+              onPressed: _isSaving ? null : _openDetailedLog,
             ),
             const SizedBox(height: AppTheme.spaceSM),
-            BroadcastCta(
-              label: 'SAVE MATCH',
-              loadingLabel: 'SAVING…',
+            CPrimaryButton(
+              label: 'Save match',
+              loadingLabel: 'Saving…',
               icon: Icons.check_rounded,
               loading: _isSaving,
               onPressed: isValid && !_isSaving ? _saveMatch : null,
@@ -779,9 +771,9 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
           content: Text(
             'Enter a valid score before opening detailed log.',
             style: AppTheme.bodyMediumThemed(context)
-                .copyWith(color: _bc.textPrimary),
+                .copyWith(color: AppTheme.textPrimaryColor(context)),
           ),
-          backgroundColor: _bc.panelRaised,
+          backgroundColor: AppTheme.elevatedBackground(context),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -822,7 +814,7 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
     final opponent = _savedMatch?.opponent ?? 'Opponent';
 
     return Scaffold(
-      backgroundColor: _bc.bg,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -842,56 +834,54 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                     iconSize: 22,
                     style:
                         IconButton.styleFrom(minimumSize: const Size(44, 44)),
-                    color: _bc.textSecondary,
+                    color: AppTheme.textSecondaryColor(context),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ),
 
                 const Spacer(),
 
-                BroadcastPanel(
-                  bc: _bc,
-                  semanticLabel:
+                Semantics(
+                  label:
                       'Match saved. ${isWin ? "Win" : "Loss"} $scoreDisplay against $opponent',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('FULL TIME · MATCH SAVED',
-                          style: AppTheme.labelThemed(context).copyWith(
-                              color: _bc.accentInk, letterSpacing: 2)),
-                      const SizedBox(height: AppTheme.spaceMD),
-                      Row(
-                        children: [
-                          BroadcastResultBadge(bc: _bc, isWin: isWin),
-                          const SizedBox(width: AppTheme.spaceSM),
-                          Text(
-                            isWin ? 'WIN' : 'LOSS',
+                  child: TGCard(
+                    padding: AppTheme.cardPaddingLarge,
+                    elevated: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('FULL TIME · MATCH SAVED',
                             style: AppTheme.labelThemed(context).copyWith(
-                              letterSpacing: 2,
-                              color: isWin ? _bc.win : _bc.loss,
+                                color: AppTheme.primary, letterSpacing: 2)),
+                        const SizedBox(height: AppTheme.spaceMD),
+                        Row(
+                          children: [
+                            CResultBadge(isWin: isWin),
+                            const SizedBox(width: AppTheme.spaceSM),
+                            Text(
+                              isWin ? 'WIN' : 'LOSS',
+                              style: AppTheme.labelThemed(context).copyWith(
+                                letterSpacing: 2,
+                                color: isWin ? AppTheme.win : AppTheme.loss,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppTheme.spaceSM),
-                      BroadcastScoreline(
-                          bc: _bc, raw: scoreDisplay, size: 40),
-                      const SizedBox(height: AppTheme.spaceXS),
-                      Text('vs $opponent',
-                          style: AppTheme.bodyMediumThemed(context)
-                              .copyWith(color: _bc.textSecondary)),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: AppTheme.spaceSM),
+                        _scoreline(scoreDisplay, size: 40),
+                        const SizedBox(height: AppTheme.spaceXS),
+                        Text('vs $opponent',
+                            style: AppTheme.bodyMediumThemed(context).copyWith(
+                                color: AppTheme.textSecondaryColor(context))),
+                      ],
+                    ),
                   ),
                 ),
 
                 const Spacer(),
 
                 Container(
-                  decoration: BoxDecoration(
-                    color: _bc.panel,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                    border: Border.all(color: _bc.border),
-                  ),
+                  decoration: AppTheme.cardDecorationThemed(context),
                   child: ShareButton(
                     shareText: ShareTextGenerator.matchResult(
                       result: _savedMatch?.result ?? 'Win',
@@ -902,14 +892,14 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
                       insight: null,
                     ),
                     subject: 'My tennis match',
-                    color: _bc.textSecondary,
+                    color: AppTheme.textSecondaryColor(context),
                   ),
                 ),
 
                 const SizedBox(height: AppTheme.spaceSM),
 
-                BroadcastCta(
-                  label: 'DONE',
+                CPrimaryButton(
+                  label: 'Done',
                   onPressed: () => Navigator.pop(context, true),
                 ),
               ],
@@ -918,5 +908,43 @@ class _QuickMatchScreenState extends State<QuickMatchScreen>
         ),
       ),
     );
+  }
+
+  /// Monospace scoreline with lost sets dimmed so the eye lands on sets won.
+  /// Mirrors the `_scoreline` pattern from home_screen.dart.
+  Widget _scoreline(String raw, {double size = 17}) {
+    final sets = raw.trim().isEmpty
+        ? const <String>[]
+        : raw.trim().split(RegExp(r'\s+'));
+    if (sets.isEmpty) {
+      return Text('—', style: AppTheme.scorelineThemed(context, size: size));
+    }
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (int i = 0; i < sets.length; i++)
+          Padding(
+            padding:
+                EdgeInsets.only(right: i == sets.length - 1 ? 0 : size * 0.32),
+            child: Text(
+              sets[i],
+              style: AppTheme.scorelineThemed(context, size: size).copyWith(
+                color: _wonSet(sets[i])
+                    ? AppTheme.textPrimaryColor(context)
+                    : AppTheme.textMutedColor(context).withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  bool _wonSet(String token) {
+    final clean = token.replaceAll(RegExp(r'\(.*?\)'), '');
+    final parts = clean.split('-');
+    if (parts.length < 2) return true;
+    final me = int.tryParse(parts[0].trim()) ?? 0;
+    final opp = int.tryParse(parts[1].trim()) ?? 0;
+    return me >= opp;
   }
 }

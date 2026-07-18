@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
@@ -13,6 +12,7 @@ import '../services/usage_service.dart';
 import '../services/streak_service.dart';
 import '../config/app_config.dart';
 import '../theme/app_theme.dart';
+import '../widgets/composure_kit.dart';
 import 'login_screen.dart';
 import 'help_faq_screen.dart';
 import 'feedback_screen.dart';
@@ -28,7 +28,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = Provider.of<AuthService>(context);
     final themeService = Provider.of<ThemeService>(context);
     final courtService = Provider.of<CourtService>(context);
@@ -44,27 +43,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
+      backgroundColor: AppTheme.scaffoldBackground(context),
       appBar: AppBar(
         title: Text(
           'Settings',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: AppTheme.headingSmallThemed(context)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spaceMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Card (authenticated only)
             if (!authService.isGuest) ...[
-              _buildProfileCard(authService, profileService, isPremium, isDark),
-              const SizedBox(height: 24),
-              _buildStatsCard(usageService, streakService, isDark),
-              const SizedBox(height: 24),
+              _buildProfileCard(authService, profileService, isPremium),
+              const SizedBox(height: AppTheme.spaceLG),
+              _buildStatsCard(usageService, streakService),
+              const SizedBox(height: AppTheme.spaceLG),
             ],
 
             // Guest sign-in prompt
@@ -81,24 +81,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     (route) => false,
                   );
                 },
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                isDark: isDark,
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: AppTheme.textMutedColor(context)),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceLG),
             ],
 
             // Appearance Section
-            _buildSectionTitle('Appearance', isDark),
+            _buildSectionTitle('Appearance'),
             _buildSettingsTile(
               icon: themeService.themeMode == ThemeMode.dark
                   ? Icons.dark_mode
                   : Icons.light_mode,
-              iconColor: Colors.blue,
+              iconColor: AppTheme.primary,
               title: 'Theme',
               subtitle: _getThemeLabel(themeService.themeMode),
               onTap: () => _showThemePicker(themeService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
+              trailing: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: AppTheme.textMutedColor(context)),
             ),
             _buildSettingsTile(
               icon: Icons.sports_tennis_outlined,
@@ -106,49 +106,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Court surface',
               subtitle: courtService.displayName,
               onTap: () => _showCourtSurfacePicker(courtService),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
+              trailing: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: AppTheme.textMutedColor(context)),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceLG),
 
             // Player Profile Section (authenticated only)
             if (!authService.isGuest) ...[
-              _buildSectionTitle('Player Profile', isDark),
+              _buildSectionTitle('Player Profile'),
               _buildSettingsTile(
                 icon: Icons.sports_tennis,
                 iconColor: AppTheme.primary,
                 title: 'Skill Level',
                 subtitle: _getLevelLabel(profileService.playerLevel),
                 onTap: () => _showLevelPicker(profileService),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                isDark: isDark,
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: AppTheme.textMutedColor(context)),
               ),
               _buildSettingsTile(
                 icon: Icons.flag,
-                iconColor: Colors.purple,
+                iconColor: AppTheme.primary,
                 title: 'Primary Goal',
                 subtitle: _getGoalLabel(profileService.primaryGoal),
                 onTap: () => _showGoalPicker(profileService),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                isDark: isDark,
+                trailing: Icon(Icons.arrow_forward_ios,
+                    size: 16, color: AppTheme.textMutedColor(context)),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceLG),
             ],
 
             // Support Section
-            _buildSectionTitle('Support', isDark),
+            _buildSectionTitle('Support'),
             _buildSettingsTile(
               icon: Icons.help_outline,
-              iconColor: Colors.orange,
+              iconColor: AppTheme.primary,
               title: 'Help & FAQ',
               subtitle: 'Get answers to common questions',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const HelpFaqScreen()),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
+              trailing: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: AppTheme.textMutedColor(context)),
             ),
             _buildSettingsTile(
               icon: Icons.feedback_outlined,
@@ -159,16 +159,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 context,
                 MaterialPageRoute(builder: (context) => const FeedbackScreen()),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
+              trailing: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: AppTheme.textMutedColor(context)),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceLG),
 
             // Legal Section
-            _buildSectionTitle('Legal', isDark),
+            _buildSectionTitle('Legal'),
             _buildSettingsTile(
               icon: Icons.description_outlined,
-              iconColor: Colors.grey,
+              iconColor: AppTheme.textMutedColor(context),
               title: 'Terms of Service',
               onTap: () => Navigator.push(
                 context,
@@ -178,12 +178,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
+              trailing: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: AppTheme.textMutedColor(context)),
             ),
             _buildSettingsTile(
               icon: Icons.privacy_tip_outlined,
-              iconColor: Colors.grey,
+              iconColor: AppTheme.textMutedColor(context),
               title: 'Privacy Policy',
               onTap: () => Navigator.push(
                 context,
@@ -193,56 +193,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              isDark: isDark,
+              trailing: Icon(Icons.arrow_forward_ios,
+                  size: 16, color: AppTheme.textMutedColor(context)),
             ),
             if (!authService.isGuest && AppConfig.paymentsEnabled)
               _buildSettingsTile(
                 icon: Icons.manage_accounts_outlined,
-                iconColor: Colors.blueGrey,
+                iconColor: AppTheme.primary,
                 title: 'Manage Subscription',
                 subtitle: 'View, change, or cancel your plan',
                 onTap: _openSubscriptionManagement,
-                trailing: const Icon(Icons.open_in_new, size: 16),
-                isDark: isDark,
+                trailing: Icon(Icons.open_in_new,
+                    size: 16, color: AppTheme.textMutedColor(context)),
               ),
 
             // Account section (authenticated only)
             if (!authService.isGuest) ...[
-              const SizedBox(height: 24),
-              _buildSectionTitle('Account', isDark),
+              const SizedBox(height: AppTheme.spaceLG),
+              _buildSectionTitle('Account'),
               _buildSettingsTile(
                 icon: Icons.delete_forever_outlined,
-                iconColor: Colors.red,
+                iconColor: AppTheme.loss,
                 title: 'Delete Account',
                 subtitle: 'Permanently remove your account and data',
                 onTap: () => _deleteAccount(authService),
-                isDark: isDark,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceLG),
               _buildSettingsTile(
                 icon: Icons.logout,
-                iconColor: Colors.red,
+                iconColor: AppTheme.loss,
                 title: 'Sign Out',
                 onTap: () => _signOut(authService),
-                isDark: isDark,
               ),
             ],
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppTheme.spaceXL),
 
             // Version
             Center(
               child: Text(
                 'Composure v${AppConfig.appVersion} (Build ${AppConfig.buildNumber})',
-                style: GoogleFonts.poppins(
+                style: AppTheme.bodySmallThemed(context).copyWith(
                   fontSize: 12,
-                  color: Colors.grey[500],
+                  color: AppTheme.textMutedColor(context),
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceMD),
           ],
         ),
       ),
@@ -253,21 +251,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AuthService authService,
     PlayerProfileService profileService,
     bool isPremium,
-    bool isDark,
   ) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceCard : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(AppTheme.spaceLG),
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Row(
         children: [
           CircleAvatar(
@@ -280,6 +267,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? Text(
                     (authService.userDisplayName ?? 'U')[0].toUpperCase(),
                     style: const TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontVariations: AppTheme.fontVariationsSemiExpanded,
                       color: AppTheme.primaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
@@ -287,55 +276,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : null,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppTheme.spaceMD),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   authService.userDisplayName ?? 'Player',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.grey[800],
-                  ),
+                  style: AppTheme.headingSmallThemed(context)
+                      .copyWith(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   authService.userEmail ?? '',
-                  style: GoogleFonts.poppins(
+                  style: AppTheme.bodySmallThemed(context).copyWith(
                     fontSize: 13,
-                    color: Colors.grey[500],
+                    color: AppTheme.textMutedColor(context),
                   ),
                 ),
               ],
             ),
           ),
           if (AppConfig.paymentsEnabled && isPremium)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade100,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.workspace_premium,
-                    size: 14,
-                    color: Colors.amber,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'PRO',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade800,
-                    ),
-                  ),
-                ],
-              ),
+            const CBadge(
+              label: 'PRO',
+              variant: CBadgeVariant.warning,
+              icon: Icons.workspace_premium,
+              pill: true,
             ),
         ],
       ),
@@ -343,62 +309,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildStatsCard(
-      UsageService usageService, StreakService streakService, bool isDark) {
+      UsageService usageService, StreakService streakService) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceCard : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      padding: AppTheme.cardPadding,
+      decoration: AppTheme.cardDecorationThemed(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+          _buildStatItem('🔥', '${streakService.currentStreak}', 'Streak'),
+          _buildStatItem('📊', '${usageService.matchCount}', 'Matches'),
           _buildStatItem(
-              '🔥', '${streakService.currentStreak}', 'Streak', isDark),
-          _buildStatItem('📊', '${usageService.matchCount}', 'Matches', isDark),
-          _buildStatItem('🎯', '${usageService.aiAnalysesRemaining}',
-              'Free analyses', isDark),
+              '🎯', '${usageService.aiAnalysesRemaining}', 'Free analyses'),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String emoji, String value, String label, bool isDark) {
+  Widget _buildStatItem(String emoji, String value, String label) {
     return Column(
       children: [
         Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppTheme.spaceXS),
         Text(
           value,
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.grey[800],
-          ),
+          style: AppTheme.statMediumThemed(context).copyWith(fontSize: 20),
         ),
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: AppTheme.bodySmallThemed(context).copyWith(
             fontSize: 12,
-            color: Colors.grey[500],
+            color: AppTheme.textMutedColor(context),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isDark) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: GoogleFonts.poppins(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey[500],
-          letterSpacing: 0.5,
-        ),
-      ),
+      child: CEyebrow(title, color: AppTheme.textMutedColor(context)),
     );
   }
 
@@ -409,58 +359,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String? subtitle,
     VoidCallback? onTap,
     Widget? trailing,
-    required bool isDark,
   }) {
-    return GestureDetector(
-      onTap: onTap != null
-          ? () {
-              HapticFeedback.selectionClick();
-              onTap();
-            }
-          : null,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.surfaceCard : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: (iconColor ?? Colors.grey).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+    final tint = iconColor ?? AppTheme.textMutedColor(context);
+    return Semantics(
+      button: onTap != null,
+      label: title,
+      child: GestureDetector(
+        onTap: onTap != null
+            ? () {
+                HapticFeedback.selectionClick();
+                onTap();
+              }
+            : null,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppTheme.spaceSM),
+          padding: AppTheme.cardPadding,
+          constraints: const BoxConstraints(minHeight: 44),
+          decoration: AppTheme.cardDecorationThemed(context),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spaceSM),
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+                child: Icon(icon, color: tint, size: 20),
               ),
-              child: Icon(icon, color: iconColor ?? Colors.grey, size: 20),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : Colors.grey[800],
-                    ),
-                  ),
-                  if (subtitle != null)
+              const SizedBox(width: AppTheme.spaceMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      subtitle,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[500],
+                      title,
+                      style: AppTheme.bodyMediumThemed(context).copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textPrimaryColor(context),
                       ),
                     ),
-                ],
+                    if (subtitle != null)
+                      Text(
+                        subtitle,
+                        style: AppTheme.bodySmallThemed(context).copyWith(
+                          fontSize: 12,
+                          color: AppTheme.textMutedColor(context),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            if (trailing != null) trailing,
-          ],
+              if (trailing != null) trailing,
+            ],
+          ),
         ),
       ),
     );
@@ -496,21 +448,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showThemePicker(ThemeService themeService) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.cardBackground(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLG)),
+      ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.spaceLG),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Choose Theme',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceMD),
             ListTile(
-              leading: const Icon(Icons.brightness_auto),
-              title: Text('System', style: GoogleFonts.poppins()),
+              leading: Icon(Icons.brightness_auto,
+                  color: AppTheme.textSecondaryColor(context)),
+              title:
+                  Text('System', style: AppTheme.bodyMediumThemed(context)),
               trailing: themeService.themeMode == ThemeMode.system
                   ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
@@ -520,8 +479,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.light_mode),
-              title: Text('Light', style: GoogleFonts.poppins()),
+              leading: Icon(Icons.light_mode,
+                  color: AppTheme.textSecondaryColor(context)),
+              title: Text('Light', style: AppTheme.bodyMediumThemed(context)),
               trailing: themeService.themeMode == ThemeMode.light
                   ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
@@ -531,8 +491,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.dark_mode),
-              title: Text('Dark', style: GoogleFonts.poppins()),
+              leading: Icon(Icons.dark_mode,
+                  color: AppTheme.textSecondaryColor(context)),
+              title: Text('Dark', style: AppTheme.bodyMediumThemed(context)),
               trailing: themeService.themeMode == ThemeMode.dark
                   ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
@@ -550,29 +511,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showCourtSurfacePicker(CourtService courtService) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.cardBackground(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLG)),
+      ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.spaceLG),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Court Surface',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             Text(
               'Changes the home screen background. The Quick Match button uses a complementary colour for each court.',
-              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[500]),
+              style: AppTheme.bodySmallThemed(context).copyWith(
+                fontSize: 13,
+                color: AppTheme.textMutedColor(context),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceMD),
             ListTile(
               leading: Icon(Icons.terrain_outlined,
                   color: AppTheme.surfaceAccent('clay')),
-              title: Text('Clay', style: GoogleFonts.poppins()),
+              title: Text('Clay', style: AppTheme.bodyMediumThemed(context)),
               subtitle: Text('Roland Garros - blue button',
-                  style: GoogleFonts.poppins(fontSize: 12)),
+                  style: AppTheme.bodySmallThemed(context)
+                      .copyWith(fontSize: 12)),
               trailing: courtService.surface == CourtSurface.clay
                   ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
@@ -584,9 +554,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: Icon(Icons.sports_tennis_outlined,
                   color: AppTheme.surfaceAccent('hard')),
-              title: Text('Hard (Blue)', style: GoogleFonts.poppins()),
+              title: Text('Hard (Blue)',
+                  style: AppTheme.bodyMediumThemed(context)),
               subtitle: Text('US / Australian Open - red button',
-                  style: GoogleFonts.poppins(fontSize: 12)),
+                  style: AppTheme.bodySmallThemed(context)
+                      .copyWith(fontSize: 12)),
               trailing: courtService.surface == CourtSurface.hard
                   ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
@@ -598,9 +570,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               leading: Icon(Icons.grass_outlined,
                   color: AppTheme.surfaceAccent('grass')),
-              title: Text('Grass', style: GoogleFonts.poppins()),
+              title: Text('Grass', style: AppTheme.bodyMediumThemed(context)),
               subtitle: Text('Wimbledon - navy button',
-                  style: GoogleFonts.poppins(fontSize: 12)),
+                  style: AppTheme.bodySmallThemed(context)
+                      .copyWith(fontSize: 12)),
               trailing: courtService.surface == CourtSurface.grass
                   ? const Icon(Icons.check, color: AppTheme.primary)
                   : null,
@@ -618,22 +591,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showLevelPicker(PlayerProfileService profileService) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.cardBackground(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLG)),
+      ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.spaceLG),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Your Skill Level',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceMD),
             ...PlayerProfileService.levelOptions.map((option) => ListTile(
-                  title: Text(option['title']!, style: GoogleFonts.poppins()),
+                  title: Text(option['title']!,
+                      style: AppTheme.bodyMediumThemed(context)),
                   subtitle: Text(option['subtitle']!,
-                      style: GoogleFonts.poppins(fontSize: 12)),
+                      style: AppTheme.bodySmallThemed(context)
+                          .copyWith(fontSize: 12)),
                   trailing: profileService.playerLevel == option['id']
                       ? const Icon(Icons.check, color: AppTheme.primary)
                       : null,
@@ -651,22 +631,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showGoalPicker(PlayerProfileService profileService) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.cardBackground(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLG)),
+      ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppTheme.spaceLG),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Your Primary Goal',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppTheme.headingSmallThemed(context)
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spaceMD),
             ...PlayerProfileService.goalOptions.map((option) => ListTile(
                   leading: Text(option['emoji']!,
                       style: const TextStyle(fontSize: 24)),
-                  title: Text(option['title']!, style: GoogleFonts.poppins()),
+                  title: Text(option['title']!,
+                      style: AppTheme.bodyMediumThemed(context)),
                   trailing: profileService.primaryGoal == option['id']
                       ? const Icon(Icons.check, color: AppTheme.primary)
                       : null,
@@ -685,19 +671,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          side: BorderSide(color: AppTheme.borderColor(context)),
+        ),
         title: Text('Sign Out',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            style: AppTheme.headingSmallThemed(context)
+                .copyWith(fontWeight: FontWeight.w600)),
         content: Text('Are you sure you want to sign out?',
-            style: GoogleFonts.poppins()),
+            style: AppTheme.bodyMediumThemed(context)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
+            child:
+                Text('Cancel', style: AppTheme.bodyMediumThemed(context)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child:
-                Text('Sign Out', style: GoogleFonts.poppins(color: Colors.red)),
+            child: Text('Sign Out',
+                style: AppTheme.bodyMediumThemed(context).copyWith(
+                    color: AppTheme.loss, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -718,21 +712,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.cardBackground(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          side: BorderSide(color: AppTheme.borderColor(context)),
+        ),
         title: Text('Delete Account?',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            style: AppTheme.headingSmallThemed(context)
+                .copyWith(fontWeight: FontWeight.w600)),
         content: Text(
           'This permanently deletes your account and all associated app data. This action cannot be undone.',
-          style: GoogleFonts.poppins(),
+          style: AppTheme.bodyMediumThemed(context),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
+            child:
+                Text('Cancel', style: AppTheme.bodyMediumThemed(context)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child:
-                Text('Delete', style: GoogleFonts.poppins(color: Colors.red)),
+            child: Text('Delete',
+                style: AppTheme.bodyMediumThemed(context).copyWith(
+                    color: AppTheme.loss, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -747,7 +749,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Account deleted successfully',
-              style: GoogleFonts.poppins()),
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: Colors.white)),
           backgroundColor: AppTheme.primary,
         ),
       );
@@ -762,9 +765,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SnackBar(
         content: Text(
           authService.error ?? 'Could not delete account right now.',
-          style: GoogleFonts.poppins(),
+          style: AppTheme.bodyMediumThemed(context)
+              .copyWith(color: Colors.white),
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: AppTheme.loss,
       ),
     );
   }
@@ -788,9 +792,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SnackBar(
           content: Text(
             'Unable to open subscription settings right now.',
-            style: GoogleFonts.poppins(),
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: Colors.white),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.loss,
         ),
       );
     }

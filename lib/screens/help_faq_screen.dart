@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 /// Help & FAQ Screen
@@ -11,38 +10,33 @@ class HelpFaqScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
+      backgroundColor: AppTheme.scaffoldBackground(context),
       appBar: AppBar(
         title: Text(
           'Help & FAQ',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: AppTheme.headingSmallThemed(context)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spaceMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.surfaceCard : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+            TGCard(
+              padding: AppTheme.cardPaddingLarge,
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppTheme.spaceMD),
                     decoration: BoxDecoration(
                       color: AppTheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     ),
                     child: const Icon(
                       Icons.help_outline_rounded,
@@ -50,25 +44,19 @@ class HelpFaqScreen extends StatelessWidget {
                       size: 28,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppTheme.spaceMD),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'How can we help?',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.grey[800],
-                          ),
+                          style: AppTheme.headingSmallThemed(context),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           'Find answers to common questions',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: Colors.grey[500],
-                          ),
+                          style: AppTheme.bodySmallThemed(context),
                         ),
                       ],
                     ),
@@ -77,25 +65,25 @@ class HelpFaqScreen extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceLG),
             
             // FAQ Items
-            ..._faqItems.map((faq) => _buildFaqItem(
-              context,
-              question: faq['question']!,
-              answer: faq['answer']!,
-              isDark: isDark,
-            )),
+            ..._faqItems.map((faq) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppTheme.spaceMD),
+                  child: TGCollapsibleSection(
+                    title: faq['question']!,
+                    child: Text(
+                      faq['answer']!,
+                      style: AppTheme.bodyMediumThemed(context),
+                    ),
+                  ),
+                )),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceSM),
             
             // Contact section
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.surfaceCard : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+            TGCard(
+              padding: AppTheme.cardPaddingLarge,
               child: Column(
                 children: [
                   const Icon(
@@ -103,71 +91,23 @@ class HelpFaqScreen extends StatelessWidget {
                     color: AppTheme.primary,
                     size: 32,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppTheme.spaceMD),
                   Text(
                     'Still need help?',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.grey[800],
-                    ),
+                    style: AppTheme.headingSmallThemed(context)
+                        .copyWith(fontSize: 16),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppTheme.spaceXS),
                   Text(
                     'Contact us at ademolabaruwa09@gmail.com',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
+                    style: AppTheme.bodySmallThemed(context),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
             
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFaqItem(
-    BuildContext context, {
-    required String question,
-    required String answer,
-    required bool isDark,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceCard : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          title: Text(
-            question,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white : Colors.grey[800],
-            ),
-          ),
-          iconColor: AppTheme.primary,
-          collapsedIconColor: Colors.grey[500],
-          children: [
-            Text(
-              answer,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-            ),
+            const SizedBox(height: AppTheme.spaceXL),
           ],
         ),
       ),
@@ -213,4 +153,3 @@ class HelpFaqScreen extends StatelessWidget {
     },
   ];
 }
-

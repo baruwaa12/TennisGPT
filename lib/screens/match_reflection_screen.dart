@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/player_profile_service.dart';
 import '../models/match_performance.dart';
 import '../theme/app_theme.dart';
+import '../widgets/composure_kit.dart';
 import '../utils/paywall_navigation.dart';
 
 /// Quick post-match reflection screen with guided options
@@ -57,7 +58,8 @@ class _MatchReflectionScreenState extends State<MatchReflectionScreen> {
         SnackBar(
           content: Text(
             'Select at least one item to get advice',
-            style: AppTheme.bodyMediumThemed(context),
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: Colors.white),
           ),
           backgroundColor: AppTheme.warning,
         ),
@@ -119,7 +121,8 @@ Based on this post-match reflection, provide specific tactical advice for improv
           SnackBar(
             content: Text(
               'Unable to generate advice. Please try again.',
-              style: AppTheme.bodyMediumThemed(context),
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: Colors.white),
             ),
             backgroundColor: AppTheme.loss,
           ),
@@ -172,18 +175,18 @@ Based on this post-match reflection, provide specific tactical advice for improv
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spaceMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Match summary card
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppTheme.spaceMD),
               decoration: BoxDecoration(
                 color: isWin 
                     ? AppTheme.win.withValues(alpha: 0.12)
                     : AppTheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLG),
                 border: Border.all(color: AppTheme.borderColor(context)),
               ),
               child: Row(
@@ -194,7 +197,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                       color: isWin
                           ? AppTheme.win.withValues(alpha: 0.18)
                           : AppTheme.primary.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     ),
                     child: Icon(
                       isWin
@@ -203,7 +206,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
                       color: isWin ? AppTheme.win : AppTheme.primary,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppTheme.spaceMD),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,7 +228,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceLG),
             
             // What went well
             Text(
@@ -238,13 +241,13 @@ Based on this post-match reflection, provide specific tactical advice for improv
               selected: _selectedStrengths,
               accentColor: AppTheme.win,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             _buildOtherInput(
               hint: 'Other strength...',
               onChanged: (v) => setState(() => _otherStrength = v),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceLG),
             
             // What needs work
             Text(
@@ -257,56 +260,20 @@ Based on this post-match reflection, provide specific tactical advice for improv
               selected: _selectedWeaknesses,
               accentColor: AppTheme.warning,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTheme.spaceSM),
             _buildOtherInput(
               hint: 'Other area to improve...',
               onChanged: (v) => setState(() => _otherWeakness = v),
             ),
             
-            const SizedBox(height: 32),
+            const SizedBox(height: AppTheme.spaceXL),
             
             // Get tactical advice button
-            GestureDetector(
-              onTap: _isGettingAdvice ? null : _getTacticalAdvice,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primary, AppTheme.primaryDark],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: AppTheme.ctaGlow,
-                ),
-                child: Center(
-                  child: _isGettingAdvice
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppTheme.surfaceDark),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Analyzing...',
-                              style: AppTheme.headingSmallThemed(context)
-                                  .copyWith(color: AppTheme.surfaceDark),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          'Get Tactical Advice',
-                          style: AppTheme.headingSmallThemed(context)
-                              .copyWith(color: AppTheme.surfaceDark),
-                        ),
-                ),
-              ),
+            CPrimaryButton(
+              label: 'Get Tactical Advice',
+              loading: _isGettingAdvice,
+              loadingLabel: 'Analyzing...',
+              onPressed: _isGettingAdvice ? null : _getTacticalAdvice,
             ),
             
             const SizedBox(height: 12),
@@ -340,40 +307,37 @@ Based on this post-match reflection, provide specific tactical advice for improv
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spaceMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground(context),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.borderColor(context)),
-              ),
+            TGCard(
+              padding: AppTheme.cardPaddingLarge,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(AppTheme.spaceSM),
                         decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                          color: AppTheme.primary.withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusMD),
+                        ),
+                        child: const Icon(Icons.psychology,
+                            color: AppTheme.primary, size: 24),
                       ),
-                      child: const Icon(Icons.psychology, color: AppTheme.primary, size: 24),
-                      ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppTheme.spaceMD),
                       Text(
                         'Based on Your Reflection',
                         style: AppTheme.headingSmallThemed(context),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppTheme.spaceMD),
+                  Divider(color: AppTheme.borderColor(context)),
+                  const SizedBox(height: AppTheme.spaceMD),
                   Text(
                     _tacticalAdvice!,
                     style: AppTheme.bodyMediumThemed(context).copyWith(
@@ -384,28 +348,11 @@ Based on this post-match reflection, provide specific tactical advice for improv
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spaceLG),
             
-            GestureDetector(
-              onTap: _done,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.primary, AppTheme.primaryDark],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: AppTheme.ctaGlow,
-                ),
-                child: Center(
-                  child: Text(
-                    'Done',
-                    style: AppTheme.headingSmallThemed(context)
-                        .copyWith(color: AppTheme.surfaceDark),
-                  ),
-                ),
-              ),
+            CPrimaryButton(
+              label: 'Done',
+              onPressed: _done,
             ),
           ],
         ),
@@ -419,46 +366,55 @@ Based on this post-match reflection, provide specific tactical advice for improv
     required Color accentColor,
   }) {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: AppTheme.spaceSM,
+      runSpacing: AppTheme.spaceSM,
       children: options.map((option) {
         final isSelected = selected.contains(option['id']);
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() {
-              if (isSelected) {
-                selected.remove(option['id']);
-              } else {
-                selected.add(option['id']!);
-              }
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? accentColor.withValues(alpha: 0.2)
-                  : AppTheme.elevatedBackground(context),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected 
-                    ? accentColor 
-                    : AppTheme.borderColor(context),
-                width: isSelected ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  option['label'] ?? '',
-                  style: AppTheme.bodySmallThemed(context).copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? accentColor : AppTheme.textSecondaryColor(context),
-                  ),
+        return Semantics(
+          button: true,
+          selected: isSelected,
+          label: option['label'],
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() {
+                if (isSelected) {
+                  selected.remove(option['id']);
+                } else {
+                  selected.add(option['id']!);
+                }
+              });
+            },
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? accentColor.withValues(alpha: 0.2)
+                    : AppTheme.elevatedBackground(context),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                border: Border.all(
+                  color: isSelected 
+                      ? accentColor 
+                      : AppTheme.borderColor(context),
+                  width: isSelected ? 1.5 : 1,
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    option['label'] ?? '',
+                    style: AppTheme.bodySmallThemed(context).copyWith(
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected
+                          ? accentColor
+                          : AppTheme.textSecondaryColor(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -474,25 +430,7 @@ Based on this post-match reflection, provide specific tactical advice for improv
       onChanged: onChanged,
       style: AppTheme.bodyMediumThemed(context)
           .copyWith(color: AppTheme.textPrimaryColor(context)),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppTheme.bodySmallThemed(context),
-        filled: true,
-        fillColor: AppTheme.elevatedBackground(context),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.borderColor(context)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.borderColor(context)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
+      decoration: AppTheme.inputDecorationThemed(context, hint: hint),
     );
   }
 }

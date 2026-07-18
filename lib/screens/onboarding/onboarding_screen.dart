@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../services/player_profile_service.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/composure_kit.dart';
 import '../home_screen.dart';
 import '../../utils/tennis_validator.dart';
 import '../../utils/paywall_navigation.dart';
@@ -19,7 +19,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  
+
   // Form data
   String? _selectedLevel;
   String? _selectedGoal;
@@ -47,16 +47,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _previousPage() {
-    HapticFeedback.lightImpact();
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
   Future<void> _getFirstInsight() async {
     if (_opponentController.text.trim().isEmpty) {
       _skipToHome();
@@ -72,9 +62,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           SnackBar(
             content: Text(
               'Please describe something tennis-related about your match',
-              style: GoogleFonts.poppins(),
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: Colors.white),
             ),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppTheme.warning,
           ),
         );
         return;
@@ -86,17 +77,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final profileService = Provider.of<PlayerProfileService>(context, listen: false);
-      
+      final profileService =
+          Provider.of<PlayerProfileService>(context, listen: false);
+
       final matchDescription = '''
 First match logged by new user.
 ${profileService.getPlayerContext()}
 Match Result: $_matchResult against ${_opponentController.text.trim()}
 ${_noteController.text.isNotEmpty ? 'Notes: ${_noteController.text}' : ''}
 Please provide a brief tactical insight to show the value of the app.
-      '''.trim();
-      
-      final response = await apiService.tacticalAnalysisSummary(matchDescription, []);
+      '''
+          .trim();
+
+      final response =
+          await apiService.tacticalAnalysisSummary(matchDescription, []);
 
       if (response == null && apiService.requiresUpgrade) {
         if (context.mounted) {
@@ -108,7 +102,7 @@ Please provide a brief tactical insight to show the value of the app.
         _aiInsight = response;
         _isLoadingInsight = false;
       });
-      
+
       _nextPage();
     } catch (e) {
       setState(() => _isLoadingInsight = false);
@@ -121,8 +115,9 @@ Please provide a brief tactical insight to show the value of the app.
   }
 
   Future<void> _completeOnboarding() async {
-    final profileService = Provider.of<PlayerProfileService>(context, listen: false);
-    
+    final profileService =
+        Provider.of<PlayerProfileService>(context, listen: false);
+
     if (_selectedLevel != null) {
       await profileService.setPlayerLevel(_selectedLevel!);
     }
@@ -130,7 +125,7 @@ Please provide a brief tactical insight to show the value of the app.
       await profileService.setPrimaryGoal(_selectedGoal!);
     }
     await profileService.completeOnboarding();
-    
+
     if (mounted) {
       Navigator.pushReplacement(
         context,
@@ -141,34 +136,33 @@ Please provide a brief tactical insight to show the value of the app.
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+      backgroundColor: AppTheme.scaffoldBackground(context),
       body: SafeArea(
         child: Column(
           children: [
             // Progress indicator
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppTheme.spaceLG),
               child: Row(
                 children: List.generate(5, (index) {
                   return Expanded(
                     child: Container(
                       height: 4,
-                      margin: EdgeInsets.only(right: index < 4 ? 8 : 0),
+                      margin: EdgeInsets.only(
+                          right: index < 4 ? AppTheme.spaceSM : 0),
                       decoration: BoxDecoration(
                         color: index <= _currentPage
                             ? AppTheme.primary
-                            : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+                            : AppTheme.borderColor(context),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       ),
                     ),
                   );
                 }),
               ),
             ),
-            
+
             // Pages
             Expanded(
               child: PageView(
@@ -194,7 +188,7 @@ Please provide a brief tactical insight to show the value of the app.
 
   Widget _buildWelcomePage() {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -203,37 +197,30 @@ Please provide a brief tactical insight to show the value of the app.
             '🎯',
             style: TextStyle(fontSize: 80),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             'Composure',
-            style: GoogleFonts.poppins(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+            style: AppTheme.headingLargeThemed(context).copyWith(fontSize: 36),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             'Your AI Tennis Strategist',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              color: Colors.grey[600],
-            ),
+            style: AppTheme.bodyLargeThemed(context),
           ),
-          const SizedBox(height: 48),
-          
+          const SizedBox(height: AppTheme.spaceXXL),
+
           // Features
           _buildFeatureRow('⚡', 'Log matches in 30 seconds'),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceMD),
           _buildFeatureRow('🧠', 'Get tactical analysis'),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceMD),
           _buildFeatureRow('📈', 'Track your improvement'),
-          
+
           const Spacer(),
-          
+
           // Get Started Button
-          _buildPrimaryButton('Get Started', _nextPage),
-          const SizedBox(height: 32),
+          CPrimaryButton(label: 'Get Started', onPressed: _nextPage),
+          const SizedBox(height: AppTheme.spaceXL),
         ],
       ),
     );
@@ -244,12 +231,11 @@ Please provide a brief tactical insight to show the value of the app.
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppTheme.spaceMD),
         Text(
           text,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            color: Colors.grey[700],
+          style: AppTheme.bodyMediumThemed(context).copyWith(
+            color: AppTheme.textSecondaryColor(context),
           ),
         ),
       ],
@@ -258,103 +244,107 @@ Please provide a brief tactical insight to show the value of the app.
 
   Widget _buildLevelPage() {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             "What's your level?",
-            style: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+            style: AppTheme.headingMediumThemed(context),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             "We'll tailor insights to your skill level",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: AppTheme.bodyMediumThemed(context),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
-          
+          const SizedBox(height: AppTheme.spaceXL),
+
           ...PlayerProfileService.levelOptions.map((level) {
             final isSelected = _selectedLevel == level['id'];
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  setState(() => _selectedLevel = level['id']);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary.withValues(alpha: 0.08) : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary : Colors.transparent,
-                      width: 2,
+              child: Semantics(
+                button: true,
+                selected: isSelected,
+                label: level['title'],
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _selectedLevel = level['id']);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primary.withValues(alpha: 0.08)
+                          : AppTheme.elevatedBackground(context),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.borderColor(context),
+                        width: isSelected ? 2 : 1,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? AppTheme.primary : Colors.grey,
-                            width: 2,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppTheme.primary
+                                  : AppTheme.textMutedColor(context),
+                              width: 2,
+                            ),
+                            color: isSelected
+                                ? AppTheme.primary
+                                : Colors.transparent,
                           ),
-                          color: isSelected ? AppTheme.primary : Colors.transparent,
+                          child: isSelected
+                              ? const Icon(Icons.check,
+                                  color: Colors.white, size: 16)
+                              : null,
                         ),
-                        child: isSelected
-                            ? const Icon(Icons.check, color: Colors.white, size: 16)
-                            : null,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              level['title']!,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[800],
+                        const SizedBox(width: AppTheme.spaceMD),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                level['title']!,
+                                style: AppTheme.bodyMediumThemed(context)
+                                    .copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textPrimaryColor(context),
+                                ),
                               ),
-                            ),
-                            Text(
-                              level['subtitle']!,
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                color: Colors.grey[600],
+                              Text(
+                                level['subtitle']!,
+                                style: AppTheme.bodySmallThemed(context),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             );
           }),
-          
+
           const Spacer(),
-          
-          _buildPrimaryButton(
-            'Continue',
-            _selectedLevel != null ? _nextPage : null,
+
+          CPrimaryButton(
+            label: 'Continue',
+            onPressed: _selectedLevel != null ? _nextPage : null,
           ),
           const SizedBox(height: 12),
           _buildSkipButton(),
@@ -365,78 +355,84 @@ Please provide a brief tactical insight to show the value of the app.
 
   Widget _buildGoalPage() {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             "What's your main goal?",
-            style: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+            style: AppTheme.headingMediumThemed(context),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             "We'll focus your insights on what matters",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: AppTheme.bodyMediumThemed(context),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
-          
+          const SizedBox(height: AppTheme.spaceXL),
+
           ...PlayerProfileService.goalOptions.map((goal) {
             final isSelected = _selectedGoal == goal['id'];
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  setState(() => _selectedGoal = goal['id']);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary.withValues(alpha: 0.08) : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(goal['emoji']!, style: const TextStyle(fontSize: 28)),
-                      const SizedBox(width: 16),
-                      Text(
-                        goal['title']!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: isSelected ? AppTheme.primary : Colors.grey[800],
-                        ),
+              child: Semantics(
+                button: true,
+                selected: isSelected,
+                label: goal['title'],
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() => _selectedGoal = goal['id']);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primary.withValues(alpha: 0.08)
+                          : AppTheme.elevatedBackground(context),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.borderColor(context),
+                        width: isSelected ? 2 : 1,
                       ),
-                      const Spacer(),
-                      if (isSelected)
-                        const Icon(Icons.check_circle, color: AppTheme.primary),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        Text(goal['emoji']!,
+                            style: const TextStyle(fontSize: 28)),
+                        const SizedBox(width: AppTheme.spaceMD),
+                        Text(
+                          goal['title']!,
+                          style:
+                              AppTheme.bodyMediumThemed(context).copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.textPrimaryColor(context),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (isSelected)
+                          const Icon(Icons.check_circle,
+                              color: AppTheme.primary),
+                      ],
+                    ),
                   ),
                 ),
               ),
             );
           }),
-          
+
           const Spacer(),
-          
-          _buildPrimaryButton(
-            'Continue',
-            _selectedGoal != null ? _nextPage : null,
+
+          CPrimaryButton(
+            label: 'Continue',
+            onPressed: _selectedGoal != null ? _nextPage : null,
           ),
           const SizedBox(height: 12),
           _buildSkipButton(),
@@ -447,157 +443,89 @@ Please provide a brief tactical insight to show the value of the app.
 
   Widget _buildMatchPage() {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceLG),
           Text(
             "Log your last match",
-            style: GoogleFonts.poppins(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+            style: AppTheme.headingMediumThemed(context),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Text(
             "Get instant tactical insights",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: AppTheme.bodyMediumThemed(context),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
-          
+          const SizedBox(height: AppTheme.spaceXL),
+
           // Opponent name
           Text(
             'Opponent',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
+            style: AppTheme.bodyMediumThemed(context).copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+              color: AppTheme.textSecondaryColor(context),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           TextField(
             controller: _opponentController,
-            style: GoogleFonts.poppins(),
-            decoration: InputDecoration(
-              hintText: 'Who did you play?',
-              hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.all(16),
-            ),
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: AppTheme.textPrimaryColor(context)),
+            decoration:
+                AppTheme.inputDecorationThemed(context, hint: 'Who did you play?'),
           ),
           const SizedBox(height: 20),
-          
+
           // Result toggle
           Text(
             'Result',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
+            style: AppTheme.bodyMediumThemed(context).copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+              color: AppTheme.textSecondaryColor(context),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           Row(
             children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _matchResult = 'Win');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: _matchResult == 'Win' ? AppTheme.win : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '🏆 WIN',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: _matchResult == 'Win' ? Colors.white : Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              Expanded(child: _buildResultToggle('Win', '🏆 WIN', AppTheme.win)),
               const SizedBox(width: 12),
               Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    setState(() => _matchResult = 'Loss');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: _matchResult == 'Loss' ? AppTheme.loss : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '💪 LOSS',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: _matchResult == 'Loss' ? Colors.white : Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+                  child: _buildResultToggle('Loss', '💪 LOSS', AppTheme.loss)),
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Quick note
           Text(
             'One thing that stood out',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
+            style: AppTheme.bodyMediumThemed(context).copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+              color: AppTheme.textSecondaryColor(context),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppTheme.spaceSM),
           TextField(
             controller: _noteController,
-            style: GoogleFonts.poppins(),
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: AppTheme.textPrimaryColor(context)),
             maxLines: 2,
-            decoration: InputDecoration(
-              hintText: 'e.g., "My serve was on fire" or "Struggled with returns"',
-              hintStyle: GoogleFonts.poppins(color: Colors.grey[400], fontSize: 14),
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.all(16),
+            decoration: AppTheme.inputDecorationThemed(
+              context,
+              hint:
+                  'e.g., "My serve was on fire" or "Struggled with returns"',
             ),
           ),
-          
+
           const Spacer(),
-          
-          _buildPrimaryButton(
-            _isLoadingInsight ? 'Analyzing...' : 'Get My Analysis →',
-            _isLoadingInsight ? null : _getFirstInsight,
+
+          CPrimaryButton(
+            label: 'Get My Analysis →',
+            loading: _isLoadingInsight,
+            loadingLabel: 'Analyzing...',
+            onPressed: _isLoadingInsight ? null : _getFirstInsight,
           ),
           const SizedBox(height: 12),
           Center(
@@ -605,7 +533,8 @@ Please provide a brief tactical insight to show the value of the app.
               onPressed: _skipToHome,
               child: Text(
                 'Skip for now',
-                style: GoogleFonts.poppins(color: Colors.grey[600]),
+                style: AppTheme.bodyMediumThemed(context)
+                    .copyWith(color: AppTheme.textMutedColor(context)),
               ),
             ),
           ),
@@ -614,41 +543,84 @@ Please provide a brief tactical insight to show the value of the app.
     );
   }
 
+  Widget _buildResultToggle(String value, String label, Color activeColor) {
+    final isSelected = _matchResult == value;
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: value,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          setState(() => _matchResult = value);
+        },
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spaceMD),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? activeColor
+                : AppTheme.elevatedBackground(context),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+            border: Border.all(
+              color: isSelected
+                  ? activeColor
+                  : AppTheme.borderColor(context),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppTheme.bodyMediumThemed(context).copyWith(
+                fontWeight: FontWeight.w600,
+                color: isSelected
+                    ? Colors.white
+                    : AppTheme.textMutedColor(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildInsightPage() {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppTheme.spaceXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: AppTheme.spaceLG),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppTheme.spaceMD),
             decoration: BoxDecoration(
               color: AppTheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+              border: Border.all(
+                  color: AppTheme.primary.withValues(alpha: 0.20)),
             ),
             child: Row(
               children: [
                 const Text('🎯', style: TextStyle(fontSize: 32)),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppTheme.spaceMD),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Your First Tactical Insight',
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.headingSmallThemed(context).copyWith(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryDark,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.isDark(context)
+                              ? AppTheme.primaryLight
+                              : AppTheme.primaryDark,
                         ),
                       ),
                       Text(
                         'Based on your match vs ${_opponentController.text}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppTheme.primary,
-                        ),
+                        style: AppTheme.bodySmallThemed(context)
+                            .copyWith(color: AppTheme.primary),
                       ),
                     ],
                   ),
@@ -656,29 +628,23 @@ Please provide a brief tactical insight to show the value of the app.
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          
+          const SizedBox(height: AppTheme.spaceLG),
+
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
+              decoration: AppTheme.cardDecorationThemed(context),
               child: _aiInsight == null
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const CircularProgressIndicator(color: AppTheme.primary),
-                          const SizedBox(height: 16),
+                          const CircularProgressIndicator(
+                              color: AppTheme.primary),
+                          const SizedBox(height: AppTheme.spaceMD),
                           Text(
                             'Analyzing your match...',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                            style: AppTheme.bodySmallThemed(context),
                           ),
                         ],
                       ),
@@ -686,79 +652,32 @@ Please provide a brief tactical insight to show the value of the app.
                   : SingleChildScrollView(
                       child: Text(
                         _aiInsight!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
+                        style: AppTheme.bodyMediumThemed(context).copyWith(
                           height: 1.7,
-                          color: Colors.grey[800],
+                          color: AppTheme.textPrimaryColor(context),
                         ),
                       ),
                     ),
             ),
           ),
-          
-          const SizedBox(height: 24),
-          
+
+          const SizedBox(height: AppTheme.spaceLG),
+
           Text(
             'Your account is ready.',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
+            style: AppTheme.bodyMediumThemed(context).copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
+              color: AppTheme.textSecondaryColor(context),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppTheme.spaceMD),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _completeOnboarding,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Continue to Home',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          CPrimaryButton(
+            label: 'Continue to Home',
+            onPressed: _completeOnboarding,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPrimaryButton(String label, VoidCallback? onPressed) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: onPressed != null
-                ? [AppTheme.primary, AppTheme.primaryDark]
-                : [Colors.grey.shade400, Colors.grey.shade500],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: onPressed != null ? AppTheme.ctaGlow : null,
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -769,7 +688,8 @@ Please provide a brief tactical insight to show the value of the app.
         onPressed: _skipToHome,
         child: Text(
           'Skip',
-          style: GoogleFonts.poppins(color: Colors.grey[600]),
+          style: AppTheme.bodyMediumThemed(context)
+              .copyWith(color: AppTheme.textMutedColor(context)),
         ),
       ),
     );

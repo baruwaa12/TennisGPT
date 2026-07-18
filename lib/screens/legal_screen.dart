@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 enum LegalDocumentType {
@@ -39,34 +38,25 @@ class LegalScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
+      backgroundColor: AppTheme.scaffoldBackground(context),
       appBar: AppBar(
         title: Text(
           _title,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: AppTheme.headingSmallThemed(context)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.surfaceCard : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
+        padding: const EdgeInsets.all(AppTheme.spaceMD),
+        child: TGCard(
+          padding: AppTheme.cardPaddingLarge,
           child: Text(
             _content,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: isDark ? Colors.grey[300] : Colors.grey[700],
-              height: 1.6,
-            ),
+            style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.6),
           ),
         ),
       ),

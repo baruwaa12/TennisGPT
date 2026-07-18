@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../services/auth_service.dart';
@@ -44,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authService.error!),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.loss,
         ),
       );
       authService.clearError();
@@ -78,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.loss,
           ),
         );
       }
@@ -112,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.loss,
           ),
         );
       }
@@ -121,19 +120,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // ============ Consistent button dimensions ============
   static const double _authButtonHeight = 56.0;
-  static const double _authButtonRadius = 12.0;
+  static const double _authButtonRadius = AppTheme.radiusLG;
   static const double _authButtonFontSize = 16.0;
   static const EdgeInsets _authButtonPadding =
-      EdgeInsets.symmetric(horizontal: 24);
+      EdgeInsets.symmetric(horizontal: AppTheme.spaceLG);
 
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final isLoading = authService.isLoading;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = AppTheme.isDark(context);
 
-    final textColor = isDark ? Colors.white : Colors.grey[800]!;
+    final textColor = AppTheme.textPrimaryColor(context);
     final subtitleColor = isDark ? AppTheme.primaryLight : AppTheme.primaryDark;
 
     return Scaffold(
@@ -152,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(AppTheme.spaceLG),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -161,8 +159,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: isDark ? AppTheme.surfaceCard : Colors.white,
-                        borderRadius: BorderRadius.circular(60),
+                        color: AppTheme.cardBackground(context),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusFull),
                         boxShadow: [
                           BoxShadow(
                             color: AppTheme.primary
@@ -184,14 +183,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     // App Title
                     Text(
                       'Composure',
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.headingLargeThemed(context).copyWith(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppTheme.primaryDark,
+                        color:
+                            isDark ? AppTheme.textPrimary : AppTheme.primaryDark,
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppTheme.spaceSM),
 
                     // Updated Subtitle — elite positioning
                     Padding(
@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'Structured Tactical Intelligence for Competitive Players',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.bodyMediumThemed(context).copyWith(
                           fontSize: 14,
                           color: subtitleColor,
                           fontWeight: FontWeight.w500,
@@ -208,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: AppTheme.spaceXXL),
 
                     // ============ Auth Buttons (consistent) ============
 
@@ -217,9 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: _authButtonHeight,
                       child: Material(
-                        color: isDark
-                            ? AppTheme.surfaceCard
-                            : Colors.white,
+                        color: AppTheme.cardBackground(context),
                         borderRadius:
                             BorderRadius.circular(_authButtonRadius),
                         elevation: isDark ? 0 : 2,
@@ -246,12 +244,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   )
                                 else
                                   // Google "G" — no white box, transparent
-                                  Text(
+                                  const Text(
                                     'G',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(
+                                      fontFamily: AppTheme.fontFamily,
+                                      fontVariations:
+                                          AppTheme.fontVariationsSemiExpanded,
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF4285F4),
+                                      // Google brand blue — intentionally kept.
+                                      color: Color(0xFF4285F4),
                                     ),
                                   ),
                                 const SizedBox(width: 12),
@@ -259,7 +261,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   isLoading
                                       ? 'Signing in...'
                                       : 'Continue with Google',
-                                  style: GoogleFonts.poppins(
+                                  style: AppTheme.bodyMediumThemed(context)
+                                      .copyWith(
                                     fontSize: _authButtonFontSize,
                                     fontWeight: FontWeight.w600,
                                     color: textColor,
@@ -285,9 +288,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: _authButtonHeight,
                             child: Material(
-                              color: isDark
-                                  ? Colors.white
-                                  : Colors.black,
+                              // Apple sign-in brand surface (black / white).
+                              color: isDark ? Colors.white : Colors.black,
                               borderRadius: BorderRadius.circular(
                                   _authButtonRadius),
                               child: InkWell(
@@ -312,7 +314,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       const SizedBox(width: 12),
                                       Text(
                                         'Continue with Apple',
-                                        style: GoogleFonts.poppins(
+                                        style: AppTheme.bodyMediumThemed(context)
+                                            .copyWith(
                                           fontSize: _authButtonFontSize,
                                           fontWeight: FontWeight.w600,
                                           color: isDark
@@ -330,7 +333,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppTheme.spaceLG),
 
                     // Continue without signing in
                     TextButton(
@@ -345,7 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                       child: Text(
                         'Continue without signing in',
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.bodyMediumThemed(context).copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: subtitleColor.withValues(alpha: 0.7),
@@ -354,15 +357,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppTheme.spaceLG),
 
                     // Updated Feature bullets — analytical positioning
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(AppTheme.spaceLG),
                       decoration: BoxDecoration(
-                        color: (isDark ? AppTheme.surfaceCard : Colors.white)
+                        color: AppTheme.cardBackground(context)
                             .withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius:
+                            BorderRadius.circular(AppTheme.radiusLG),
                       ),
                       child: Column(
                         children: [
@@ -372,14 +376,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             subtitle:
                                 'Structured insights from match data',
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppTheme.spaceMD),
                           _buildFeatureItem(
                             icon: Icons.pattern_rounded,
                             title: 'Match Pattern Tracking',
                             subtitle:
                                 'Identify recurring trends across matches',
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppTheme.spaceMD),
                           _buildFeatureItem(
                             icon: Icons.psychology_outlined,
                             title: 'Mental Stability Insights',
@@ -404,11 +408,11 @@ class _LoginScreenState extends State<LoginScreen> {
     required String title,
     required String subtitle,
   }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = AppTheme.isDark(context);
 
-    final titleColor = isDark ? Colors.white : Colors.grey[800]!;
-    final subtitleColor = isDark ? Colors.grey[400]! : AppTheme.primaryDark;
+    final titleColor = AppTheme.textPrimaryColor(context);
+    final subtitleColor =
+        isDark ? AppTheme.textMutedColor(context) : AppTheme.primaryDark;
     final iconBgColor = isDark
         ? AppTheme.primary.withValues(alpha: 0.15)
         : AppTheme.primary.withValues(alpha: 0.1);
@@ -416,10 +420,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppTheme.spaceSM),
           decoration: BoxDecoration(
             color: iconBgColor,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           ),
           child: Icon(
             icon,
@@ -434,7 +438,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.poppins(
+                style: AppTheme.bodyMediumThemed(context).copyWith(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: titleColor,
@@ -442,7 +446,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               Text(
                 subtitle,
-                style: GoogleFonts.poppins(
+                style: AppTheme.bodySmallThemed(context).copyWith(
                   fontSize: 12,
                   color: subtitleColor,
                 ),

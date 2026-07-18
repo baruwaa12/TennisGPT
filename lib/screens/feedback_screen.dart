@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 import '../theme/app_theme.dart';
+import '../widgets/composure_kit.dart';
 import '../config/app_config.dart';
 
 /// Send Feedback Screen
@@ -74,8 +74,12 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
     if (feedback.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter your feedback', style: GoogleFonts.poppins()),
-          backgroundColor: Colors.orange,
+          content: Text(
+            'Please enter your feedback',
+            style: AppTheme.bodyMediumThemed(context)
+                .copyWith(color: Colors.white),
+          ),
+          backgroundColor: AppTheme.warning,
         ),
       );
       return;
@@ -103,7 +107,8 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
             SnackBar(
               content: Text(
                 'Opening email app...',
-                style: GoogleFonts.poppins(),
+                style: AppTheme.bodyMediumThemed(context)
+                    .copyWith(color: Colors.white),
               ),
               backgroundColor: AppTheme.primary,
             ),
@@ -119,9 +124,10 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
           SnackBar(
             content: Text(
               'Could not open email. Please email $_supportEmail directly.',
-              style: GoogleFonts.poppins(),
+              style: AppTheme.bodyMediumThemed(context)
+                  .copyWith(color: Colors.white),
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.loss,
             duration: const Duration(seconds: 5),
           ),
         );
@@ -141,14 +147,13 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.grey[50],
+      backgroundColor: AppTheme.scaffoldBackground(context),
       appBar: AppBar(
         title: Text(
           'Send Feedback',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: AppTheme.headingSmallThemed(context)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -157,24 +162,20 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppTheme.spaceMD),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.surfaceCard : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              TGCard(
+                padding: AppTheme.cardPaddingLarge,
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppTheme.spaceMD),
                       decoration: BoxDecoration(
                         color: AppTheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
                       child: const Icon(
                         Icons.feedback_outlined,
@@ -182,25 +183,20 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                         size: 28,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppTheme.spaceMD),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'We\'d love to hear from you',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.grey[800],
-                            ),
+                            style: AppTheme.headingSmallThemed(context)
+                                .copyWith(fontSize: 16),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             'Your feedback helps us improve',
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: Colors.grey[500],
-                            ),
+                            style: AppTheme.bodySmallThemed(context),
                           ),
                         ],
                       ),
@@ -209,111 +205,113 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceLG),
               
               // Category selection
               Text(
                 'What\'s this about?',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
+                style: AppTheme.bodyMediumThemed(context).copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey[800],
+                  color: AppTheme.textPrimaryColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: AppTheme.spaceSM,
+                runSpacing: AppTheme.spaceSM,
                 children: _categories.map((category) {
                   final isSelected = _selectedCategory == category['id'];
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedCategory = category['id']!);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.primary.withValues(alpha: 0.1)
-                            : (isDark ? AppTheme.surfaceCard : Colors.white),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? AppTheme.primary : Colors.grey.shade300,
-                          width: isSelected ? 2 : 1,
+                  return Semantics(
+                    button: true,
+                    selected: isSelected,
+                    label: category['label'],
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _selectedCategory = category['id']!);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        constraints: const BoxConstraints(minHeight: 44),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spaceMD,
+                          vertical: 10,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(category['emoji']!),
-                          const SizedBox(width: 6),
-                          Text(
-                            category['label']!,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              color: isSelected
-                                  ? AppTheme.primary
-                                  : (isDark ? Colors.white : Colors.grey[700]),
-                            ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.primary.withValues(alpha: 0.1)
+                              : AppTheme.cardBackground(context),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.radiusFull),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppTheme.primary
+                                : AppTheme.borderColor(context),
+                            width: isSelected ? 2 : 1,
                           ),
-                        ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(category['emoji']!),
+                            const SizedBox(width: 6),
+                            Text(
+                              category['label']!,
+                              style: AppTheme.bodySmallThemed(context).copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: isSelected
+                                    ? AppTheme.primary
+                                    : AppTheme.textSecondaryColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
                 }).toList(),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceLG),
               
               // Feedback input
               Text(
                 'Your feedback',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
+                style: AppTheme.bodyMediumThemed(context).copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey[800],
+                  color: AppTheme.textPrimaryColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
               Container(
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.surfaceCard : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? AppTheme.surfaceBorder : Colors.grey.shade300),
-                ),
+                decoration: AppTheme.cardDecorationThemed(context),
                 child: TextField(
                   controller: _feedbackController,
                   maxLines: 6,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: isDark ? Colors.white : Colors.grey[800],
+                  style: AppTheme.bodyMediumThemed(context).copyWith(
+                    color: AppTheme.textPrimaryColor(context),
                   ),
                   decoration: InputDecoration(
                     hintText: 'Tell us what\'s on your mind...',
-                    hintStyle: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey[400],
+                    hintStyle: AppTheme.bodyMediumThemed(context).copyWith(
+                      color: AppTheme.textMutedColor(context),
                     ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.all(AppTheme.spaceMD),
                   ),
                 ),
               ),
               
-              const SizedBox(height: 12),
+              const SizedBox(height: AppTheme.spaceMD),
               
               // Device info note
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppTheme.spaceMD),
                 decoration: BoxDecoration(
                   color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: Row(
                   children: [
@@ -322,12 +320,11 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                       size: 16,
                       color: AppTheme.primary,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppTheme.spaceSM),
                     Expanded(
                       child: Text(
                         'App version and device info will be included automatically',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
+                        style: AppTheme.bodySmallThemed(context).copyWith(
                           color: AppTheme.primary,
                         ),
                       ),
@@ -336,55 +333,28 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: AppTheme.spaceLG),
               
               // Send button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSending ? null : _sendFeedback,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isSending
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          'Send Feedback',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              CPrimaryButton(
+                label: 'Send Feedback',
+                loading: _isSending,
+                loadingLabel: 'Sending...',
+                onPressed: _isSending ? null : _sendFeedback,
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spaceMD),
               
               // Direct email option
               Center(
                 child: Text(
                   'Or email us directly at $_supportEmail',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: AppTheme.bodySmallThemed(context),
+                  textAlign: TextAlign.center,
                 ),
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: AppTheme.spaceXL),
             ],
           ),
         ),
@@ -392,4 +362,3 @@ Category: ${_categories.firstWhere((c) => c['id'] == _selectedCategory)['label']
     );
   }
 }
-

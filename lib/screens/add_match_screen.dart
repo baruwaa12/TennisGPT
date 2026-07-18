@@ -6,6 +6,7 @@ import '../services/match_history_service.dart';
 import '../utils/match_format_utils.dart';
 import '../widgets/voice_input_button.dart';
 import '../widgets/guided_set_score_editor.dart';
+import '../widgets/composure_kit.dart';
 
 /// Add Match Screen (Detailed)
 ///
@@ -732,42 +733,12 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   }
 
   Widget _buildSaveButton() {
-    return GestureDetector(
-      onTap: _isSaving ? null : _saveMatch,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: AppTheme.primary,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        ),
-        child: Center(
-          child: _isSaving
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: AppTheme.surfaceDark,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                    const SizedBox(width: AppTheme.spaceSM),
-                    Text(
-                      'Saving...',
-                      style:
-                          AppTheme.headingSmall.copyWith(color: AppTheme.surfaceDark),
-                    ),
-                  ],
-                )
-              : Text(
-                  'Save match',
-                  style: AppTheme.headingSmall.copyWith(color: AppTheme.surfaceDark),
-                ),
-        ),
-      ),
+    return CPrimaryButton(
+      label: 'Save match',
+      icon: Icons.check_rounded,
+      loading: _isSaving,
+      loadingLabel: 'Saving...',
+      onPressed: _isSaving ? null : _saveMatch,
     );
   }
 }

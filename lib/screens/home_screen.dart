@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../theme/broadcast_theme.dart';
-import '../widgets/broadcast_kit.dart';
 import '../widgets/ui_kit.dart';
+import '../widgets/composure_kit.dart';
 import '../services/auth_service.dart';
 import '../services/match_history_service.dart';
 import '../models/match_performance.dart';
@@ -14,10 +13,9 @@ import 'quick_match_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 
-/// Home Screen — Broadcast.
-/// A sports "match centre" rendered on a dark TV-graphics canvas: high-contrast
-/// scoreboard hero, tabular numbers, electric-lime accent rules, uppercase
-/// labels, and fixtures-style result lists.
+/// Home Screen — ComposureDesign1.
+/// The "match centre": a win-rate hero, quick actions, recent results and the
+/// tactical coach entry, styled with the ComposureDesign1 token system.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -33,8 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _totalMatches = 0;
   bool _isLoading = true;
   bool _hasLoadedOnce = false;
-
-  late BroadcastTheme _bc;
 
   @override
   void initState() {
@@ -160,8 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _bc = BroadcastTheme.of(context);
-
+    final dark = AppTheme.isDark(context);
     final authService = Provider.of<AuthService>(context);
     final firstName = authService.isGuest
         ? 'Player'
@@ -171,44 +166,40 @@ class _HomeScreenState extends State<HomeScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            _bc.dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: _bc.dark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
       ),
-      child: Theme(
-        data: _bc.themeData,
-        child: Scaffold(
-          backgroundColor: _bc.bg,
-          body: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: _loadStats,
-              color: _bc.accentInk,
-              backgroundColor: _bc.panel,
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(child: _broadcastHeader(firstName)),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG, 0,
-                        AppTheme.spaceLG, AppTheme.spaceXXL),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate(
-                        showSkeleton
-                            ? const [
-                                SkeletonBox(
-                                    height: 150, radius: AppTheme.radiusSM),
-                                SizedBox(height: AppTheme.spaceMD),
-                                SkeletonBox(
-                                    height: 84, radius: AppTheme.radiusSM),
-                              ]
-                            : _totalMatches == 0
-                                ? [_broadcastEmpty()]
-                                : _broadcastBody(),
-                      ),
+      child: Scaffold(
+        backgroundColor: AppTheme.scaffoldBackground(context),
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadStats,
+            color: AppTheme.primary,
+            backgroundColor: AppTheme.cardBackground(context),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _header(firstName)),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG, 0,
+                      AppTheme.spaceLG, AppTheme.spaceXXL),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate(
+                      showSkeleton
+                          ? const [
+                              SkeletonBox(
+                                  height: 150, radius: AppTheme.radiusLG),
+                              SizedBox(height: AppTheme.spaceMD),
+                              SkeletonBox(
+                                  height: 84, radius: AppTheme.radiusLG),
+                            ]
+                          : _totalMatches == 0
+                              ? [_emptyState()]
+                              : _body(),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -216,32 +207,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastHeader(String firstName) {
+  Widget _header(String firstName) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppTheme.spaceLG, AppTheme.spaceLG,
           AppTheme.spaceMD, AppTheme.spaceMD),
       child: Row(
         children: [
-          Container(width: 4, height: 36, color: _bc.accentInk),
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'MATCH CENTRE',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(color: _bc.accentInk, letterSpacing: 2.5),
-                ),
+                const CEyebrow('Match Centre'),
                 const SizedBox(height: 2),
                 Text(
-                  firstName.toUpperCase(),
+                  firstName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTheme.headingMediumThemed(context).copyWith(
-                      letterSpacing: -0.4,
-                      fontWeight: FontWeight.w700,
-                      color: _bc.textPrimary),
+                  style: AppTheme.headingLargeThemed(context)
+                      .copyWith(fontSize: 30),
                 ),
               ],
             ),
@@ -252,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
             iconSize: 22,
             style: IconButton.styleFrom(
               minimumSize: const Size(44, 44),
-              foregroundColor: _bc.textMuted,
+              foregroundColor: AppTheme.textMutedColor(context),
             ),
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -261,23 +253,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<Widget> _broadcastBody() {
+  List<Widget> _body() {
     return [
-      _broadcastHero(),
+      _hero(),
       const SizedBox(height: AppTheme.spaceLG),
-      _broadcastCta(),
+      CPrimaryButton(
+        label: 'Log a match',
+        icon: Icons.add_rounded,
+        onPressed: _openQuickMatch,
+      ),
       const SizedBox(height: AppTheme.spaceXL),
       if (_recentMatches.isNotEmpty) ...[
-        _broadcastRecent(),
+        _recent(),
         const SizedBox(height: AppTheme.spaceXL),
       ],
-      _broadcastCoachCard(),
+      _coachCard(),
     ];
   }
 
   /// Form delta: win rate over the last 5 matches vs overall win rate.
-  /// Positive means the player is trending above their baseline.
-  /// Returns null when there isn't enough history for it to mean anything.
   int? _formDeltaPct() {
     if (_totalMatches < 6 || _recentMatches.isEmpty) return null;
     final window = _recentMatches.take(5).toList();
@@ -285,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return ((windowRate - _winRate) * 100).round();
   }
 
-  Widget _broadcastHero() {
+  Widget _hero() {
     final winPct = (_winRate * 100).round();
     final wins = (_winRate * _totalMatches).round();
     final losses = _totalMatches - wins;
@@ -298,74 +292,74 @@ class _HomeScreenState extends State<HomeScreen> {
           ', form ${formDelta >= 0 ? "up" : "down"} ${formDelta.abs()} percent');
     }
 
-    return BroadcastPanel(
-      bc: _bc,
-      accentRule: true,
-      semanticLabel: semantics.toString(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('WIN %',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(color: _bc.accentInk, letterSpacing: 2)),
-              const SizedBox(height: 2),
-              Text(
-                '$winPct',
-                style: AppTheme.scorelineThemed(context, size: 68)
-                    .copyWith(height: 0.95, color: _bc.textPrimary),
-              ),
-            ],
-          ),
-          const SizedBox(width: AppTheme.spaceLG),
-          Container(width: 1, height: 92, color: _bc.border),
-          const SizedBox(width: AppTheme.spaceLG),
-          Expanded(
-            child: Column(
+    return Semantics(
+      label: semantics.toString(),
+      child: TGCard(
+        padding: AppTheme.cardPaddingLarge,
+        elevated: true,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _broadcastHeroLine('RECORD', '$wins–$losses'),
-                if (formDelta != null) ...[
-                  const SizedBox(height: 12),
-                  _broadcastFormLine(formDelta),
-                ],
+                const CEyebrow('Win %'),
+                const SizedBox(height: 2),
+                Text(
+                  '$winPct',
+                  style: AppTheme.scorelineThemed(context, size: 64)
+                      .copyWith(height: 0.95),
+                ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(width: AppTheme.spaceLG),
+            Container(
+                width: 1, height: 92, color: AppTheme.borderColor(context)),
+            const SizedBox(width: AppTheme.spaceLG),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _heroLine('Record', '$wins–$losses'),
+                  if (formDelta != null) ...[
+                    const SizedBox(height: 12),
+                    _formLine(formDelta),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _broadcastHeroLine(String label, String value) {
+  Widget _heroLine(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: AppTheme.labelThemed(context)
-                .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+        Text(label.toUpperCase(),
+            style: AppTheme.labelThemed(context).copyWith(
+                letterSpacing: 1.4, color: AppTheme.textMutedColor(context))),
         Text(value,
-            style: AppTheme.scorelineThemed(context, size: 18)
-                .copyWith(color: _bc.textPrimary)),
+            style: AppTheme.scorelineThemed(context, size: 18)),
       ],
     );
   }
 
-  Widget _broadcastFormLine(int delta) {
+  Widget _formLine(int delta) {
     final Color color;
     final IconData arrow;
     if (delta > 0) {
-      color = _bc.win;
+      color = AppTheme.win;
       arrow = Icons.arrow_upward_rounded;
     } else if (delta < 0) {
-      color = _bc.loss;
+      color = AppTheme.loss;
       arrow = Icons.arrow_downward_rounded;
     } else {
-      color = _bc.textMuted;
+      color = AppTheme.textMutedColor(context);
       arrow = Icons.arrow_forward_rounded;
     }
     final sign = delta > 0 ? '+' : (delta < 0 ? '−' : '');
@@ -374,8 +368,8 @@ class _HomeScreenState extends State<HomeScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('FORM',
-            style: AppTheme.labelThemed(context)
-                .copyWith(letterSpacing: 1.5, color: _bc.textMuted)),
+            style: AppTheme.labelThemed(context).copyWith(
+                letterSpacing: 1.4, color: AppTheme.textMutedColor(context))),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -390,35 +384,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastCta() {
-    return BroadcastCta(
-      label: 'LOG A MATCH',
-      icon: Icons.add_rounded,
-      onPressed: _openQuickMatch,
-    );
-  }
-
-  Widget _broadcastRecent() {
+  Widget _recent() {
     final items = _recentMatches.take(5).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BroadcastSectionHeader(
-          bc: _bc,
+        CSectionHeader(
           title: 'Recent results',
           actionLabel: 'View all',
           onAction: _openMatchHistory,
         ),
         const SizedBox(height: AppTheme.spaceXS),
-        BroadcastPanel(
-          bc: _bc,
+        TGCard(
           padding: EdgeInsets.zero,
           child: Column(
             children: [
               for (int i = 0; i < items.length; i++) ...[
-                _broadcastMatchRow(items[i]),
+                _matchRow(items[i]),
                 if (i != items.length - 1)
-                  Divider(height: 1, color: _bc.border),
+                  Divider(height: 1, color: AppTheme.borderColor(context)),
               ],
             ],
           ),
@@ -427,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _broadcastMatchRow(MatchPerformance m) {
+  Widget _matchRow(MatchPerformance m) {
     final isWin = _isWin(m);
     final score =
         m.scoreLine.isNotEmpty ? m.scoreLine : '${m.setsWon}-${m.setsLost}';
@@ -437,12 +421,13 @@ class _HomeScreenState extends State<HomeScreen> {
         HapticFeedback.lightImpact();
         _openMatchHistory();
       },
+      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
       child: Padding(
         padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.spaceMD, vertical: AppTheme.spaceMD),
         child: Row(
           children: [
-            BroadcastResultBadge(bc: _bc, isWin: isWin),
+            CResultBadge(isWin: isWin),
             const SizedBox(width: AppTheme.spaceMD),
             Expanded(
               child: Column(
@@ -453,78 +438,108 @@ class _HomeScreenState extends State<HomeScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTheme.headingSmallThemed(context)
-                        .copyWith(fontSize: 16, color: _bc.textPrimary),
+                        .copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 2),
                   Text('${_formatDate(m.date)} · ${m.surface.toUpperCase()}',
-                      style: AppTheme.labelThemed(context)
-                          .copyWith(color: _bc.textMuted)),
+                      style: AppTheme.labelThemed(context).copyWith(
+                          color: AppTheme.textMutedColor(context))),
                 ],
               ),
             ),
             const SizedBox(width: AppTheme.spaceSM),
-            BroadcastScoreline(bc: _bc, raw: score),
+            _scoreline(score),
           ],
         ),
       ),
     );
   }
 
-  Widget _broadcastCoachCard() {
-    return BroadcastPanel(
-      bc: _bc,
-      raised: true,
-      onTap: _openCoach,
-      semanticLabel: 'Open tactical coach',
-      child: Row(
-        children: [
-          Icon(Icons.insights_rounded, color: _bc.accentInk, size: 26),
-          const SizedBox(width: AppTheme.spaceMD),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('TACTICAL COACH',
-                    style: AppTheme.labelThemed(context).copyWith(
-                        letterSpacing: 2,
-                        color: _bc.textPrimary,
-                        fontSize: 14)),
-                const SizedBox(height: 3),
-                Text('AI breakdown of your match patterns',
-                    style: AppTheme.bodySmallThemed(context)
-                        .copyWith(color: _bc.textSecondary)),
-              ],
+  /// Monospace scoreline with lost sets dimmed so the eye lands on sets won.
+  Widget _scoreline(String raw, {double size = 17}) {
+    final sets = raw.trim().isEmpty
+        ? const <String>[]
+        : raw.trim().split(RegExp(r'\s+'));
+    if (sets.isEmpty) {
+      return Text('—', style: AppTheme.scorelineThemed(context, size: size));
+    }
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (int i = 0; i < sets.length; i++)
+          Padding(
+            padding:
+                EdgeInsets.only(right: i == sets.length - 1 ? 0 : size * 0.32),
+            child: Text(
+              sets[i],
+              style: AppTheme.scorelineThemed(context, size: size).copyWith(
+                color: _wonSet(sets[i])
+                    ? AppTheme.textPrimaryColor(context)
+                    : AppTheme.textMutedColor(context).withValues(alpha: 0.7),
+              ),
             ),
           ),
-          Icon(Icons.arrow_forward_rounded, color: _bc.accentInk, size: 20),
-        ],
+      ],
+    );
+  }
+
+  bool _wonSet(String token) {
+    final clean = token.replaceAll(RegExp(r'\(.*?\)'), '');
+    final parts = clean.split('-');
+    if (parts.length < 2) return true;
+    final me = int.tryParse(parts[0].trim()) ?? 0;
+    final opp = int.tryParse(parts[1].trim()) ?? 0;
+    return me >= opp;
+  }
+
+  Widget _coachCard() {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _openCoach();
+      },
+      child: Semantics(
+        button: true,
+        label: 'Open tactical coach',
+        child: Container(
+          decoration: AppTheme.elevatedCardDecorationThemed(context),
+          padding: AppTheme.cardPaddingLarge,
+          child: Row(
+            children: [
+              const Icon(Icons.insights_rounded,
+                  color: AppTheme.primary, size: 26),
+              const SizedBox(width: AppTheme.spaceMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Tactical Coach',
+                        style: AppTheme.headingSmallThemed(context)
+                            .copyWith(fontSize: 16)),
+                    const SizedBox(height: 3),
+                    Text('AI breakdown of your match patterns',
+                        style: AppTheme.bodySmallThemed(context)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_rounded,
+                  color: AppTheme.primary, size: 20),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _broadcastEmpty() {
-    return BroadcastPanel(
-      bc: _bc,
-      semanticLabel: 'No matches yet. Log your first match.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('NO MATCHES YET',
-              style: AppTheme.labelThemed(context)
-                  .copyWith(color: _bc.accentInk, letterSpacing: 2)),
-          const SizedBox(height: AppTheme.spaceSM),
-          Text('Log your first match',
-              style: AppTheme.headingMediumThemed(context)
-                  .copyWith(color: _bc.textPrimary)),
-          const SizedBox(height: AppTheme.spaceXS),
-          Text(
-            'Your win rate, form and AI coaching all unlock from here.',
-            style: AppTheme.bodyMediumThemed(context)
-                .copyWith(color: _bc.textSecondary),
-          ),
-          const SizedBox(height: AppTheme.spaceLG),
-          _broadcastCta(),
-        ],
+  Widget _emptyState() {
+    return CEmptyState(
+      eyebrow: 'No matches yet',
+      title: 'Log your first match',
+      message: 'Your win rate, form and AI coaching all unlock from here.',
+      action: CPrimaryButton(
+        label: 'Log a match',
+        icon: Icons.add_rounded,
+        onPressed: _openQuickMatch,
       ),
     );
   }

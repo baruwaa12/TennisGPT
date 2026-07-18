@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../theme/broadcast_theme.dart';
-import '../widgets/broadcast_kit.dart';
+import '../widgets/composure_kit.dart';
 import '../widgets/ui_kit.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
@@ -21,10 +20,10 @@ import '../widgets/voice_input_button.dart';
 import '../utils/ai_disclosure_consent.dart';
 import '../utils/paywall_navigation.dart';
 
-/// Coach Screen — Broadcast.
-/// Scoreboard chrome on a dark TV-graphics canvas: uppercase tabs, a form
-/// panel, and a bold electric-lime review CTA, fronting an AI tactical
-/// breakdown of the player's recent matches.
+/// Coach Screen — ComposureDesign1.
+/// A calm intelligence surface: uppercase tabs, a form card, and a brand
+/// review CTA, fronting an AI tactical breakdown of the player's recent
+/// matches, styled with the ComposureDesign1 token system.
 class TacticalCoachScreen extends StatefulWidget {
   const TacticalCoachScreen({super.key});
 
@@ -53,8 +52,6 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   String _formTrend = '';
   String _topStrength = '';
   String _needsWork = '';
-
-  late BroadcastTheme _bc;
 
   @override
   void initState() {
@@ -264,34 +261,30 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _bc = BroadcastTheme.of(context);
+    final dark = AppTheme.isDark(context);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            _bc.dark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: _bc.dark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
       ),
-      child: Theme(
-        data: _bc.themeData,
-        child: Scaffold(
-          backgroundColor: _bc.bg,
-          body: SafeArea(
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              behavior: HitTestBehavior.translucent,
-              child: Column(
-                children: [
-                  _coachTopBar(),
-                  _coachTabs(),
-                  Expanded(
-                    child: _activeTab == 1
-                        ? _buildSavedView()
-                        : _buildCoachView(),
-                  ),
-                ],
-              ),
+      child: Scaffold(
+        backgroundColor: AppTheme.scaffoldBackground(context),
+        body: SafeArea(
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: Column(
+              children: [
+                _coachTopBar(),
+                _coachTabs(),
+                Expanded(
+                  child: _activeTab == 1
+                      ? _buildSavedView()
+                      : _buildCoachView(),
+                ),
+              ],
             ),
           ),
         ),
@@ -310,15 +303,24 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             tooltip: 'Back',
             iconSize: 22,
             style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-            color: _bc.textSecondary,
+            color: AppTheme.textSecondaryColor(context),
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           const SizedBox(width: AppTheme.spaceXS),
-          Container(width: 4, height: 24, color: _bc.accentInk),
+          Container(
+            width: 4,
+            height: 24,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+            ),
+          ),
           const SizedBox(width: 10),
           Text('TACTICAL COACH',
               style: AppTheme.labelThemed(context).copyWith(
-                  fontSize: 16, letterSpacing: 2, color: _bc.textPrimary)),
+                  fontSize: 16,
+                  letterSpacing: 2,
+                  color: AppTheme.textPrimaryColor(context))),
         ],
       ),
     );
@@ -339,7 +341,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: selected ? _bc.accentInk : Colors.transparent,
+                  color: selected ? AppTheme.primary : Colors.transparent,
                   width: 2.5,
                 ),
               ),
@@ -349,7 +351,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               textAlign: TextAlign.center,
               style: AppTheme.labelThemed(context).copyWith(
                 letterSpacing: 1.5,
-                color: selected ? _bc.textPrimary : _bc.textMuted,
+                color: selected
+                    ? AppTheme.textPrimaryColor(context)
+                    : AppTheme.textMutedColor(context),
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
@@ -363,7 +367,8 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           AppTheme.spaceLG, 0, AppTheme.spaceLG, AppTheme.spaceSM),
       child: Container(
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: _bc.border)),
+          border:
+              Border(bottom: BorderSide(color: AppTheme.borderColor(context))),
         ),
         child: Row(children: [tab('COACH', 0), tab('SAVED', 1)]),
       ),
@@ -381,7 +386,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_isLoading)
-            const SkeletonBox(height: 130, radius: AppTheme.radiusSM)
+            const SkeletonBox(height: 130, radius: AppTheme.radiusLG)
           else
             _coachForm(winPct),
           const SizedBox(height: AppTheme.spaceLG),
@@ -407,60 +412,56 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   Widget _coachForm(int winPct) {
     if (_recentMatches.isEmpty) {
-      return BroadcastPanel(
-        bc: _bc,
-        accentRule: false,
+      return TGCard(
         child: Text(
           'Log a few matches and your coach will spot the patterns.',
-          style: AppTheme.bodyMediumThemed(context)
-              .copyWith(color: _bc.textSecondary),
+          style: AppTheme.bodyMediumThemed(context),
         ),
       );
     }
 
-    return BroadcastPanel(
-      bc: _bc,
-      accentRule: true,
-      semanticLabel: 'Current form: $winPct percent win rate',
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('FORM',
-                  style: AppTheme.labelThemed(context)
-                      .copyWith(color: _bc.accentInk, letterSpacing: 2)),
-              const SizedBox(height: 2),
-              Text('$winPct%',
-                  style: AppTheme.scorelineThemed(context, size: 46)
-                      .copyWith(color: _bc.textPrimary)),
-            ],
-          ),
-          const SizedBox(width: AppTheme.spaceLG),
-          Container(width: 1, height: 76, color: _bc.border),
-          const SizedBox(width: AppTheme.spaceLG),
-          Expanded(
-            child: Column(
+    return Semantics(
+      label: 'Current form: $winPct percent win rate',
+      child: TGCard(
+        elevated: true,
+        child: Row(
+          children: [
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_formTrend.isNotEmpty) ...[
-                  Text(_formTrend.toUpperCase(),
-                      style: AppTheme.labelThemed(context)
-                          .copyWith(color: _bc.win, letterSpacing: 1.2)),
-                  const SizedBox(height: 8),
-                ],
-                if (_topStrength.isNotEmpty)
-                  _coachFormLine('STRENGTH', _topStrength),
-                if (_needsWork.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  _coachFormLine('NEEDS WORK', _needsWork),
-                ],
+                const CEyebrow('Form'),
+                const SizedBox(height: 2),
+                Text('$winPct%',
+                    style: AppTheme.scorelineThemed(context, size: 46)),
               ],
             ),
-          ),
-        ],
+            const SizedBox(width: AppTheme.spaceLG),
+            Container(
+                width: 1, height: 76, color: AppTheme.borderColor(context)),
+            const SizedBox(width: AppTheme.spaceLG),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_formTrend.isNotEmpty) ...[
+                    Text(_formTrend.toUpperCase(),
+                        style: AppTheme.labelThemed(context)
+                            .copyWith(color: AppTheme.win, letterSpacing: 1.2)),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_topStrength.isNotEmpty)
+                    _coachFormLine('STRENGTH', _topStrength),
+                  if (_needsWork.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _coachFormLine('NEEDS WORK', _needsWork),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -472,16 +473,15 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         SizedBox(
           width: 92,
           child: Text(label,
-              style: AppTheme.labelThemed(context)
-                  .copyWith(letterSpacing: 1, color: _bc.textMuted)),
+              style: AppTheme.labelThemed(context).copyWith(
+                  letterSpacing: 1, color: AppTheme.textMutedColor(context))),
         ),
         Expanded(
           child: Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTheme.headingSmallThemed(context)
-                .copyWith(fontSize: 15, color: _bc.textPrimary),
+            style: AppTheme.headingSmallThemed(context).copyWith(fontSize: 15),
           ),
         ),
       ],
@@ -489,9 +489,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
   }
 
   Widget _reviewCta() {
-    return BroadcastCta(
-      label: 'REVIEW MY MATCHES',
-      loadingLabel: 'REVIEWING…',
+    return CPrimaryButton(
+      label: 'Review my matches',
+      loadingLabel: 'Reviewing…',
       icon: Icons.auto_awesome_rounded,
       loading: _isGenerating,
       onPressed: _isLoading ? null : _reviewRecentMatchHistory,
@@ -506,15 +506,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           children: [
             Text('Add context',
                 style: AppTheme.headingSmallThemed(context)
-                    .copyWith(letterSpacing: -0.2, color: _bc.textPrimary)),
+                    .copyWith(letterSpacing: -0.2)),
             const SizedBox(width: AppTheme.spaceSM),
             const TonalChip(label: 'Optional'),
             const Spacer(),
-            Icon(Icons.mic_none_rounded, size: 16, color: _bc.textMuted),
+            Icon(Icons.mic_none_rounded,
+                size: 16, color: AppTheme.textMutedColor(context)),
             const SizedBox(width: 4),
-            Text('Type or speak',
-                style: AppTheme.bodySmallThemed(context)
-                    .copyWith(color: _bc.textMuted)),
+            Text('Type or speak', style: AppTheme.bodySmallThemed(context)),
           ],
         ),
         const SizedBox(height: AppTheme.spaceSM),
@@ -523,7 +522,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           hintText: 'e.g. I get tight serving for the set…',
           maxLines: 2,
           style: AppTheme.bodyMediumThemed(context)
-              .copyWith(color: _bc.textPrimary),
+              .copyWith(color: AppTheme.textPrimaryColor(context)),
         ),
       ],
     );
@@ -548,31 +547,31 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spaceLG),
       decoration: BoxDecoration(
-        color: _bc.panel,
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: _bc.loss.withValues(alpha: 0.4)),
+        border: Border.all(color: AppTheme.loss.withValues(alpha: 0.4)),
       ),
       child: Column(
         children: [
-          TonalIconBadge(
-              icon: Icons.error_outline_rounded, color: _bc.loss),
+          const TonalIconBadge(
+              icon: Icons.error_outline_rounded, color: AppTheme.loss),
           const SizedBox(height: AppTheme.spaceSM),
           Text('Couldn\'t generate insight',
-              style: AppTheme.headingSmallThemed(context)
-                  .copyWith(color: _bc.textPrimary)),
+              style: AppTheme.headingSmallThemed(context)),
           const SizedBox(height: AppTheme.spaceXS),
           Text(
             _errorMessage ?? 'Please try again',
             textAlign: TextAlign.center,
             style: AppTheme.bodySmallThemed(context)
-                .copyWith(color: _bc.textSecondary),
+                .copyWith(color: AppTheme.textSecondaryColor(context)),
           ),
           const SizedBox(height: AppTheme.spaceMD),
           TextButton(
             onPressed: () => setState(() => _errorMessage = null),
             style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
             child: Text('Dismiss',
-                style: AppTheme.label.copyWith(color: _bc.accentInk)),
+                style: AppTheme.labelThemed(context)
+                    .copyWith(color: AppTheme.primary)),
           ),
         ],
       ),
@@ -618,14 +617,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       children: [
         Text(
           'BASED ON YOUR LAST $matchesUsed MATCHES',
-          style: AppTheme.labelThemed(context)
-              .copyWith(letterSpacing: 1.2, color: _bc.textMuted),
+          style: AppTheme.labelThemed(context).copyWith(
+              letterSpacing: 1.2, color: AppTheme.textMutedColor(context)),
         ),
         if (scopeNote.isNotEmpty) ...[
           const SizedBox(height: AppTheme.spaceXS),
           Text(scopeNote,
               style: AppTheme.bodySmallThemed(context)
-                  .copyWith(color: _bc.textSecondary)),
+                  .copyWith(color: AppTheme.textSecondaryColor(context))),
         ],
         const SizedBox(height: AppTheme.spaceMD),
         _buildCoachSection(
@@ -698,7 +697,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 step,
                 style: AppTheme.labelThemed(context).copyWith(
                   letterSpacing: 1,
-                  color: highlighted ? _bc.accentInk : _bc.textMuted,
+                  color: highlighted
+                      ? AppTheme.primary
+                      : AppTheme.textMutedColor(context),
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSM),
@@ -709,7 +710,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 style: AppTheme.headingSmallThemed(context).copyWith(
                   fontSize: 18,
                   letterSpacing: -0.3,
-                  color: highlighted ? _bc.accentInk : _bc.textPrimary,
+                  color: highlighted
+                      ? AppTheme.primary
+                      : AppTheme.textPrimaryColor(context),
                 ),
               ),
             ),
@@ -718,14 +721,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         const SizedBox(height: AppTheme.spaceSM),
         Text(
           text,
-          style: AppTheme.bodyLargeThemed(context)
-              .copyWith(height: 1.6, fontSize: 16, color: _bc.textSecondary),
+          style: AppTheme.bodyLargeThemed(context).copyWith(
+              height: 1.6,
+              fontSize: 16,
+              color: AppTheme.textSecondaryColor(context)),
         ),
         if (hasMeta) ...[
           const SizedBox(height: AppTheme.spaceSM),
           Text(_buildEvidenceMeta(evidence, confidence, trend),
               style: AppTheme.labelThemed(context)
-                  .copyWith(color: _bc.textMuted)),
+                  .copyWith(color: AppTheme.textMutedColor(context))),
         ],
       ],
     );
@@ -733,9 +738,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     if (highlighted) {
       return Container(
         padding: const EdgeInsets.only(left: AppTheme.spaceMD),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           border: Border(
-            left: BorderSide(color: _bc.accentInk, width: 2.5),
+            left: BorderSide(color: AppTheme.primary, width: 2.5),
           ),
         ),
         child: block,
@@ -766,13 +771,9 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     final drillName = practicePlan['drillName'] as String? ?? '';
     final objective = practicePlan['objective'] as String? ?? '';
 
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spaceLG),
-      decoration: BoxDecoration(
-        color: _bc.panelRaised,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        border: Border.all(color: _bc.border),
-      ),
+    return TGCard(
+      elevated: true,
+      padding: AppTheme.cardPaddingLarge,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -783,20 +784,19 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
               const SizedBox(width: AppTheme.spaceSM),
               Text('Practice plan',
                   style: AppTheme.headingSmallThemed(context)
-                      .copyWith(fontSize: 16, color: _bc.textPrimary)),
+                      .copyWith(fontSize: 16)),
             ],
           ),
           if (drillName.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceMD),
             Text(drillName,
                 style: AppTheme.headingSmallThemed(context)
-                    .copyWith(fontSize: 15, color: _bc.textPrimary)),
+                    .copyWith(fontSize: 15)),
           ],
           if (objective.isNotEmpty) ...[
             const SizedBox(height: AppTheme.spaceXS),
             Text(objective,
-                style: AppTheme.bodyMediumThemed(context)
-                    .copyWith(height: 1.55, color: _bc.textSecondary)),
+                style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.55)),
           ],
         ],
       ),
@@ -816,21 +816,21 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: _bc.textSecondary,
+                    color: AppTheme.textSecondaryColor(context),
                   ),
                 )
-              : Icon(Icons.bookmark_outline_rounded,
-                  size: 18, color: _bc.accentInk),
+              : const Icon(Icons.bookmark_outline_rounded,
+                  size: 18, color: AppTheme.primary),
           label: Text(
             _isSaving ? 'Saving…' : 'Save',
-            style: AppTheme.label.copyWith(color: _bc.accentInk),
+            style: AppTheme.labelThemed(context).copyWith(color: AppTheme.primary),
           ),
         ),
         const SizedBox(width: AppTheme.spaceSM),
         ShareButton(
           shareText: shareText,
           subject: 'My Tactical Analysis',
-          color: _bc.accentInk,
+          color: AppTheme.primary,
         ),
         const SizedBox(width: AppTheme.spaceSM),
         TextButton.icon(
@@ -842,10 +842,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             });
           },
           style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
-          icon: Icon(Icons.refresh_rounded, size: 18, color: _bc.textSecondary),
+          icon: Icon(Icons.refresh_rounded,
+              size: 18, color: AppTheme.textSecondaryColor(context)),
           label: Text(
             'New review',
-            style: AppTheme.label.copyWith(color: _bc.textSecondary),
+            style: AppTheme.labelThemed(context)
+                .copyWith(color: AppTheme.textSecondaryColor(context)),
           ),
         ),
       ],
@@ -909,13 +911,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                     icon: Icons.bookmark_border_rounded, size: 60),
                 const SizedBox(height: AppTheme.spaceMD),
                 Text('No saved advice yet',
-                    style: AppTheme.headingSmallThemed(context)
-                        .copyWith(color: _bc.textPrimary)),
+                    style: AppTheme.headingSmallThemed(context)),
                 const SizedBox(height: AppTheme.spaceXS),
                 Text(
                   'Generate a review and tap Save to keep it here\n(your latest 3 are kept).',
                   style: AppTheme.bodySmallThemed(context)
-                      .copyWith(color: _bc.textSecondary),
+                      .copyWith(color: AppTheme.textSecondaryColor(context)),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -937,11 +938,10 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
         children: [
           Text('Saved advice',
               style: AppTheme.headingMediumThemed(context)
-                  .copyWith(letterSpacing: -0.4, color: _bc.textPrimary)),
+                  .copyWith(letterSpacing: -0.4)),
           const SizedBox(height: AppTheme.spaceXS),
           Text('Most recent first · keeps your latest 3',
-              style: AppTheme.bodySmallThemed(context)
-                  .copyWith(color: _bc.textMuted)),
+              style: AppTheme.bodySmallThemed(context)),
           const SizedBox(height: AppTheme.spaceMD),
           ...List.generate(_savedEntries.length, (index) {
             final entry = _savedEntries[index];
@@ -980,14 +980,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     final previewText =
         needsExpansion ? '${content.substring(0, 200).trimRight()}…' : content;
 
-    return BroadcastPanel(
-      bc: _bc,
-      accentRule: false,
-      onTap: needsExpansion
-          ? () =>
-              setState(() => _expandedCardIndex = isExpanded ? null : index)
-          : null,
-      semanticLabel: 'Saved advice from $dateLabel',
+    final card = TGCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1003,7 +996,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                   turns: isExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 250),
                   child: Icon(Icons.expand_more_rounded,
-                      size: 20, color: _bc.textMuted),
+                      size: 20, color: AppTheme.textMutedColor(context)),
                 ),
             ],
           ),
@@ -1014,8 +1007,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             alignment: Alignment.topCenter,
             child: Text(
               isExpanded || !needsExpansion ? content : previewText,
-              style: AppTheme.bodyMediumThemed(context)
-                  .copyWith(height: 1.55, color: _bc.textSecondary),
+              style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.55),
               maxLines: isExpanded || !needsExpansion ? null : 4,
               overflow: isExpanded || !needsExpansion
                   ? TextOverflow.clip
@@ -1025,9 +1017,27 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           if (needsExpansion && !isExpanded) ...[
             const SizedBox(height: AppTheme.spaceXS),
             Text('Tap to read more',
-                style: AppTheme.label.copyWith(color: _bc.accentInk)),
+                style: AppTheme.labelThemed(context)
+                    .copyWith(color: AppTheme.primary)),
           ],
         ],
+      ),
+    );
+
+    if (!needsExpansion) {
+      return Semantics(label: 'Saved advice from $dateLabel', child: card);
+    }
+
+    return Semantics(
+      button: true,
+      label: 'Saved advice from $dateLabel',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          HapticFeedback.lightImpact();
+          setState(() => _expandedCardIndex = isExpanded ? null : index);
+        },
+        child: card,
       ),
     );
   }
