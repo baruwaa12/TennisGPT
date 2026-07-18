@@ -12,15 +12,15 @@ import '../theme/app_theme.dart';
 /// skeletons over spinners.
 /// ============================================================
 
-/// Semantic feedback colors.
+/// Semantic feedback colors (ComposureDesign1 status tokens).
 class AppAccents {
   AppAccents._();
 
-  /// Reserved for errors / destructive moments.
-  static const Color negative = Color(0xFFFF453A);
+  /// Reserved for errors / destructive moments (danger token).
+  static const Color negative = AppTheme.loss;
 
-  /// Reserved for positive confirmations (e.g. saved).
-  static const Color positive = Color(0xFF32D74B);
+  /// Reserved for positive confirmations, e.g. saved (success token).
+  static const Color positive = AppTheme.win;
 }
 
 /// Icon tile — neutral monochrome.

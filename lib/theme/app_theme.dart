@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,33 +11,37 @@ class AppTheme {
   AppTheme._();
 
   // ============ COLORS ============
-  // Single committed accent palette (deep blue intelligence).
-  static const Color primary = Color(0xFF4DA3FF);
-  static const Color primaryLight = Color(0xFF7DC2FF);
-  static const Color primaryDark = Color(0xFF2E7DD6);
+  // ComposureDesign1 brand palette (TypeUI design system).
+  static const Color primary = Color(0xFF0166FF); // brand
+  static const Color primaryLight = Color(0xFF4D9AFF); // fg-brand (dark)
+  static const Color primaryDark = Color(0xFF0052CC); // brand-strong
 
   /// Glow tone for highlighted surfaces
-  static const Color softGlow = Color(0xFF7DC2FF);
+  static const Color softGlow = Color(0xFF4D9AFF);
+
+  /// Brand-tinted background surfaces (light mode), from ComposureDesign1.
+  static const Color brandSofter = Color(0xFFE8F1FF); // brand-softer
+  static const Color brandSoft = Color(0xFFCCE0FF); // brand-soft
 
   /// Surface colors - layered depth system (DARK MODE DEFAULTS)
-  /// Use the theme-aware getters below for actual usage
-  static const Color surfaceDark = Color(0xFF0A0E14);
-  static const Color surfaceSecondary = Color(0xFF0F1622);
-  static const Color surfaceCard = Color(0xFF111824);
-  static const Color surfaceElevated = Color(0xFF162132);
-  static const Color surfaceBorder = Color(0xFF263246);
+  /// ComposureDesign1 dark neutral scale. Use theme-aware getters for usage.
+  static const Color surfaceDark = Color(0xFF060B18); // neutral-primary
+  static const Color surfaceSecondary = Color(0xFF0C1222); // neutral-*-soft
+  static const Color surfaceCard = Color(0xFF131B2E); // neutral-*-medium
+  static const Color surfaceElevated = Color(0xFF1E293B); // neutral-*-strong
+  static const Color surfaceBorder = Color(0xFF334155); // quaternary-medium
 
   /// Text colors - clear hierarchy (DARK MODE DEFAULTS)
-  /// Use the theme-aware getters below for actual usage
-  static const Color textPrimary = Color(0xFFF7FBFF);
-  static const Color textSecondary = Color(0xFFC7D2E5);
-  static const Color textMuted = Color(0xFF9FB0CB);
+  /// ComposureDesign1 slate text scale (contrast-verified against surfaceDark).
+  static const Color textPrimary = Color(0xFFF1F5F9); // heading
+  static const Color textSecondary = Color(0xFFCBD5E1); // body (>=7:1)
+  static const Color textMuted = Color(0xFF94A3B8); // body-subtle (>=4.5:1)
 
-  /// Accent colors for data/stats
-  static const Color win = Color(0xFF2ED47A);
-  static const Color loss = Color(0xFFFF5C7A);
-  static const Color neutral = Color(0xFF27D3B2);
-  static const Color warning = Color(0xFFFFB547);
+  /// Accent colors for data/stats (ComposureDesign1 status + accent tokens)
+  static const Color win = Color(0xFF10B981); // success
+  static const Color loss = Color(0xFFF43F5E); // danger (dark fg)
+  static const Color neutral = Color(0xFF14B8A6); // teal accent
+  static const Color warning = Color(0xFFF97316); // warning
 
   /// Court-surface accent language (Authored style).
   /// Surface becomes a small meaningful accent, never a full theme:
@@ -55,13 +61,14 @@ class AppTheme {
   }
 
   // ============ LIGHT MODE COLORS ============
-  static const Color _surfaceLight = Color(0xFFF3ECE3);
-  static const Color _surfaceCardLight = Color(0xFFFFFBF5);
-  static const Color _surfaceElevatedLight = Color(0xFFEDE2D3);
-  static const Color _surfaceBorderLight = Color(0xFFD7C6B0);
-  static const Color _textPrimaryLight = Color(0xFF1B1715);
-  static const Color _textSecondaryLight = Color(0xFF463E38);
-  static const Color _textMutedLight = Color(0xFF7A6F65);
+  // ComposureDesign1 light neutral scale (public so ThemeService can reuse).
+  static const Color surfaceLight = Color(0xFFF8FAFC); // neutral-secondary-soft
+  static const Color surfaceCardLight = Color(0xFFFFFFFF); // neutral-primary
+  static const Color surfaceElevatedLight = Color(0xFFF0F4F8); // neutral-tertiary
+  static const Color surfaceBorderLight = Color(0xFFE2E8F0); // border-default
+  static const Color textPrimaryLight = Color(0xFF0F172A); // heading
+  static const Color textSecondaryLight = Color(0xFF475569); // body
+  static const Color textMutedLight = Color(0xFF64748B); // body-subtle
 
   // ============ THEME-AWARE COLOR GETTERS ============
 
@@ -69,49 +76,49 @@ class AppTheme {
   static Color scaffoldBackground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? surfaceDark
-        : _surfaceLight;
+        : surfaceLight;
   }
 
   /// Get card background color based on theme
   static Color cardBackground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? surfaceCard
-        : _surfaceCardLight;
+        : surfaceCardLight;
   }
 
   /// Get elevated surface color based on theme
   static Color elevatedBackground(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? surfaceElevated
-        : _surfaceElevatedLight;
+        : surfaceElevatedLight;
   }
 
   /// Get border color based on theme
   static Color borderColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? surfaceBorder
-        : _surfaceBorderLight;
+        : surfaceBorderLight;
   }
 
   /// Get primary text color based on theme
   static Color textPrimaryColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? textPrimary
-        : _textPrimaryLight;
+        : textPrimaryLight;
   }
 
   /// Get secondary text color based on theme
   static Color textSecondaryColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? textSecondary
-        : _textSecondaryLight;
+        : textSecondaryLight;
   }
 
   /// Get muted text color based on theme
   static Color textMutedColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? textMuted
-        : _textMutedLight;
+        : textMutedLight;
   }
 
   /// Check if current theme is dark
@@ -119,21 +126,24 @@ class AppTheme {
     return Theme.of(context).brightness == Brightness.dark;
   }
 
-  /// Get theme-aware card decoration
+  /// Get theme-aware card decoration.
+  /// ComposureDesign1 card: base radius (16), 1px border, shadow-md depth.
   static BoxDecoration cardDecorationThemed(BuildContext context) {
     return BoxDecoration(
       color: cardBackground(context),
       borderRadius: BorderRadius.circular(radiusLG),
       border: Border.all(color: borderColor(context), width: 1),
+      boxShadow: cardShadow,
     );
   }
 
-  /// Get theme-aware elevated card decoration
+  /// Get theme-aware elevated card decoration (shadow-lg step-up).
   static BoxDecoration elevatedCardDecorationThemed(BuildContext context) {
     return BoxDecoration(
       color: elevatedBackground(context),
       borderRadius: BorderRadius.circular(radiusLG),
-      boxShadow: cardShadow,
+      border: Border.all(color: borderColor(context), width: 1),
+      boxShadow: elevatedShadow,
     );
   }
 
@@ -158,31 +168,63 @@ class AppTheme {
   static const EdgeInsets cardPaddingLarge = EdgeInsets.all(spaceLG);
 
   // ============ BORDER RADIUS ============
-
-  static const double radiusSM = 8.0;
-  static const double radiusMD = 12.0;
-  static const double radiusLG = 16.0;
-  static const double radiusXL = 20.0;
+  // ComposureDesign1 radius scale: sm 6, default 10, base 16, full 9999.
+  static const double radiusSM = 6.0; // sm - checkboxes, tiny elements
+  static const double radiusMD = 10.0; // default - badges, small controls
+  static const double radiusLG = 16.0; // base - buttons, cards, inputs, modals
+  static const double radiusXL = 16.0; // base (no larger tier in the scale)
+  static const double radiusFull = 9999.0; // pills, avatars, toggles
 
   // ============ TYPOGRAPHY ============
-  // Display font: Sora (calm authority)
-  // Body font: Inter (decision-first readability)
-  // NOTE: These use dark mode colors by default. Use themed versions for proper light/dark support.
-  static TextStyle _display({
+  // ComposureDesign1 font: Zalando Sans SemiExpanded (bundled variable font).
+  // Single family for display + body, per the design system.
+  static const String fontFamily = 'ZalandoSans';
+
+  /// SemiExpanded width on the variable `wdth` axis (75–125 range).
+  static const double _semiExpandedWidth = 112.5;
+
+  /// Width variation shared by all brand type (SemiExpanded).
+  static const List<FontVariation> fontVariationsSemiExpanded = [
+    FontVariation('wdth', _semiExpandedWidth),
+  ];
+
+  static TextStyle _brandFont({
     required double size,
     required FontWeight weight,
     required Color color,
     double spacing = 0,
     double? height,
   }) {
-    return GoogleFonts.sora(
+    return TextStyle(
+      fontFamily: fontFamily,
       fontSize: size,
       fontWeight: weight,
+      fontVariations: [
+        FontVariation('wght', weight.value.toDouble()),
+        const FontVariation('wdth', _semiExpandedWidth),
+      ],
       color: color,
       letterSpacing: spacing,
       height: height,
     );
   }
+
+  // Display + body share the single brand family; kept as separate helpers
+  // so existing call sites and intent (headings vs. copy) stay readable.
+  static TextStyle _display({
+    required double size,
+    required FontWeight weight,
+    required Color color,
+    double spacing = 0,
+    double? height,
+  }) =>
+      _brandFont(
+        size: size,
+        weight: weight,
+        color: color,
+        spacing: spacing,
+        height: height,
+      );
 
   static TextStyle _body({
     required double size,
@@ -190,15 +232,14 @@ class AppTheme {
     required Color color,
     double spacing = 0,
     double? height,
-  }) {
-    return GoogleFonts.inter(
-      fontSize: size,
-      fontWeight: weight,
-      color: color,
-      letterSpacing: spacing,
-      height: height,
-    );
-  }
+  }) =>
+      _brandFont(
+        size: size,
+        weight: weight,
+        color: color,
+        spacing: spacing,
+        height: height,
+      );
 
   /// Screen titles - bold, commanding (increased ~15%)
   static TextStyle get headingLarge => _display(
@@ -394,16 +435,16 @@ class AppTheme {
         filled: true,
         fillColor: cardBackground(context),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMD),
+          borderRadius: BorderRadius.circular(radiusLG),
           borderSide: BorderSide(color: borderColor(context)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMD),
+          borderRadius: BorderRadius.circular(radiusLG),
           borderSide: BorderSide(color: borderColor(context)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMD),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+          borderRadius: BorderRadius.circular(radiusLG),
+          borderSide: const BorderSide(color: primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,
@@ -413,19 +454,35 @@ class AppTheme {
 
   // ============ SHADOWS ============
 
-  static List<BoxShadow> get cardShadow => [
+  /// ComposureDesign1 shadow-md (standard cards, popovers, dropdowns).
+  static List<BoxShadow> get cardShadow => const [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.25),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
+          color: Color(0x14000000), // black / 0.08
+          blurRadius: 16,
+          spreadRadius: -4,
+          offset: Offset(0, 6),
+        ),
+        BoxShadow(
+          color: Color(0x0D000000), // black / 0.05
+          blurRadius: 6,
+          spreadRadius: -2,
+          offset: Offset(0, 2),
         ),
       ];
 
-  static List<BoxShadow> get elevatedShadow => [
+  /// ComposureDesign1 shadow-lg (prominent cards, sticky/glass surfaces).
+  static List<BoxShadow> get elevatedShadow => const [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.35),
-          blurRadius: 20,
-          offset: const Offset(0, 4),
+          color: Color(0x1A000000), // black / 0.10
+          blurRadius: 28,
+          spreadRadius: -6,
+          offset: Offset(0, 12),
+        ),
+        BoxShadow(
+          color: Color(0x0F000000), // black / 0.06
+          blurRadius: 12,
+          spreadRadius: -4,
+          offset: Offset(0, 4),
         ),
       ];
 
@@ -490,16 +547,16 @@ class AppTheme {
         filled: true,
         fillColor: surfaceCard,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMD),
+          borderRadius: BorderRadius.circular(radiusLG),
           borderSide: const BorderSide(color: surfaceBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMD),
+          borderRadius: BorderRadius.circular(radiusLG),
           borderSide: const BorderSide(color: surfaceBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMD),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+          borderRadius: BorderRadius.circular(radiusLG),
+          borderSide: const BorderSide(color: primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,
@@ -684,5 +741,52 @@ class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
         ],
       ),
     );
+  }
+}
+
+/// ComposureDesign1 glassmorphism card (opt-in, for hero/feature surfaces).
+///
+/// Implements the design system's frosted-glass spec: `backdrop blur(16)`,
+/// translucent fill, a 1px translucent-white frosted edge, base radius (16),
+/// and shadow-md. Use for signature surfaces; standard content should keep
+/// [TGCard] for readability and performance.
+class TGGlassCard extends StatelessWidget {
+  const TGGlassCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.onTap,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = AppTheme.isDark(context);
+    // Glass fill + frosted edge (translucent white), per cards.md.
+    final fill = Colors.white.withValues(alpha: dark ? 0.06 : 0.65);
+    final edge = Colors.white.withValues(alpha: dark ? 0.10 : 0.50);
+
+    final content = ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: padding ?? AppTheme.cardPadding,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+            border: Border.all(color: edge, width: 1),
+            boxShadow: AppTheme.cardShadow,
+          ),
+          child: child,
+        ),
+      ),
+    );
+
+    if (onTap == null) return content;
+    return GestureDetector(onTap: onTap, child: content);
   }
 }

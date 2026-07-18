@@ -568,8 +568,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.terrain_outlined,
-                  color: Color(0xFFE6462E)),
+              leading: Icon(Icons.terrain_outlined,
+                  color: AppTheme.surfaceAccent('clay')),
               title: Text('Clay', style: GoogleFonts.poppins()),
               subtitle: Text('Roland Garros - blue button',
                   style: GoogleFonts.poppins(fontSize: 12)),
@@ -582,8 +582,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.sports_tennis_outlined,
-                  color: Color(0xFF2E7DD6)),
+              leading: Icon(Icons.sports_tennis_outlined,
+                  color: AppTheme.surfaceAccent('hard')),
               title: Text('Hard (Blue)', style: GoogleFonts.poppins()),
               subtitle: Text('US / Australian Open - red button',
                   style: GoogleFonts.poppins(fontSize: 12)),
@@ -596,8 +596,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.grass_outlined,
-                  color: Color(0xFF3F8C3F)),
+              leading: Icon(Icons.grass_outlined,
+                  color: AppTheme.surfaceAccent('grass')),
               title: Text('Grass', style: GoogleFonts.poppins()),
               subtitle: Text('Wimbledon - navy button',
                   style: GoogleFonts.poppins(fontSize: 12)),

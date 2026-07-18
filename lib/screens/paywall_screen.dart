@@ -562,7 +562,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.primary.withValues(alpha: 0.08) : const Color(0xFFEFF6FF),
+        color: isDark
+            ? AppTheme.primary.withValues(alpha: 0.08)
+            : AppTheme.brandSofter,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? AppTheme.primary.withValues(alpha: 0.2) : AppTheme.primary.withValues(alpha: 0.3),

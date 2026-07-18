@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
               end: Alignment.bottomCenter,
               colors: isDark
                   ? [AppTheme.surfaceSecondary, AppTheme.surfaceDark]
-                  : [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
+                  : [AppTheme.brandSofter, AppTheme.brandSoft],
             ),
           ),
           child: SafeArea(

@@ -1,6 +1,6 @@
 ---
 name: "untitled-project"
-description: "Untitled Project design skill for AI coding agents."
+description: "ComposureDesign1 design skill for AI coding agents."
 metadata:
   author: typeui.sh
   source: workspace-importer

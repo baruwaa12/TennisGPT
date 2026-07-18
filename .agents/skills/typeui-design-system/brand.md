@@ -2,7 +2,7 @@
 
 ## Identity
 
-- **Design system name:** Untitled Project
+- **Design system name:** ComposureDesign1
 - **Project name:** Untitled Project
 - **Project logo:** No logo set. Use the TypeUI dashboard to add one.
 
