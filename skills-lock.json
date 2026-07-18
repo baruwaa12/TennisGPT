@@ -175,6 +175,12 @@
       "skillPath": "skills/engineering/triage/SKILL.md",
       "computedHash": "7caa274494d702d8c668d1ff17267b4a69b6d58e34a00c20b2df9de67ef6edc9"
     },
+    "typeui-fundamentals": {
+      "source": "bergside/typeui",
+      "sourceType": "github",
+      "skillPath": "skills/fundamentals/SKILL.md",
+      "computedHash": "37d3df14b03932ef4a3950332acbc6104d93a17595dbdebe63b5c16c4cc67a43"
+    },
     "ubiquitous-language": {
       "source": "mattpocock/skills",
       "sourceType": "github",
