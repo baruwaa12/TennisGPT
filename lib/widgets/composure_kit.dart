@@ -28,12 +28,16 @@ class CEyebrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Cypherpunk overline/eyebrow: retro-mono, uppercase, wide tracking.
     return Text(
       text.toUpperCase(),
-      style: AppTheme.labelThemed(context).copyWith(
+      style: TextStyle(
+        fontFamily: AppTheme.monoFamily,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
         color: color ?? AppTheme.primary,
         letterSpacing: 1.6,
-        fontWeight: FontWeight.w600,
+        height: 1.3,
       ),
     );
   }
@@ -250,7 +254,9 @@ class CSecondaryButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppTheme.elevatedBackground(context),
             borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-            border: Border.all(color: AppTheme.borderColor(context)),
+            border: Border.all(
+                color: AppTheme.borderColor(context),
+                width: AppTheme.borderWidth),
           ),
           child: Row(
             mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -303,10 +309,11 @@ class CBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
+        // Cypherpunk badges are near-square shells (no pills), with a bold
+        // 2px ink-family border.
         color: bg,
-        borderRadius: BorderRadius.circular(
-            pill ? AppTheme.radiusFull : AppTheme.radiusMD),
-        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: border, width: AppTheme.borderWidth),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -381,7 +388,7 @@ class CResultBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: color, width: AppTheme.borderWidth),
       ),
       child: Text(
         isWin ? 'W' : 'L',

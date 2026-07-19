@@ -65,13 +65,22 @@ class ThemeService extends ChangeNotifier {
     fontWeight: FontWeight.w500,
   );
 
-  // Light Theme — ComposureDesign1 tokens
+  // Cypherpunk is a single stark identity: lime section surface, ink type +
+  // 2px ink borders, raised beige cards, crisp 2px corners, flat elevation.
   static ThemeData get lightTheme {
-    final lightTextTheme = Typography.material2021().black.apply(
+    final textTheme = Typography.material2021().black.apply(
           fontFamily: AppTheme.fontFamily,
           bodyColor: AppTheme.textSecondaryLight,
           displayColor: AppTheme.textPrimaryLight,
         );
+
+    final inkBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+      borderSide: const BorderSide(
+        color: AppTheme.surfaceBorderLight,
+        width: AppTheme.borderWidth,
+      ),
+    );
 
     return ThemeData(
       useMaterial3: true,
@@ -81,12 +90,14 @@ class ThemeService extends ChangeNotifier {
         seedColor: AppTheme.primary,
         brightness: Brightness.light,
         primary: AppTheme.primary,
+        onPrimary: Colors.white,
         surface: AppTheme.surfaceCardLight,
         onSurface: AppTheme.textPrimaryLight,
+        error: AppTheme.loss,
       ),
       scaffoldBackgroundColor: AppTheme.surfaceLight,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppTheme.surfaceCardLight,
+        backgroundColor: AppTheme.surfaceLight,
         foregroundColor: AppTheme.textPrimaryLight,
         elevation: 0,
         centerTitle: true,
@@ -94,39 +105,41 @@ class ThemeService extends ChangeNotifier {
       ),
       cardTheme: CardThemeData(
         color: AppTheme.surfaceCardLight,
-        elevation: 2,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          side: const BorderSide(
+            color: AppTheme.surfaceBorderLight,
+            width: AppTheme.borderWidth,
+          ),
         ),
       ),
-      textTheme: lightTextTheme,
+      textTheme: textTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppTheme.surfaceCardLight,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          borderSide: const BorderSide(color: AppTheme.surfaceBorderLight),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          borderSide: const BorderSide(color: AppTheme.surfaceBorderLight),
-        ),
+        border: inkBorder,
+        enabledBorder: inkBorder,
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: const BorderSide(
+            color: AppTheme.primary,
+            width: AppTheme.borderWidth,
+          ),
         ),
         hintStyle: const TextStyle(color: AppTheme.textMutedLight),
         labelStyle: const TextStyle(color: AppTheme.textSecondaryLight),
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: AppTheme.primary,
-        selectionColor: AppTheme.primary.withValues(alpha: 0.3),
+        selectionColor: AppTheme.primary.withValues(alpha: 0.2),
         selectionHandleColor: AppTheme.primary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primary,
           foregroundColor: Colors.white,
+          elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusLG),
@@ -144,82 +157,7 @@ class ThemeService extends ChangeNotifier {
     );
   }
 
-  // Dark Theme — ComposureDesign1 tokens
-  static ThemeData get darkTheme {
-    final darkTextTheme = Typography.material2021().white.apply(
-          fontFamily: AppTheme.fontFamily,
-          bodyColor: AppTheme.textSecondary,
-          displayColor: AppTheme.textPrimary,
-        );
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      fontFamily: AppTheme.fontFamily,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppTheme.primary,
-        brightness: Brightness.dark,
-        primary: AppTheme.primary,
-        surface: AppTheme.surfaceCard,
-        onSurface: AppTheme.textPrimary,
-      ),
-      scaffoldBackgroundColor: AppTheme.surfaceDark,
-      appBarTheme: AppBarTheme(
-        backgroundColor: AppTheme.surfaceSecondary,
-        foregroundColor: AppTheme.textPrimary,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: _appBarTitle(AppTheme.textPrimary),
-      ),
-      cardTheme: CardThemeData(
-        color: AppTheme.surfaceCard,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        ),
-      ),
-      textTheme: darkTextTheme,
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: AppTheme.surfaceElevated,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          borderSide: const BorderSide(color: AppTheme.surfaceBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          borderSide: const BorderSide(color: AppTheme.surfaceBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
-        ),
-        hintStyle: const TextStyle(color: AppTheme.textMuted),
-        labelStyle: const TextStyle(color: AppTheme.textSecondary),
-      ),
-      textSelectionTheme: TextSelectionThemeData(
-        cursorColor: AppTheme.primary,
-        selectionColor: AppTheme.primary.withValues(alpha: 0.3),
-        selectionHandleColor: AppTheme.primary,
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-          ),
-          textStyle: _buttonText,
-        ),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-        ),
-      ),
-      dividerColor: AppTheme.surfaceBorder,
-    );
-  }
+  // Cypherpunk has one identity — dark mode resolves to the same skin so the
+  // app always reads as Cypherpunk regardless of the system theme toggle.
+  static ThemeData get darkTheme => lightTheme;
 }

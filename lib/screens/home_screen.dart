@@ -218,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 40,
             decoration: BoxDecoration(
               color: AppTheme.primary,
-              borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             ),
           ),
           const SizedBox(width: 12),
@@ -322,7 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _heroLine('Record', '$wins–$losses'),
+                  _heroLine('Record', '$wins-$losses'),
                   if (formDelta != null) ...[
                     const SizedBox(height: 12),
                     _formLine(formDelta),
@@ -362,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
       color = AppTheme.textMutedColor(context);
       arrow = Icons.arrow_forward_rounded;
     }
-    final sign = delta > 0 ? '+' : (delta < 0 ? '−' : '');
+    final sign = delta > 0 ? '+' : (delta < 0 ? '-' : '');
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -461,7 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ? const <String>[]
         : raw.trim().split(RegExp(r'\s+'));
     if (sets.isEmpty) {
-      return Text('—', style: AppTheme.scorelineThemed(context, size: size));
+      return Text('-', style: AppTheme.scorelineThemed(context, size: size));
     }
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,

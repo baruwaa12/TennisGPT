@@ -100,12 +100,19 @@ flutter:
   assets:
     - assets/images/
 
-  # ComposureDesign1 brand font (Zalando Sans, variable wdth+wght).
-  # Runtime Google Fonts fetching is disabled, so the font is bundled.
+  # Bundled brand fonts. Runtime Google Fonts fetching is disabled, so fonts
+  # used by the active design system are bundled here.
+  # - ZalandoSans: neo-grotesque body/UI voice.
+  # - SpaceMono: Cypherpunk retro-mono display / eyebrow / scoreline voice.
   fonts:
     - family: ZalandoSans
       fonts:
         - asset: assets/fonts/ZalandoSans.ttf
+    - family: SpaceMono
+      fonts:
+        - asset: assets/fonts/SpaceMono-Regular.ttf
+        - asset: assets/fonts/SpaceMono-Bold.ttf
+          weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

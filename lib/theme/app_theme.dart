@@ -1,74 +1,77 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// TennisGPT Design System
-/// Direction: calm tactical intelligence.
-/// Clarity-first hierarchy, premium restraint, and pressure-ready readability.
+/// Composure Design System — active skin: TypeUI · Cypherpunk.
+/// Direction: stark, two-tone retro-tech. One electric-lime section surface,
+/// near-black ink type + 2px ink borders, raised beige cards, crisp 2px
+/// corners, flat/grounded elevation, and a retro-mono display voice.
+///
+/// Cypherpunk is a single stark identity, so the light and dark constants
+/// resolve to the same palette; the app reads as Cypherpunk regardless of the
+/// system theme toggle.
 
 class AppTheme {
   AppTheme._();
 
   // ============ COLORS ============
-  // ComposureDesign1 brand palette (TypeUI design system).
-  static const Color primary = Color(0xFF0166FF); // brand
-  static const Color primaryLight = Color(0xFF4D9AFF); // fg-brand (dark)
-  static const Color primaryDark = Color(0xFF0052CC); // brand-strong
+  // Cypherpunk palette (TypeUI). `brand` is ink; the lime is the section fill.
+  static const Color _ink = Color(0xFF1C1C1C); // brand / body / borders
+  static const Color _lime = Color(0xFFD8FF7C); // neutral-secondary (sections)
+  static const Color _beige = Color(0xFFEAE5DB); // neutral-primary (cards)
 
-  /// Glow tone for highlighted surfaces
-  static const Color softGlow = Color(0xFF4D9AFF);
+  static const Color primary = _ink; // brand (ink)
+  static const Color primaryLight = _ink; // brand reads as ink at every step
+  static const Color primaryDark = Color(0xFF000000); // pressed ink (dark-strong)
 
-  /// Brand-tinted background surfaces (light mode), from ComposureDesign1.
-  static const Color brandSofter = Color(0xFFE8F1FF); // brand-softer
-  static const Color brandSoft = Color(0xFFCCE0FF); // brand-soft
+  /// Glow tone (Cypherpunk is flat; kept as ink for any legacy reference).
+  static const Color softGlow = _ink;
 
-  /// Surface colors - layered depth system (DARK MODE DEFAULTS)
-  /// ComposureDesign1 dark neutral scale. Use theme-aware getters for usage.
-  static const Color surfaceDark = Color(0xFF060B18); // neutral-primary
-  static const Color surfaceSecondary = Color(0xFF0C1222); // neutral-*-soft
-  static const Color surfaceCard = Color(0xFF131B2E); // neutral-*-medium
-  static const Color surfaceElevated = Color(0xFF1E293B); // neutral-*-strong
-  static const Color surfaceBorder = Color(0xFF334155); // quaternary-medium
+  /// Brand-tinted background surfaces — Cypherpunk raised/soft neutrals.
+  static const Color brandSofter = _beige; // brand-softer (#E9E5DB≈#EAE5DB)
+  static const Color brandSoft = Color(0xFFC9C3B1); // brand-soft
 
-  /// Text colors - clear hierarchy (DARK MODE DEFAULTS)
-  /// ComposureDesign1 slate text scale (contrast-verified against surfaceDark).
-  static const Color textPrimary = Color(0xFFF1F5F9); // heading
-  static const Color textSecondary = Color(0xFFCBD5E1); // body (>=7:1)
-  static const Color textMuted = Color(0xFF94A3B8); // body-subtle (>=4.5:1)
+  /// Surface colors (DARK MODE DEFAULTS — mapped to the single Cypherpunk skin).
+  static const Color surfaceDark = _lime; // section surface (lime)
+  static const Color surfaceSecondary = _lime; // app bars / bands (lime)
+  static const Color surfaceCard = _beige; // raised card surface
+  static const Color surfaceElevated = _beige; // raised/floating surface
+  static const Color surfaceBorder = _ink; // 2px ink border
 
-  /// Accent colors for data/stats (ComposureDesign1 status + accent tokens)
-  static const Color win = Color(0xFF10B981); // success
-  static const Color loss = Color(0xFFF43F5E); // danger (dark fg)
-  static const Color neutral = Color(0xFF14B8A6); // teal accent
-  static const Color warning = Color(0xFFF97316); // warning
+  /// Text colors — all ink; hierarchy comes from size/weight, not color.
+  static const Color textPrimary = _ink; // heading
+  static const Color textSecondary = _ink; // body
+  static const Color textMuted = _ink; // body-subtle
 
-  /// Court-surface accent language (Authored style).
-  /// Surface becomes a small meaningful accent, never a full theme:
-  /// clay → terracotta, grass → green, carpet → violet, hard → court blue.
+  /// Status + accent tokens (used only when something truly is that state).
+  static const Color win = Color(0xFF2D8654); // success
+  static const Color loss = Color(0xFFE94736); // danger
+  static const Color neutral = Color(0xFF2BB3A3); // teal accent
+  static const Color warning = Color(0xFFA8852E); // warning-strong (legible)
+
+  /// Court-surface accent language, mapped onto the Cypherpunk accent set:
+  /// clay → orange, grass → teal, carpet → purple, hard → indigo.
   static Color surfaceAccent(String surface) {
     switch (surface.trim().toLowerCase()) {
       case 'clay':
-        return const Color(0xFFD8662E); // terracotta
+        return const Color(0xFFF6913C); // orange
       case 'grass':
-        return const Color(0xFF3FA866); // grass green
+        return const Color(0xFF2BB3A3); // teal
       case 'carpet':
-        return const Color(0xFF8B7CFF); // indoor violet
+        return const Color(0xFF9D7CFF); // purple
       case 'hard':
       default:
-        return const Color(0xFF3C82E6); // court blue
+        return const Color(0xFF4A5BE0); // indigo
     }
   }
 
   // ============ LIGHT MODE COLORS ============
-  // ComposureDesign1 light neutral scale (public so ThemeService can reuse).
-  static const Color surfaceLight = Color(0xFFF8FAFC); // neutral-secondary-soft
-  static const Color surfaceCardLight = Color(0xFFFFFFFF); // neutral-primary
-  static const Color surfaceElevatedLight = Color(0xFFF0F4F8); // neutral-tertiary
-  static const Color surfaceBorderLight = Color(0xFFE2E8F0); // border-default
-  static const Color textPrimaryLight = Color(0xFF0F172A); // heading
-  static const Color textSecondaryLight = Color(0xFF475569); // body
-  static const Color textMutedLight = Color(0xFF64748B); // body-subtle
+  // Same single Cypherpunk skin (public so ThemeService can reuse).
+  static const Color surfaceLight = _lime; // section surface (lime)
+  static const Color surfaceCardLight = _beige; // raised card surface
+  static const Color surfaceElevatedLight = _beige; // raised/floating surface
+  static const Color surfaceBorderLight = _ink; // 2px ink border
+  static const Color textPrimaryLight = _ink; // heading
+  static const Color textSecondaryLight = _ink; // body
+  static const Color textMutedLight = _ink; // body-subtle
 
   // ============ THEME-AWARE COLOR GETTERS ============
 
@@ -121,31 +124,33 @@ class AppTheme {
         : textMutedLight;
   }
 
-  /// Check if current theme is dark
-  static bool isDark(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark;
-  }
+  /// Cypherpunk is a single stark light identity — always report "not dark" so
+  /// every screen takes the light branch and status-bar icons stay ink.
+  static bool isDark(BuildContext context) => false;
 
-  /// Get theme-aware card decoration.
-  /// ComposureDesign1 card: base radius (16), 1px border, shadow-md depth.
+  /// Cypherpunk card: raised beige surface, crisp 2px corner, bold 2px ink
+  /// border, and NO resting shadow — separation comes from the border.
   static BoxDecoration cardDecorationThemed(BuildContext context) {
     return BoxDecoration(
       color: cardBackground(context),
       borderRadius: BorderRadius.circular(radiusLG),
-      border: Border.all(color: borderColor(context), width: 1),
+      border: Border.all(color: borderColor(context), width: borderWidth),
       boxShadow: cardShadow,
     );
   }
 
-  /// Get theme-aware elevated card decoration (shadow-lg step-up).
+  /// Elevated/raised card — same crisp beige shell with a whisper of ink lift.
   static BoxDecoration elevatedCardDecorationThemed(BuildContext context) {
     return BoxDecoration(
       color: elevatedBackground(context),
       borderRadius: BorderRadius.circular(radiusLG),
-      border: Border.all(color: borderColor(context), width: 1),
+      border: Border.all(color: borderColor(context), width: borderWidth),
       boxShadow: elevatedShadow,
     );
   }
+
+  /// Cypherpunk borders are a bold 2px ink stroke on every shell.
+  static const double borderWidth = 2.0;
 
   // ============ SPACING ============
 
@@ -168,24 +173,29 @@ class AppTheme {
   static const EdgeInsets cardPaddingLarge = EdgeInsets.all(spaceLG);
 
   // ============ BORDER RADIUS ============
-  // ComposureDesign1 radius scale: sm 6, default 10, base 16, full 9999.
-  static const double radiusSM = 6.0; // sm - checkboxes, tiny elements
-  static const double radiusMD = 10.0; // default - badges, small controls
-  static const double radiusLG = 16.0; // base - buttons, cards, inputs, modals
-  static const double radiusXL = 16.0; // base (no larger tier in the scale)
-  static const double radiusFull = 9999.0; // pills, avatars, toggles
+  // Cypherpunk is near-square: every component shell is a crisp 2px corner.
+  // Only functionally-round controls (avatars, toggles, dots) use radiusFull.
+  static const double radiusSM = 2.0; // nested children / tiny elements
+  static const double radiusMD = 2.0; // badges, small controls
+  static const double radiusLG = 2.0; // buttons, cards, inputs, modals (shell)
+  static const double radiusXL = 4.0; // oversized hero / feature panels
+  static const double radiusFull = 9999.0; // avatars, toggle track, status dots
 
   // ============ TYPOGRAPHY ============
-  // ComposureDesign1 font: Zalando Sans SemiExpanded (bundled variable font).
-  // Single family for display + body, per the design system.
-  static const String fontFamily = 'ZalandoSans';
+  // Cypherpunk pairs two voices:
+  //  • body/UI/headings — a clean neo-grotesque (Untitled Sans → bundled
+  //    ZalandoSans at normal width).
+  //  • the "loud moments" — a retro monospace (Offbit → bundled Space Mono)
+  //    for stats, scorelines and uppercase eyebrows, for the terminal feel.
+  static const String fontFamily = 'ZalandoSans'; // neo-grotesque body/UI
+  static const String monoFamily = 'SpaceMono'; // retro-mono display voice
 
-  /// SemiExpanded width on the variable `wdth` axis (75–125 range).
-  static const double _semiExpandedWidth = 112.5;
+  /// Normal width on the variable `wdth` axis (Cypherpunk body is compact,
+  /// not expanded). Kept under the old name so call sites stay valid.
+  static const double _brandWidth = 100.0;
 
-  /// Width variation shared by all brand type (SemiExpanded).
   static const List<FontVariation> fontVariationsSemiExpanded = [
-    FontVariation('wdth', _semiExpandedWidth),
+    FontVariation('wdth', _brandWidth),
   ];
 
   static TextStyle _brandFont({
@@ -201,7 +211,7 @@ class AppTheme {
       fontWeight: weight,
       fontVariations: [
         FontVariation('wght', weight.value.toDouble()),
-        const FontVariation('wdth', _semiExpandedWidth),
+        const FontVariation('wdth', _brandWidth),
       ],
       color: color,
       letterSpacing: spacing,
@@ -209,8 +219,27 @@ class AppTheme {
     );
   }
 
-  // Display + body share the single brand family; kept as separate helpers
-  // so existing call sites and intent (headings vs. copy) stay readable.
+  /// Retro-mono display voice (Space Mono). Used for stats, scorelines and
+  /// uppercase eyebrows — the Cypherpunk "loud moments".
+  static TextStyle _mono({
+    required double size,
+    required FontWeight weight,
+    required Color color,
+    double spacing = 0,
+    double? height,
+  }) {
+    return TextStyle(
+      fontFamily: monoFamily,
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+      letterSpacing: spacing,
+      height: height,
+    );
+  }
+
+  // Headings + body use the neo-grotesque; helpers kept separate so intent
+  // (headings vs. copy) stays readable at call sites.
   static TextStyle _display({
     required double size,
     required FontWeight weight,
@@ -301,30 +330,28 @@ class AppTheme {
         height: 1.4,
       );
 
-  /// Stats/numbers - large display (hero stats like win rate)
-  static TextStyle get statLarge => _display(
+  /// Stats/numbers - large display (hero stats like win rate). Retro mono.
+  static TextStyle get statLarge => _mono(
         size: 42,
-        weight: FontWeight.w800,
+        weight: FontWeight.w700,
         color: textPrimary,
-        spacing: -1.0,
+        spacing: -0.5,
         height: 1.0,
       );
 
-  /// Stats - medium display
-  static TextStyle get statMedium => _display(
+  /// Stats - medium display. Retro mono.
+  static TextStyle get statMedium => _mono(
         size: 30,
-        weight: FontWeight.w600,
+        weight: FontWeight.w700,
         color: textPrimary,
-        spacing: -0.4,
         height: 1.05,
       );
 
-  /// Score display - prominent
-  static TextStyle get scoreDisplay => _display(
+  /// Score display - prominent. Retro mono.
+  static TextStyle get scoreDisplay => _mono(
         size: 36,
         weight: FontWeight.w700,
         color: textPrimary,
-        spacing: -0.6,
       );
 
   // ============ THEME-AWARE TEXT STYLES ============
@@ -382,36 +409,35 @@ class AppTheme {
         height: 1.4,
       );
 
-  static TextStyle statLargeThemed(BuildContext context) => _display(
+  static TextStyle statLargeThemed(BuildContext context) => _mono(
         size: 42,
-        weight: FontWeight.w800,
+        weight: FontWeight.w700,
         color: textPrimaryColor(context),
-        spacing: -1.0,
+        spacing: -0.5,
         height: 1.0,
       );
 
-  static TextStyle statMediumThemed(BuildContext context) => _display(
+  static TextStyle statMediumThemed(BuildContext context) => _mono(
         size: 30,
-        weight: FontWeight.w600,
+        weight: FontWeight.w700,
         color: textPrimaryColor(context),
-        spacing: -0.4,
         height: 1.05,
       );
 
-  /// Scoreline — the identity face for tennis scores (Authored style).
-  /// Monospace with tabular figures so "6-4 3-6 7-5" reads like a scoreboard.
-  /// This is pure typography doing identity work; nothing else looks like it.
+  /// Scoreline — the identity face for scores, and a natural fit for the
+  /// Cypherpunk retro-mono voice. Bundled Space Mono with tabular figures so
+  /// "6-4 3-6 7-5" reads like a terminal scoreboard.
   static TextStyle scorelineThemed(
     BuildContext context, {
     double size = 30,
     FontWeight weight = FontWeight.w700,
     Color? color,
   }) =>
-      GoogleFonts.spaceMono(
-        fontSize: size,
-        fontWeight: weight,
+      _mono(
+        size: size,
+        weight: weight,
         color: color ?? textPrimaryColor(context),
-        letterSpacing: -0.5,
+        spacing: -0.5,
         height: 1.0,
       );
 
@@ -436,15 +462,15 @@ class AppTheme {
         fillColor: cardBackground(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          borderSide: BorderSide(color: borderColor(context)),
+          borderSide: BorderSide(color: borderColor(context), width: borderWidth),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          borderSide: BorderSide(color: borderColor(context)),
+          borderSide: BorderSide(color: borderColor(context), width: borderWidth),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          borderSide: const BorderSide(color: primary, width: 2),
+          borderSide: const BorderSide(color: primary, width: borderWidth),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,
@@ -453,81 +479,41 @@ class AppTheme {
       );
 
   // ============ SHADOWS ============
+  // Cypherpunk reads flat and grounded: resting surfaces separate with the
+  // 2px ink border, never a drop shadow. Depth (ink at low opacity) is
+  // reserved for things that genuinely float.
 
-  /// ComposureDesign1 shadow-md (standard cards, popovers, dropdowns).
-  static List<BoxShadow> get cardShadow => const [
-        BoxShadow(
-          color: Color(0x14000000), // black / 0.08
-          blurRadius: 16,
-          spreadRadius: -4,
-          offset: Offset(0, 6),
-        ),
-        BoxShadow(
-          color: Color(0x0D000000), // black / 0.05
-          blurRadius: 6,
-          spreadRadius: -2,
-          offset: Offset(0, 2),
-        ),
-      ];
+  /// Resting cards/fields are flat — separation is the ink border.
+  static List<BoxShadow> get cardShadow => const [];
 
-  /// ComposureDesign1 shadow-lg (prominent cards, sticky/glass surfaces).
+  /// A whisper of ink lift for raised/floating surfaces (elevation-2).
   static List<BoxShadow> get elevatedShadow => const [
         BoxShadow(
-          color: Color(0x1A000000), // black / 0.10
-          blurRadius: 28,
-          spreadRadius: -6,
-          offset: Offset(0, 12),
-        ),
-        BoxShadow(
-          color: Color(0x0F000000), // black / 0.06
-          blurRadius: 12,
-          spreadRadius: -4,
+          color: Color(0x141C1C1C), // ink / 0.08
+          blurRadius: 16,
           offset: Offset(0, 4),
         ),
       ];
 
-  /// Subtle blue glow for primary CTA buttons
-  static List<BoxShadow> get ctaGlow => [
-        BoxShadow(
-          color: primary.withValues(alpha: 0.4),
-          blurRadius: 16,
-          spreadRadius: 0,
-          offset: const Offset(0, 4),
-        ),
-        BoxShadow(
-          color: softGlow.withValues(alpha: 0.2),
-          blurRadius: 32,
-          spreadRadius: -4,
-          offset: const Offset(0, 8),
-        ),
-      ];
+  /// Cypherpunk primary actions are flat ink — no glow.
+  static List<BoxShadow> get ctaGlow => const [];
 
-  /// Theme-aware CTA glow (only applies in dark mode for subtlety)
-  static List<BoxShadow> ctaGlowThemed(BuildContext context) {
-    return isDark(context)
-        ? ctaGlow
-        : [
-            BoxShadow(
-              color: primary.withValues(alpha: 0.25),
-              blurRadius: 12,
-              spreadRadius: 0,
-              offset: const Offset(0, 4),
-            ),
-          ];
-  }
+  /// Kept for API compatibility; Cypherpunk CTAs are flat.
+  static List<BoxShadow> ctaGlowThemed(BuildContext context) => const [];
 
   // ============ DECORATIONS ============
 
   static BoxDecoration get cardDecoration => BoxDecoration(
         color: surfaceCard,
         borderRadius: BorderRadius.circular(radiusLG),
-        border: Border.all(color: surfaceBorder, width: 1),
+        border: Border.all(color: surfaceBorder, width: borderWidth),
       );
 
   static BoxDecoration get elevatedCardDecoration => BoxDecoration(
         color: surfaceElevated,
         borderRadius: BorderRadius.circular(radiusLG),
-        boxShadow: cardShadow,
+        border: Border.all(color: surfaceBorder, width: borderWidth),
+        boxShadow: elevatedShadow,
       );
 
   // ============ INPUT DECORATION ============
@@ -548,15 +534,15 @@ class AppTheme {
         fillColor: surfaceCard,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          borderSide: const BorderSide(color: surfaceBorder),
+          borderSide: const BorderSide(color: surfaceBorder, width: borderWidth),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          borderSide: const BorderSide(color: surfaceBorder),
+          borderSide: const BorderSide(color: surfaceBorder, width: borderWidth),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusLG),
-          borderSide: const BorderSide(color: primary, width: 2),
+          borderSide: const BorderSide(color: primary, width: borderWidth),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spaceMD,
@@ -744,12 +730,9 @@ class _TGCollapsibleSectionState extends State<TGCollapsibleSection> {
   }
 }
 
-/// ComposureDesign1 glassmorphism card (opt-in, for hero/feature surfaces).
-///
-/// Implements the design system's frosted-glass spec: `backdrop blur(16)`,
-/// translucent fill, a 1px translucent-white frosted edge, base radius (16),
-/// and shadow-md. Use for signature surfaces; standard content should keep
-/// [TGCard] for readability and performance.
+/// Signature/feature panel. Cypherpunk has no frosted glass — this is a raised
+/// beige shell with the bold 2px ink border and a whisper of ink lift. Kept
+/// under the same name so existing call sites stay valid.
 class TGGlassCard extends StatelessWidget {
   const TGGlassCard({
     super.key,
@@ -764,26 +747,10 @@ class TGGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = AppTheme.isDark(context);
-    // Glass fill + frosted edge (translucent white), per cards.md.
-    final fill = Colors.white.withValues(alpha: dark ? 0.06 : 0.65);
-    final edge = Colors.white.withValues(alpha: dark ? 0.10 : 0.50);
-
-    final content = ClipRRect(
-      borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: padding ?? AppTheme.cardPadding,
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
-            border: Border.all(color: edge, width: 1),
-            boxShadow: AppTheme.cardShadow,
-          ),
-          child: child,
-        ),
-      ),
+    final content = Container(
+      padding: padding ?? AppTheme.cardPadding,
+      decoration: AppTheme.elevatedCardDecorationThemed(context),
+      child: child,
     );
 
     if (onTap == null) return content;
