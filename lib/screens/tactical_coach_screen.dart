@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -611,64 +613,93 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       scopeNote,
     );
 
-    return Column(
-      key: _insightCardKey,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'BASED ON YOUR LAST $matchesUsed MATCHES',
-          style: AppTheme.labelThemed(context).copyWith(
-              letterSpacing: 1.2, color: AppTheme.textMutedColor(context)),
-        ),
-        if (scopeNote.isNotEmpty) ...[
-          const SizedBox(height: AppTheme.spaceXS),
-          Text(scopeNote,
-              style: AppTheme.bodySmallThemed(context)
-                  .copyWith(color: AppTheme.textSecondaryColor(context))),
-        ],
-        const SizedBox(height: AppTheme.spaceMD),
-        _buildCoachSection(
-          step: '01',
-          title: 'What keeps showing up',
-          text: whatKeepsShowingUp['text'] as String? ?? '',
-          evidence: whatKeepsShowingUp['evidence'] as String?,
-          confidence: whatKeepsShowingUp['confidence'] as String?,
-          trend: whatKeepsShowingUp['trend'] as String?,
-        ),
-        const SizedBox(height: AppTheme.spaceLG),
-        _buildCoachSection(
-          step: '02',
-          title: 'What\'s helping you win',
-          text: whatsHelpingYouWin['text'] as String? ?? '',
-          evidence: whatsHelpingYouWin['evidence'] as String?,
-          confidence: whatsHelpingYouWin['confidence'] as String?,
-          trend: whatsHelpingYouWin['trend'] as String?,
-        ),
-        const SizedBox(height: AppTheme.spaceLG),
-        _buildCoachSection(
-          step: '03',
-          title: 'What breaks under pressure',
-          text: whatBreaksUnderPressure['text'] as String? ?? '',
-          evidence: whatBreaksUnderPressure['evidence'] as String?,
-          confidence: whatBreaksUnderPressure['confidence'] as String?,
-          trend: whatBreaksUnderPressure['trend'] as String?,
-        ),
-        const SizedBox(height: AppTheme.spaceLG),
-        // The single accent moment — the one thing to act on next.
-        _buildCoachSection(
-          step: '04',
-          title: 'Next match focus',
-          text: _buildNextMatchFocusText(nextMatchFocus),
-          confidence: nextMatchFocus['confidence'] as String?,
-          highlighted: true,
-        ),
-        if (hasPracticePlan) ...[
+    final headerLabel = matchesUsed > 0
+        ? 'BASED ON YOUR LAST $matchesUsed ${matchesUsed == 1 ? 'MATCH' : 'MATCHES'}'
+        : 'YOUR COACH REVIEW';
+
+    // Keyed per result so the staggered reveal replays for each new review.
+    return KeyedSubtree(
+      key: ValueKey(identityHashCode(data)),
+      child: Column(
+        key: _insightCardKey,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _RevealIn(
+            delayMs: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  headerLabel,
+                  style: AppTheme.labelThemed(context).copyWith(
+                      letterSpacing: 1.2,
+                      color: AppTheme.textMutedColor(context)),
+                ),
+                if (scopeNote.isNotEmpty) ...[
+                  const SizedBox(height: AppTheme.spaceXS),
+                  Text(scopeNote,
+                      style: AppTheme.bodySmallThemed(context).copyWith(
+                          color: AppTheme.textSecondaryColor(context))),
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: AppTheme.spaceMD),
-          _buildPracticePlanCard(practicePlan),
+          _RevealIn(
+            delayMs: 80,
+            child: _buildCoachSection(
+              step: '01',
+              title: 'What keeps showing up',
+              text: whatKeepsShowingUp['text'] as String? ?? '',
+              evidence: whatKeepsShowingUp['evidence'] as String?,
+              confidence: whatKeepsShowingUp['confidence'] as String?,
+              trend: whatKeepsShowingUp['trend'] as String?,
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceLG),
+          _RevealIn(
+            delayMs: 180,
+            child: _buildCoachSection(
+              step: '02',
+              title: 'What\'s helping you win',
+              text: whatsHelpingYouWin['text'] as String? ?? '',
+              evidence: whatsHelpingYouWin['evidence'] as String?,
+              confidence: whatsHelpingYouWin['confidence'] as String?,
+              trend: whatsHelpingYouWin['trend'] as String?,
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceLG),
+          _RevealIn(
+            delayMs: 280,
+            child: _buildCoachSection(
+              step: '03',
+              title: 'What breaks under pressure',
+              text: whatBreaksUnderPressure['text'] as String? ?? '',
+              evidence: whatBreaksUnderPressure['evidence'] as String?,
+              confidence: whatBreaksUnderPressure['confidence'] as String?,
+              trend: whatBreaksUnderPressure['trend'] as String?,
+            ),
+          ),
+          const SizedBox(height: AppTheme.spaceLG),
+          // The single accent moment — the one thing to act on next.
+          _RevealIn(
+            delayMs: 400,
+            child: _buildNextFocusCard(nextMatchFocus),
+          ),
+          if (hasPracticePlan) ...[
+            const SizedBox(height: AppTheme.spaceMD),
+            _RevealIn(
+              delayMs: 500,
+              child: _buildPracticePlanCard(practicePlan),
+            ),
+          ],
+          const SizedBox(height: AppTheme.spaceLG),
+          _RevealIn(
+            delayMs: 560,
+            child: _buildActionsRow(shareText),
+          ),
         ],
-        const SizedBox(height: AppTheme.spaceLG),
-        _buildActionsRow(shareText),
-      ],
+      ),
     );
   }
 
@@ -679,14 +710,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     String? evidence,
     String? confidence,
     String? trend,
-    bool highlighted = false,
   }) {
-    // Editorial: a numbered block with no card chrome; the highlighted focus
-    // gets a thin accent rule on the left.
-    final hasMeta = (evidence ?? '').isNotEmpty ||
-        (confidence ?? '').isNotEmpty ||
-        (trend ?? '').isNotEmpty;
-    final block = Column(
+    // Editorial: a numbered block with no card chrome. The advice text is the
+    // hero of the block, so it renders in the primary text color.
+    final evidenceText = (evidence ?? '').trim();
+    final trendBadge = _trendBadge(trend);
+    final confidenceLabel = _confidenceLabel(confidence);
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -697,9 +728,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 step,
                 style: AppTheme.labelThemed(context).copyWith(
                   letterSpacing: 1,
-                  color: highlighted
-                      ? AppTheme.primary
-                      : AppTheme.textMutedColor(context),
+                  color: AppTheme.textMutedColor(context),
                 ),
               ),
               const SizedBox(width: AppTheme.spaceSM),
@@ -710,12 +739,14 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
                 style: AppTheme.headingSmallThemed(context).copyWith(
                   fontSize: 18,
                   letterSpacing: -0.3,
-                  color: highlighted
-                      ? AppTheme.primary
-                      : AppTheme.textPrimaryColor(context),
+                  color: AppTheme.textPrimaryColor(context),
                 ),
               ),
             ),
+            if (trendBadge != null) ...[
+              const SizedBox(width: AppTheme.spaceSM),
+              trendBadge,
+            ],
           ],
         ),
         const SizedBox(height: AppTheme.spaceSM),
@@ -724,47 +755,161 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
           style: AppTheme.bodyLargeThemed(context).copyWith(
               height: 1.6,
               fontSize: 16,
-              color: AppTheme.textSecondaryColor(context)),
+              color: AppTheme.textPrimaryColor(context)),
         ),
-        if (hasMeta) ...[
+        if (evidenceText.isNotEmpty) ...[
           const SizedBox(height: AppTheme.spaceSM),
-          Text(_buildEvidenceMeta(evidence, confidence, trend),
-              style: AppTheme.labelThemed(context)
-                  .copyWith(color: AppTheme.textMutedColor(context))),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 2,
+                height: 32,
+                margin: const EdgeInsets.only(top: 2),
+                color: AppTheme.borderColor(context),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              Expanded(
+                child: Text(
+                  evidenceText,
+                  style: AppTheme.bodySmallThemed(context).copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: AppTheme.textSecondaryColor(context),
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        if (confidenceLabel != null) ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          CBadge(label: confidenceLabel),
         ],
       ],
     );
+  }
 
-    if (highlighted) {
-      return Container(
-        padding: const EdgeInsets.only(left: AppTheme.spaceMD),
-        decoration: const BoxDecoration(
-          border: Border(
-            left: BorderSide(color: AppTheme.primary, width: 2.5),
+  /// Translates the model's confidence value into player-friendly wording.
+  String? _confidenceLabel(String? confidence) {
+    switch (confidence?.toLowerCase().trim()) {
+      case 'high':
+        return 'Clear pattern';
+      case 'medium':
+        return 'Solid read';
+      case 'low':
+        return 'Early signs — log more matches';
+      default:
+        return null;
+    }
+  }
+
+  /// Trend rendered as a colored badge with a direction icon.
+  /// "unclear" is intentionally hidden — it adds noise, not signal.
+  Widget? _trendBadge(String? trend) {
+    switch (trend?.toLowerCase().trim()) {
+      case 'improving':
+        return const CBadge(
+          label: 'Improving',
+          variant: CBadgeVariant.success,
+          icon: Icons.trending_up_rounded,
+        );
+      case 'slipping':
+        return const CBadge(
+          label: 'Slipping',
+          variant: CBadgeVariant.danger,
+          icon: Icons.trending_down_rounded,
+        );
+      case 'stable':
+        return const CBadge(
+          label: 'Steady',
+          variant: CBadgeVariant.neutral,
+          icon: Icons.trending_flat_rounded,
+        );
+      default:
+        return null;
+    }
+  }
+
+  /// The one thing to act on next — a proper card, not just an accent rule.
+  Widget _buildNextFocusCard(Map<String, dynamic> nextMatchFocus) {
+    final text = (nextMatchFocus['text'] as String? ?? '').trim();
+    final triggerRule = (nextMatchFocus['triggerRule'] as String? ?? '').trim();
+    final confidenceLabel =
+        _confidenceLabel(nextMatchFocus['confidence'] as String?);
+
+    return Container(
+      padding: AppTheme.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.35)),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '04',
+                style: AppTheme.labelThemed(context)
+                    .copyWith(letterSpacing: 1, color: AppTheme.primary),
+              ),
+              const SizedBox(width: AppTheme.spaceSM),
+              const Expanded(child: CEyebrow('Next match focus')),
+              if (confidenceLabel != null)
+                CBadge(label: confidenceLabel, variant: CBadgeVariant.brand),
+            ],
           ),
-        ),
-        child: block,
-      );
-    }
-    return block;
-  }
-
-  String _buildEvidenceMeta(
-      String? evidence, String? confidence, String? trend) {
-    final parts = <String>[];
-    if ((evidence ?? '').isNotEmpty) parts.add(evidence!.trim());
-    if ((confidence ?? '').isNotEmpty) {
-      parts.add('Confidence: ${confidence!.trim()}');
-    }
-    if ((trend ?? '').isNotEmpty) parts.add('Trend: ${trend!.trim()}');
-    return parts.join(' • ');
-  }
-
-  String _buildNextMatchFocusText(Map<String, dynamic> nextMatchFocus) {
-    final text = nextMatchFocus['text'] as String? ?? '';
-    final triggerRule = nextMatchFocus['triggerRule'] as String? ?? '';
-    if (triggerRule.isEmpty) return text;
-    return '$text\nTrigger: $triggerRule';
+          const SizedBox(height: AppTheme.spaceSM),
+          Text(
+            text,
+            style: AppTheme.headingSmallThemed(context).copyWith(
+              fontSize: 17,
+              height: 1.45,
+              letterSpacing: -0.2,
+              color: AppTheme.textPrimaryColor(context),
+            ),
+          ),
+          if (triggerRule.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spaceMD),
+            Divider(color: AppTheme.borderColor(context), height: 1),
+            const SizedBox(height: AppTheme.spaceMD),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.bolt_rounded,
+                    size: 18, color: AppTheme.primary),
+                const SizedBox(width: AppTheme.spaceSM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'IN-MATCH TRIGGER',
+                        style: AppTheme.labelThemed(context).copyWith(
+                          letterSpacing: 1.2,
+                          color: AppTheme.textMutedColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        triggerRule,
+                        style: AppTheme.bodyMediumThemed(context).copyWith(
+                          height: 1.5,
+                          color: AppTheme.textPrimaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildPracticePlanCard(Map<String, dynamic> practicePlan) {
@@ -808,7 +953,7 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         TextButton.icon(
-          onPressed: _isSaving ? null : () => _saveCurrentAdvice(shareText),
+          onPressed: _isSaving ? null : _saveCurrentAdvice,
           style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
           icon: _isSaving
               ? SizedBox(
@@ -856,14 +1001,16 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
 
   // ============ Save + Saved view ============
 
-  Future<void> _saveCurrentAdvice(String content) async {
-    if (_isSaving) return;
+  Future<void> _saveCurrentAdvice() async {
+    if (_isSaving || _analysisResult == null) return;
     setState(() => _isSaving = true);
     HapticFeedback.lightImpact();
 
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      final success = await apiService.saveTacticalAdvice(content);
+      // Save the structured JSON so the Saved tab can re-render full sections.
+      final success =
+          await apiService.saveTacticalAdvice(jsonEncode(_analysisResult));
 
       if (mounted) {
         setState(() => _isSaving = false);
@@ -957,6 +1104,103 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     );
   }
 
+  /// Decodes a saved entry back into the structured coach format, or null
+  /// for legacy plain-text entries.
+  Map<String, dynamic>? _tryDecodeStructured(String content) {
+    try {
+      final decoded = jsonDecode(content);
+      if (decoded is Map<String, dynamic> &&
+          decoded.containsKey('whatKeepsShowingUp') &&
+          decoded.containsKey('nextMatchFocus')) {
+        return decoded;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  String _savedSectionText(Map<String, dynamic> data, String key) {
+    final section = data[key];
+    if (section is Map<String, dynamic>) {
+      return (section['text'] as String? ?? '').trim();
+    }
+    return '';
+  }
+
+  Widget _buildSavedSection(String title, String text) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: AppTheme.labelThemed(context).copyWith(
+              letterSpacing: 1.2, color: AppTheme.textMutedColor(context)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          text,
+          style: AppTheme.bodyMediumThemed(context).copyWith(
+              height: 1.5, color: AppTheme.textPrimaryColor(context)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSavedStructuredPreview(Map<String, dynamic> data) {
+    final focusText = _savedSectionText(data, 'nextMatchFocus');
+    final fallback = _savedSectionText(data, 'whatKeepsShowingUp');
+    return _buildSavedSection(
+      focusText.isNotEmpty ? 'Next match focus' : 'What keeps showing up',
+      focusText.isNotEmpty ? focusText : fallback,
+    );
+  }
+
+  Widget _buildSavedStructuredFull(Map<String, dynamic> data) {
+    final sections = <(String, String)>[
+      ('What keeps showing up', _savedSectionText(data, 'whatKeepsShowingUp')),
+      ('What\'s helping you win', _savedSectionText(data, 'whatsHelpingYouWin')),
+      (
+        'What breaks under pressure',
+        _savedSectionText(data, 'whatBreaksUnderPressure')
+      ),
+      ('Next match focus', _savedSectionText(data, 'nextMatchFocus')),
+    ].where((s) => s.$2.isNotEmpty).toList();
+
+    final nextFocus = data['nextMatchFocus'];
+    final triggerRule = nextFocus is Map<String, dynamic>
+        ? (nextFocus['triggerRule'] as String? ?? '').trim()
+        : '';
+
+    final practicePlan = data['optionalPracticePlan'];
+    final drillName = practicePlan is Map<String, dynamic>
+        ? (practicePlan['drillName'] as String? ?? '').trim()
+        : '';
+    final objective = practicePlan is Map<String, dynamic>
+        ? (practicePlan['objective'] as String? ?? '').trim()
+        : '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < sections.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppTheme.spaceMD),
+          _buildSavedSection(sections[i].$1, sections[i].$2),
+        ],
+        if (triggerRule.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.spaceSM),
+          _buildSavedSection('In-match trigger', triggerRule),
+        ],
+        if (drillName.isNotEmpty || objective.isNotEmpty) ...[
+          const SizedBox(height: AppTheme.spaceMD),
+          _buildSavedSection(
+              'Practice plan',
+              [drillName, objective]
+                  .where((s) => s.isNotEmpty)
+                  .join(' — ')),
+        ],
+      ],
+    );
+  }
+
   Widget _buildExpandableSavedCard(
       int index, String content, String createdAt) {
     final isExpanded = _expandedCardIndex == index;
@@ -976,9 +1220,27 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
       } catch (_) {}
     }
 
-    final needsExpansion = content.length > 200;
-    final previewText =
-        needsExpansion ? '${content.substring(0, 200).trimRight()}…' : content;
+    final structured = _tryDecodeStructured(content);
+    final needsExpansion = structured != null || content.length > 200;
+    final previewText = structured == null && needsExpansion
+        ? '${content.substring(0, 200).trimRight()}…'
+        : content;
+
+    final Widget body;
+    if (structured != null) {
+      body = isExpanded
+          ? _buildSavedStructuredFull(structured)
+          : _buildSavedStructuredPreview(structured);
+    } else {
+      body = Text(
+        isExpanded || !needsExpansion ? content : previewText,
+        style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.55),
+        maxLines: isExpanded || !needsExpansion ? null : 4,
+        overflow: isExpanded || !needsExpansion
+            ? TextOverflow.clip
+            : TextOverflow.ellipsis,
+      );
+    }
 
     final card = TGCard(
       child: Column(
@@ -1005,18 +1267,12 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
             alignment: Alignment.topCenter,
-            child: Text(
-              isExpanded || !needsExpansion ? content : previewText,
-              style: AppTheme.bodyMediumThemed(context).copyWith(height: 1.55),
-              maxLines: isExpanded || !needsExpansion ? null : 4,
-              overflow: isExpanded || !needsExpansion
-                  ? TextOverflow.clip
-                  : TextOverflow.ellipsis,
-            ),
+            child: SizedBox(width: double.infinity, child: body),
           ),
           if (needsExpansion && !isExpanded) ...[
             const SizedBox(height: AppTheme.spaceXS),
-            Text('Tap to read more',
+            Text(
+                structured != null ? 'Tap for full review' : 'Tap to read more',
                 style: AppTheme.labelThemed(context)
                     .copyWith(color: AppTheme.primary)),
           ],
@@ -1085,5 +1341,44 @@ class _TacticalCoachScreenState extends State<TacticalCoachScreen> {
     }
 
     return buffer.toString();
+  }
+}
+
+/// Fades and slides its child in after [delayMs], so result sections land
+/// one after another instead of appearing as a single wall of text.
+class _RevealIn extends StatefulWidget {
+  const _RevealIn({required this.delayMs, required this.child});
+
+  final int delayMs;
+  final Widget child;
+
+  @override
+  State<_RevealIn> createState() => _RevealInState();
+}
+
+class _RevealInState extends State<_RevealIn> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _visible ? 1 : 0,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOut,
+      child: AnimatedSlide(
+        offset: _visible ? Offset.zero : const Offset(0, 0.05),
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
   }
 }

@@ -273,7 +273,8 @@ class ApiService extends ChangeNotifier {
   // ============ Coaching Endpoints ============
 
   /// Tactical analysis returns structured coach JSON from the backend.
-  /// Returns keys: whatYoureSeeing, whyItMatters, nextFocus, optionalPracticePlan.
+  /// Returns keys: dataScope, whatKeepsShowingUp, whatsHelpingYouWin,
+  /// whatBreaksUnderPressure, nextMatchFocus, optionalPracticePlan.
   Future<Map<String, dynamic>?> tacticalAnalysis(
     String matchDescription,
     List<MatchPerformance>? recentMatches, {
@@ -286,7 +287,7 @@ class ApiService extends ChangeNotifier {
 
     try {
       final matchesJson = recentMatches != null && recentMatches.isNotEmpty
-          ? recentMatches.take(35).map((match) => match.toJson()).toList()
+          ? recentMatches.take(35).map((match) => match.toCoachingJson()).toList()
           : null;
 
       final response = await _makeRequest(
@@ -409,13 +410,39 @@ class ApiService extends ChangeNotifier {
     }
   }
 
-  /// Returns just the main observation text from tactical analysis.
+  /// Returns a readable plain-text summary of the tactical analysis.
   /// Use this for screens that store/display a plain string.
   Future<String?> tacticalAnalysisSummary(
       String matchDescription, List<MatchPerformance>? recentMatches) async {
     final result = await tacticalAnalysis(matchDescription, recentMatches);
     if (result == null) return null;
-    return result['whatYoureSeeing'] as String? ?? result.toString();
+
+    String sectionText(String key) {
+      final section = result[key];
+      if (section is Map<String, dynamic>) {
+        return (section['text'] as String? ?? '').trim();
+      }
+      return '';
+    }
+
+    final parts = <String>[
+      sectionText('whatKeepsShowingUp'),
+      sectionText('whatsHelpingYouWin'),
+      sectionText('whatBreaksUnderPressure'),
+    ].where((t) => t.isNotEmpty).toList();
+
+    final nextFocus = result['nextMatchFocus'];
+    if (nextFocus is Map<String, dynamic>) {
+      final focusText = (nextFocus['text'] as String? ?? '').trim();
+      final trigger = (nextFocus['triggerRule'] as String? ?? '').trim();
+      if (focusText.isNotEmpty) {
+        parts.add('Next match focus: $focusText');
+        if (trigger.isNotEmpty) parts.add('In-match trigger: $trigger');
+      }
+    }
+
+    if (parts.isEmpty) return null;
+    return parts.join('\n\n');
   }
 
   Future<String?> generateDrillsFromHistory(
@@ -426,7 +453,7 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final matchesJson = matches.map((match) => match.toJson()).toList();
+      final matchesJson = matches.map((match) => match.toCoachingJson()).toList();
       final response = await _makeRequest(
         endpoint: '/api/coaching/drills',
         body: {'matches': matchesJson},

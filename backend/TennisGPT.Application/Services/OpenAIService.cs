@@ -573,10 +573,9 @@ public class OpenAIService : IOpenAIService
         }
 
         response.DataScope ??= new DataScopeBlock();
-        if (response.DataScope.MatchesUsed <= 0)
-        {
-            response.DataScope.MatchesUsed = matchesUsed;
-        }
+        // Always use the real count from the request payload — the model's
+        // self-reported count can be hallucinated.
+        response.DataScope.MatchesUsed = matchesUsed;
         if (string.IsNullOrWhiteSpace(response.DataScope.Note))
         {
             response.DataScope.Note = matchesUsed < 3

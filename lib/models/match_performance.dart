@@ -79,6 +79,33 @@ class MatchPerformance {
     };
   }
 
+  /// Compact JSON for AI coaching prompts.
+  ///
+  /// Omits AI-generated fields (tacticalAnalysis, recommendedDrills) so the
+  /// model never treats its own past output as match evidence, and drops
+  /// empty values to keep the prompt payload small and high-signal.
+  Map<String, dynamic> toCoachingJson() {
+    return {
+      'date': date.toIso8601String().split('T').first,
+      'opponent': opponent,
+      'result': result,
+      'scoreLine': scoreLine.isNotEmpty ? scoreLine : '$setsWon-$setsLost',
+      'matchFormat': matchFormat,
+      'surface': surface,
+      if (opponentLevelSeed.isNotEmpty) 'opponentLevelSeed': opponentLevelSeed,
+      if (weather.isNotEmpty && weather != 'Unknown') 'weather': weather,
+      if (notes.isNotEmpty) 'notes': notes,
+      if (matchSummary.isNotEmpty) 'matchSummary': matchSummary,
+      if (mentalNotes.isNotEmpty) 'mentalNotes': mentalNotes,
+      if (tacticalNotes.isNotEmpty) 'tacticalNotes': tacticalNotes,
+      if (strengthNotes.isNotEmpty) 'strengthNotes': strengthNotes,
+      if (weaknessNotes.isNotEmpty) 'weaknessNotes': weaknessNotes,
+      if (strengths.isNotEmpty) 'strengths': strengths,
+      if (weaknesses.isNotEmpty) 'weaknesses': weaknesses,
+      if (keyMoments.isNotEmpty) 'keyMoments': keyMoments,
+    };
+  }
+
   factory MatchPerformance.fromJson(Map<String, dynamic> json) {
     final fallbackScoreLine = '${json['setsWon'] ?? 0}-${json['setsLost'] ?? 0}';
     return MatchPerformance(
